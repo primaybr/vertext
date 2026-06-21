@@ -63,7 +63,7 @@ Registers all application routes. Core admin routes are here. Module routes are 
 
 ```php
 // Add a custom route
-$router->get('/contact', 'Web\ContactController@index');
+$router->get('/contact', 'Web\ContactController', 'index');
 ```
 
 ### Config/Database.php — Database Config Loader

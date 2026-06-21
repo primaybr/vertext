@@ -79,13 +79,15 @@ Called on every request (when the module is enabled). Register all admin and pub
 public function registerRoutes(Router $router): void
 {
     // Admin routes
-    $router->get('/admin/my-module',           'App\Modules\MyModule\Controllers\Admin\ItemsController@index');
-    $router->get('/admin/my-module/form',       'App\Modules\MyModule\Controllers\Admin\ItemsController@createForm');
-    $router->post('/admin/my-module/store',     'App\Modules\MyModule\Controllers\Admin\ItemsController@store');
+    $adm = 'App\Modules\MyModule\Controllers\Admin\ItemsController';
+    $router->get( '/admin/my-module',      $adm, 'index');
+    $router->get( '/admin/my-module/form', $adm, 'createForm');
+    $router->post('/admin/my-module/store',$adm, 'store');
 
     // Public routes
-    $router->get('/items',    'App\Modules\MyModule\Controllers\Front\ItemsController@index');
-    $router->get('/items/{slug}', 'App\Modules\MyModule\Controllers\Front\ItemsController@show');
+    $pub = 'App\Modules\MyModule\Controllers\Front\ItemsController';
+    $router->get('/items',               $pub, 'index');
+    $router->get('/items/([a-z0-9\-]+)', $pub, 'show');
 }
 ```
 

@@ -109,7 +109,7 @@ class ProfileController extends BaseController
 // ── Logout ────────────────────────────────────────────────────────────────────
 
 // Auth::logout() destroys the session and redirects to /admin/login
-// It is called by Admin\AuthController@logout — you don't need to call it directly
+// It is called by Admin\AuthController::processLogout() — you don't need to call it directly
 // unless building a custom flow.
 Auth::logout(); // destroys session, does NOT redirect automatically
 header('Location: /admin/login');

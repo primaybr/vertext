@@ -61,10 +61,7 @@ class Module implements ModuleInterface
 
     public function registerRoutes(Router $router): void
     {
-        $router->get(
-            '/admin/hello',
-            'App\Modules\Hello\Controllers\Admin\HelloController@index'
-        );
+        $router->get('/admin/hello', 'App\Modules\Hello\Controllers\Admin\HelloController', 'index');
     }
 }
 */

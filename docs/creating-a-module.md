@@ -82,12 +82,13 @@ class Module implements ModuleInterface
 
     public function registerRoutes(Router $router): void
     {
-        $router->get('/admin/portfolio',            'App\Modules\Portfolio\Controllers\Admin\ProjectsController@index');
-        $router->get('/admin/portfolio/form',        'App\Modules\Portfolio\Controllers\Admin\ProjectsController@createForm');
-        $router->post('/admin/portfolio/store',      'App\Modules\Portfolio\Controllers\Admin\ProjectsController@store');
-        $router->get('/admin/portfolio/{id}/form',   'App\Modules\Portfolio\Controllers\Admin\ProjectsController@editForm');
-        $router->post('/admin/portfolio/{id}/update','App\Modules\Portfolio\Controllers\Admin\ProjectsController@update');
-        $router->post('/admin/portfolio/{id}/delete','App\Modules\Portfolio\Controllers\Admin\ProjectsController@delete');
+        $c = 'App\Modules\Portfolio\Controllers\Admin\ProjectsController';
+        $router->get( '/admin/portfolio',                $c, 'index');
+        $router->get( '/admin/portfolio/form',           $c, 'createForm');
+        $router->post('/admin/portfolio/store',          $c, 'store');
+        $router->get( '/admin/portfolio/(\d+)/form',     $c, 'editForm');
+        $router->post('/admin/portfolio/(\d+)/update',   $c, 'update');
+        $router->post('/admin/portfolio/(\d+)/delete',   $c, 'delete');
     }
 }
 ```
