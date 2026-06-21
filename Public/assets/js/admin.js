@@ -1,0 +1,455 @@
+/* Vertext CMS — Admin JS */
+(function () {
+    'use strict';
+
+    /* ── Theme ───────────────────────────────────────────────── */
+    function applyTheme() {
+        var t = localStorage.getItem('phuse-theme');
+        if (t) document.documentElement.setAttribute('data-theme', t);
+        syncThemeIcon();
+    }
+
+    function toggleTheme() {
+        var cur  = document.documentElement.getAttribute('data-theme') || 'light';
+        var next = cur === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem('phuse-theme', next);
+        syncThemeIcon();
+    }
+
+    function syncThemeIcon() {
+        var el = document.getElementById('theme-icon');
+        if (!el) return;
+        var t = document.documentElement.getAttribute('data-theme') || 'light';
+        el.className = t === 'dark' ? 'pi pi-sun' : 'pi pi-moon';
+    }
+
+    /* ── Sidebar ─────────────────────────────────────────────── */
+    function initSidebar() {
+        var toggle  = document.getElementById('sidebar-toggle');
+        var sidebar = document.getElementById('vtx-sidebar');
+        var overlay = document.getElementById('vtx-overlay');
+
+        function open()  { sidebar && sidebar.classList.add('open');    overlay && overlay.classList.add('show'); }
+        function close() { sidebar && sidebar.classList.remove('open'); overlay && overlay.classList.remove('show'); }
+
+        if (toggle)  toggle.addEventListener('click', function () { sidebar.classList.contains('open') ? close() : open(); });
+        if (overlay) overlay.addEventListener('click', close);
+
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+    }
+
+    /* ── Nav Group (subnav toggle) ──────────────────────────── */
+    function initNavGroups() {
+        document.querySelectorAll('.vtx-nav-group-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var group = btn.closest('.vtx-nav-group');
+                if (!group) return;
+                var isOpen = group.classList.toggle('open');
+                btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            });
+        });
+    }
+
+    /* ── User Dropdown ───────────────────────────────────────── */
+    function initUserMenu() {
+        var trigger = document.getElementById('user-menu-trigger');
+        var menu    = document.getElementById('user-menu');
+        if (!trigger || !menu) return;
+
+        trigger.addEventListener('click', function (e) {
+            e.stopPropagation();
+            menu.classList.toggle('open');
+        });
+
+        document.addEventListener('click', function () { menu.classList.remove('open'); });
+    }
+
+    /* ── AJAX ────────────────────────────────────────────────── */
+    window.VtxAjax = {
+        // POST JSON body (for simple payloads: module toggle, DB test)
+        post: function (url, data, cb) {
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', url, true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState !== 4) return;
+                var res;
+                try { res = JSON.parse(xhr.responseText); } catch (e) { res = {}; }
+                cb(xhr.status >= 200 && xhr.status < 300, res, xhr.status);
+            };
+            xhr.send(JSON.stringify(data));
+        },
+
+        // POST FormData (for CRUD forms: checkboxes, selects, file inputs)
+        postForm: function (url, formEl, cb) {
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', url, true);
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState !== 4) return;
+                var res;
+                try { res = JSON.parse(xhr.responseText); } catch (e) { res = {}; }
+                cb(xhr.status >= 200 && xhr.status < 300, res, xhr.status);
+            };
+            xhr.send(new FormData(formEl));
+        },
+
+        // GET (for loading form partials into the CRUD modal)
+        get: function (url, cb) {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', url, true);
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState !== 4) return;
+                cb(xhr.status >= 200 && xhr.status < 300, xhr.responseText, xhr.status);
+            };
+            xhr.send();
+        }
+    };
+
+    /* ── Vtx Component Loader ────────────────────────────────── */
+    window.Vtx = (function () {
+        var BASE     = (window.VTX_ASSETS_URL || '') + 'js/components/';
+        var VERSIONS = { search: 1, datatable: 1, select: 1, editor: 1, tags: 1, chart: 1, upload: 1, 'media-picker': 1 };
+        var _loaded    = {};
+        var _instances = {};
+
+        function loadScript(name, cb) {
+            if (_loaded[name]) { cb && cb(); return; }
+            var s = document.createElement('script');
+            s.src = BASE + 'vtx-' + name + '.js?v=' + (VERSIONS[name] || 1);
+            s.onload = function () { _loaded[name] = true; cb && cb(); };
+            document.head.appendChild(s);
+        }
+
+        return {
+            VERSIONS: VERSIONS,
+
+            // Dynamically load one or more components; calls cb when all are ready
+            load: function (names, cb) {
+                var pending = names.length;
+                if (pending === 0) { cb && cb(); return; }
+                names.forEach(function (name) {
+                    loadScript(name, function () {
+                        if (--pending === 0 && cb) cb();
+                    });
+                });
+            },
+
+            // Scan DOM and load only the components needed on this page
+            autoInit: function () {
+                var needed = [];
+                if (document.querySelector('[data-vtx-search]'))        needed.push('search');
+                if (document.querySelector('[data-vtx-table]'))         needed.push('datatable');
+                if (document.querySelector('[data-vtx-select]'))        needed.push('select');
+                if (document.querySelector('[data-vtx-editor]'))        needed.push('editor');
+                if (document.querySelector('[data-vtx-tags]'))          needed.push('tags');
+                if (document.querySelector('canvas[data-vtx-chart]'))   needed.push('chart');
+                if (document.querySelector('[data-vtx-upload]'))        needed.push('upload');
+                if (document.querySelector('[data-vtx-media-picker]'))  needed.push('media-picker');
+                if (needed.length) this.load(needed);
+            },
+
+            // Called by each component to register its instance
+            _register: function (type, instance) {
+                if (!_instances[type]) _instances[type] = [];
+                _instances[type].push(instance);
+            },
+
+            // Retrieve a registered instance; el is optional (returns first match)
+            getInstance: function (type, el) {
+                var list = _instances[type] || [];
+                if (el) return list.filter(function (i) { return i.el === el; })[0] || null;
+                return list[0] || null;
+            },
+
+            _instances: _instances
+        };
+    }());
+
+    /* ── Shared modal helpers ────────────────────────────────── */
+    function showBackdrop() {
+        var bd = document.getElementById('vtx-modal-backdrop');
+        if (!bd) return;
+        bd.style.display = 'block';
+        setTimeout(function () { bd.classList.add('show'); }, 10);
+    }
+
+    function hideBackdrop() {
+        var bd = document.getElementById('vtx-modal-backdrop');
+        if (!bd) return;
+        bd.classList.remove('show');
+        setTimeout(function () { bd.style.display = 'none'; }, 200);
+    }
+
+    /* ── Confirm Modal ───────────────────────────────────────── */
+    window.vtxModalClose = function () {
+        var modal = document.getElementById('vtx-confirm-modal');
+        if (modal) modal.classList.remove('show');
+        if (!document.getElementById('vtx-form-modal')?.classList.contains('show')) {
+            hideBackdrop();
+            document.body.style.overflow = '';
+        }
+    };
+
+    window.vtxConfirmModal = function (opts) {
+        var modal   = document.getElementById('vtx-confirm-modal');
+        var titleEl = document.getElementById('vtx-confirm-title');
+        var msgEl   = document.getElementById('vtx-confirm-message');
+        var okBtn   = document.getElementById('vtx-modal-confirm');
+        if (!modal) { if (typeof opts.onConfirm === 'function') opts.onConfirm(); return; }
+
+        if (titleEl) titleEl.textContent = opts.title   || 'Confirm';
+        if (msgEl)   msgEl.textContent   = opts.message || 'Are you sure?';
+        if (okBtn) {
+            okBtn.textContent = opts.confirmLabel || 'Confirm';
+            okBtn.className   = 'btn btn-sm ' + (opts.confirmClass || 'btn-danger');
+            okBtn.onclick     = function () {
+                window.vtxModalClose();
+                if (typeof opts.onConfirm === 'function') opts.onConfirm();
+            };
+        }
+
+        showBackdrop();
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    };
+
+    function initConfirmModal() {
+        var closeBtn  = document.getElementById('vtx-modal-close');
+        var cancelBtn = document.getElementById('vtx-modal-cancel');
+        var backdrop  = document.getElementById('vtx-modal-backdrop');
+
+        if (closeBtn)  closeBtn.addEventListener('click',  window.vtxModalClose);
+        if (cancelBtn) cancelBtn.addEventListener('click', window.vtxModalClose);
+        if (backdrop)  backdrop.addEventListener('click',  function () {
+            window.vtxModalClose();
+            window.vtxFormModalClose();
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') { window.vtxModalClose(); window.vtxFormModalClose(); }
+        });
+
+        // [data-confirm-form] buttons — show confirm modal, then submit or AJAX-delete
+        document.addEventListener('click', function (e) {
+            var btn = e.target.closest('[data-confirm-form]');
+            if (!btn) return;
+            e.preventDefault();
+            var isAjax = btn.dataset.confirmAjax === 'true';
+            window.vtxConfirmModal({
+                title:        btn.dataset.confirmTitle   || 'Confirm',
+                message:      btn.dataset.confirmMessage || 'Are you sure?',
+                confirmLabel: btn.dataset.confirmLabel   || 'Confirm',
+                confirmClass: btn.dataset.confirmClass   || 'btn-danger',
+                onConfirm: function () {
+                    var f = document.getElementById(btn.dataset.confirmForm);
+                    if (!f) return;
+                    if (isAjax) {
+                        VtxAjax.postForm(f.action, f, function (ok, res) {
+                            var msg = (res && res.message) ? res.message : (ok ? 'Done.' : 'An error occurred.');
+                            Phuse.toast(msg, ok && res && res.success ? 'success' : 'error');
+                            if (ok && res && res.success) {
+                                var row = btn.closest('tr');
+                                if (row) row.remove();
+                            }
+                        });
+                    } else {
+                        f.submit();
+                    }
+                }
+            });
+        });
+    }
+
+    /* ── CRUD Form Modal ─────────────────────────────────────── */
+    window.vtxFormModalClose = function () {
+        var modal = document.getElementById('vtx-form-modal');
+        if (modal) modal.classList.remove('show');
+        if (!document.getElementById('vtx-confirm-modal')?.classList.contains('show')) {
+            hideBackdrop();
+            document.body.style.overflow = '';
+        }
+    };
+
+    function runScriptsIn(container) {
+        container.querySelectorAll('script').forEach(function (oldScript) {
+            var newScript = document.createElement('script');
+            newScript.textContent = oldScript.textContent;
+            oldScript.parentNode.replaceChild(newScript, oldScript);
+        });
+    }
+
+    function initPasswordTogglesIn(container) {
+        container.querySelectorAll('[data-pw-toggle]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var target = document.getElementById(btn.dataset.pwToggle);
+                if (!target) return;
+                var isText = target.type === 'text';
+                target.type = isText ? 'password' : 'text';
+                var icon = btn.querySelector('.pi');
+                if (icon) icon.className = isText ? 'pi pi-eye' : 'pi pi-eye-off';
+            });
+        });
+    }
+
+    function initFormModal() {
+        var closeBtn = document.getElementById('vtx-form-modal-close');
+        if (closeBtn) closeBtn.addEventListener('click', window.vtxFormModalClose);
+
+        // [data-form-url] triggers: load partial via GET and display in modal
+        document.addEventListener('click', function (e) {
+            var btn = e.target.closest('[data-form-url]');
+            if (!btn) return;
+            e.preventDefault();
+
+            var url     = btn.dataset.formUrl;
+            var title   = btn.dataset.formTitle || '';
+            var size    = btn.dataset.formSize  || 'modal-lg';
+            var dialog  = document.getElementById('vtx-form-modal-dialog');
+            var titleEl = document.getElementById('vtx-form-modal-title');
+            var body    = document.getElementById('vtx-form-modal-body');
+            var modal   = document.getElementById('vtx-form-modal');
+
+            if (dialog)  dialog.className   = 'modal-dialog ' + size;
+            if (titleEl) titleEl.textContent = title;
+            if (body)    body.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--ps-text-muted);">Loading…</div>';
+
+            showBackdrop();
+            if (modal) modal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+
+            VtxAjax.get(url, function (ok, html) {
+                if (!body) return;
+                if (!ok) {
+                    body.innerHTML = '<p style="padding:1rem;color:var(--ps-danger);">Failed to load form.</p>';
+                    return;
+                }
+                body.innerHTML = html;
+                runScriptsIn(body);
+                initPasswordTogglesIn(body);
+                // Auto-enhance any [data-vtx-select] elements inside the loaded form
+                if (body.querySelector('[data-vtx-select]')) {
+                    Vtx.load(['select'], function () {
+                        body.querySelectorAll('[data-vtx-select]').forEach(function (el) {
+                            if (!el._vtxSelect) new Vtx.Select({ el: el });
+                        });
+                    });
+                }
+            });
+        });
+
+        // Delegated submit for [data-crud-form] forms loaded into the modal body
+        document.addEventListener('submit', function (e) {
+            var form = e.target.closest('[data-crud-form]');
+            if (!form) return;
+            e.preventDefault();
+
+            var submitBtn   = form.querySelector('[type=submit]');
+            var originalTxt = submitBtn ? submitBtn.textContent : '';
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Saving…'; }
+
+            VtxAjax.postForm(form.action, form, function (ok, res) {
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = originalTxt; }
+                var msg = (res && res.message) ? res.message : (ok ? 'Saved.' : 'An error occurred.');
+                if (ok && res && res.success) {
+                    window.vtxFormModalClose();
+                    Phuse.toast(msg, 'success');
+                    // Prefer VtxDataTable.reload() when a table is registered; else DOMParser fallback
+                    var dt = Vtx.getInstance('table');
+                    if (dt) {
+                        dt.reload();
+                    } else {
+                        VtxAjax.get(window.location.href, function (ok2, html) {
+                            if (!ok2) return;
+                            var doc     = new DOMParser().parseFromString(html, 'text/html');
+                            var newBody = doc.querySelector('table.vtx-table tbody');
+                            var curBody = document.querySelector('table.vtx-table tbody');
+                            if (newBody && curBody) { curBody.innerHTML = newBody.innerHTML; }
+                        });
+                    }
+                } else {
+                    Phuse.toast(msg, 'error');
+                }
+            });
+        });
+    }
+
+    /* ── AJAX Forms (e.g. Settings save) ────────────────────── */
+    function initAjaxForms() {
+        document.addEventListener('submit', function (e) {
+            var form = e.target.closest('[data-ajax-form]');
+            if (!form) return;
+            e.preventDefault();
+
+            var submitBtn   = form.querySelector('[type=submit]');
+            var originalTxt = submitBtn ? submitBtn.textContent : '';
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Saving…'; }
+
+            VtxAjax.postForm(form.action, form, function (ok, res) {
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = originalTxt; }
+                var msg = (res && res.message) ? res.message : (ok ? 'Saved.' : 'An error occurred.');
+                Phuse.toast(msg, ok && res && res.success ? 'success' : 'error');
+            });
+        });
+    }
+
+    /* ── Setup Wizard ────────────────────────────────────────── */
+    function initSetup() {
+        var form = document.getElementById('setup-form');
+        if (!form) return;
+
+        var testBtn = document.getElementById('test-db-btn');
+        if (testBtn) {
+            testBtn.addEventListener('click', function () {
+                testBtn.disabled = true;
+                testBtn.textContent = 'Testing…';
+
+                var payload = {
+                    host:     document.getElementById('db_host')     ? document.getElementById('db_host').value     : '',
+                    port:     document.getElementById('db_port')     ? document.getElementById('db_port').value     : '',
+                    database: document.getElementById('db_name')     ? document.getElementById('db_name').value     : '',
+                    username: document.getElementById('db_user')     ? document.getElementById('db_user').value     : '',
+                    password: document.getElementById('db_pass')     ? document.getElementById('db_pass').value     : ''
+                };
+
+                VtxAjax.post(form.dataset.testUrl || '/setup/test-db', payload, function (ok, res) {
+                    testBtn.disabled = false;
+                    testBtn.textContent = 'Test Connection';
+                    var good = ok && res && res.success;
+                    var type = good ? (res.exists ? 'success' : 'info') : 'error';
+                    var msg  = good ? res.message : (res && res.message ? res.message : 'Connection failed');
+                    Phuse.toast(msg, type);
+                });
+            });
+        }
+    }
+
+    /* ── Toggle Password Visibility ─────────────────────────── */
+    function initPasswordToggle() {
+        initPasswordTogglesIn(document);
+    }
+
+    /* ── Init ────────────────────────────────────────────────── */
+    applyTheme();
+
+    document.addEventListener('DOMContentLoaded', function () {
+        initSidebar();
+        initNavGroups();
+        initUserMenu();
+        initConfirmModal();
+        initFormModal();
+        initAjaxForms();
+        initSetup();
+        initPasswordToggle();
+        syncThemeIcon();
+
+        var themeBtn = document.getElementById('theme-toggle');
+        if (themeBtn) themeBtn.addEventListener('click', toggleTheme);
+
+        Vtx.autoInit();
+    });
+
+}());

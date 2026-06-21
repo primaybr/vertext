@@ -1,0 +1,170 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Controllers\Admin;
+
+use App\CMS\Auth;
+use App\CMS\ModuleLoader;
+use App\CMS\ModuleManager;
+
+/**
+ * Admin Module Manager Controller
+ *
+ * Handles: listing installed modules, toggling status,
+ * installing new modules from App/Modules/, and uninstalling.
+ */
+class ModulesController extends BaseController
+{
+    protected string $module = 'module-manager';
+
+    public function __construct()
+    {
+        parent::__construct();
+    }
+
+    // ── Index ──────────────────────────────────────────────────────────────────
+
+    /** GET /admin/modules */
+    public function index(): void
+    {
+        $this->requirePermission('modules.view');
+
+        $modules   = $this->db('modules')->orderBy('is_core DESC, name', 'ASC')->get() ?: [];
+        $available = ModuleManager::discover();
+
+        $this->adminRender('admin/modules/index', [
+            'modules'   => $modules,
+            'available' => $available,
+        ], 'Module Manager', 'modules');
+    }
+
+    // ── Toggle ─────────────────────────────────────────────────────────────────
+
+    /** POST /admin/modules/([a-z0-9\-\_]+)/toggle */
+    public function toggle(string $slug): void
+    {
+        $this->requirePermission('modules.toggle');
+
+        $module = $this->db('modules')->where('slug', $slug)->get(1);
+
+        if (!$module) {
+            $this->json(['success' => false, 'message' => 'Module not found'], 404);
+        }
+
+        if ($module['is_core']) {
+            $this->json(['success' => false, 'message' => 'Core modules cannot be disabled'], 403);
+        }
+
+        $newStatus = $module['status'] === 'enabled' ? 'disabled' : 'enabled';
+        $this->db('modules')->where('slug', $slug)->update(['status' => $newStatus]);
+
+        Auth::audit("module.{$newStatus}", 'modules', (int) $module['id'], ['slug' => $slug]);
+
+        ModuleLoader::refresh();
+
+        $this->json(['success' => true, 'status' => $newStatus]);
+    }
+
+    // ── Install ────────────────────────────────────────────────────────────────
+
+    /** POST /admin/modules/([a-z0-9\-\_]+)/install */
+    public function install(string $slug): void
+    {
+        $this->requirePermission('modules.install');
+        $this->validateCsrf();
+
+        $result = ModuleManager::install($slug);
+
+        if ($result['success']) {
+            $name = $result['name'] ?? $slug;
+            Auth::audit('module.install', 'modules', 0, ['slug' => $slug]);
+            if ($this->isAjax()) {
+                $this->json(['success' => true, 'message' => "Module \"{$name}\" installed and enabled successfully."]);
+            }
+            $this->flash('success', "Module \"{$name}\" installed and enabled successfully.");
+        } else {
+            if ($this->isAjax()) {
+                $this->json(['success' => false, 'message' => $result['message'] ?? 'Installation failed.']);
+            }
+            $this->flash('error', $result['message'] ?? 'Installation failed.');
+        }
+
+        $this->redirect($this->baseUrl . '/admin/modules');
+    }
+
+    // ── Uninstall ──────────────────────────────────────────────────────────────
+
+    /** POST /admin/modules/([a-z0-9\-\_]+)/uninstall */
+    public function uninstall(string $slug): void
+    {
+        $this->requirePermission('modules.uninstall');
+        $this->validateCsrf();
+
+        // Fetch module info before uninstalling for guard check and flash message
+        $mod = $this->db('modules')->where('slug', $slug)->get(1);
+
+        if ($mod && (bool) $mod['is_core']) {
+            if ($this->isAjax()) {
+                $this->json(['success' => false, 'message' => 'Core modules cannot be uninstalled.'], 403);
+            }
+            $this->flash('error', 'Core modules cannot be uninstalled.');
+            $this->redirect($this->baseUrl . '/admin/modules');
+        }
+
+        $result = ModuleManager::uninstall($slug);
+
+        if ($result['success']) {
+            $name = $mod['name'] ?? $slug;
+            Auth::audit('module.uninstall', 'modules', 0, ['slug' => $slug]);
+            if ($this->isAjax()) {
+                $this->json(['success' => true, 'message' => "Module \"{$name}\" uninstalled successfully."]);
+            }
+            $this->flash('success', "Module \"{$name}\" uninstalled successfully.");
+        } else {
+            if ($this->isAjax()) {
+                $this->json(['success' => false, 'message' => $result['message'] ?? 'Uninstall failed.']);
+            }
+            $this->flash('error', $result['message'] ?? 'Uninstall failed.');
+        }
+
+        $this->redirect($this->baseUrl . '/admin/modules');
+    }
+
+    // ── Sync Views ────────────────────────────────────────────────────────────
+
+    /** POST /admin/modules/([a-z0-9\-\_]+)/sync-views */
+    public function syncViews(string $slug): void
+    {
+        $this->requirePermission('modules.install');
+        $this->validateCsrf();
+
+        $ok = ModuleManager::redeployViews($slug);
+
+        if ($this->isAjax()) {
+            if ($ok) {
+                $this->json(['success' => true, 'message' => "Views for \"{$slug}\" redeployed."]);
+            } else {
+                $this->json(['success' => false, 'message' => 'Could not redeploy views. Module may not be installed.']);
+            }
+        }
+
+        if ($ok) {
+            $this->flash('success', "Views for \"{$slug}\" redeployed.");
+        } else {
+            $this->flash('error', 'Could not redeploy views.');
+        }
+        $this->redirect($this->baseUrl . '/admin/modules');
+    }
+
+    // ── Helpers ────────────────────────────────────────────────────────────────
+
+    private function validateCsrf(): void
+    {
+        $token = $this->input->post('csrf_token') ?? '';
+        if (!$this->csrf->validateToken($token)) {
+            $this->flash('error', 'Security token invalid. Please try again.');
+            $this->redirect($this->baseUrl . '/admin/modules');
+        }
+    }
+}

@@ -1,0 +1,19 @@
+Cache/
+Session/
+Config/Config.php
+Logs/
+!Core/Cache/
+vendor/
+composer.lock
+composer.json
+.phpunit.cache
+.mcp.json
+.claude/
+.playwright-mcp/
+.github/
+
+# Runtime-generated credential files — never commit these
+Storage/db.php
+Storage/app.php
+Storage/installed.lock
+

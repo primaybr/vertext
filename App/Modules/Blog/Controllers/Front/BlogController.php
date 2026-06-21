@@ -1,0 +1,252 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Modules\Blog\Controllers\Front;
+
+use Core\Controller;
+
+/**
+ * Public-facing blog frontend.
+ *
+ * GET /blog                            → index()
+ * GET /blog/category/{slug}            → category($slug)
+ * GET /blog/{slug}                     → post($slug)
+ *
+ * No authentication required.
+ */
+class BlogController extends Controller
+{
+    private int   $perPage;
+    private array $settings = [];
+
+    public function __construct()
+    {
+        parent::__construct();
+
+        // Load all blog settings
+        $rows = (new \Core\Model('settings'))->where('grp', 'blog')->get() ?: [];
+        foreach ($rows as $row) {
+            $this->settings[$row['key']] = $row['value'];
+        }
+
+        $this->perPage = max(1, (int) ($this->settings['posts_per_page'] ?? 10));
+    }
+
+    public function index(): void
+    {
+        $page   = max(1, (int) ($this->input->get('page') ?? 1));
+        $offset = ($page - 1) * $this->perPage;
+
+        $posts = (new \Core\Model('posts'))
+            ->select('posts.id, posts.title, posts.slug, posts.excerpt, posts.published_at,
+                      posts.reading_time, posts.featured_image_url,
+                      users.name AS author_name')
+            ->join('users', 'users.id = posts.author_id', 'LEFT')
+            ->where('posts.status', 'published')
+            ->whereNull('posts.deleted_at')
+            ->orderBy('posts.published_at', 'DESC')
+            ->limitOffset($this->perPage, $offset)
+            ->get() ?: [];
+
+        $total = (int) ((new \Core\Model('posts'))
+            ->where('status', 'published')
+            ->whereNull('deleted_at')
+            ->totalRows() ?: 0);
+
+        // Attach categories to each post
+        foreach ($posts as &$p) {
+            $p['categories'] = $this->postCategories((int) $p['id']);
+        }
+        unset($p);
+
+        $this->render('modules/blog/front/index', [
+            'posts'    => $posts,
+            'total'    => $total,
+            'page'     => $page,
+            'pages'    => max(1, (int) ceil($total / $this->perPage)),
+            'settings' => $this->settings,
+            'baseUrl'  => $this->baseUrl,
+        ]);
+    }
+
+    public function post(string $slug): void
+    {
+        $post = (new \Core\Model('posts'))
+            ->select('posts.*, users.name AS author_name')
+            ->join('users', 'users.id = posts.author_id', 'LEFT')
+            ->where('posts.slug', $slug)
+            ->where('posts.status', 'published')
+            ->whereNull('posts.deleted_at')
+            ->get(1);
+
+        if (!$post) {
+            http_response_code(404);
+            $this->render('errors/404', ['baseUrl' => $this->baseUrl]);
+            return;
+        }
+
+        $post['categories'] = $this->postCategories((int) $post['id']);
+        $post['tags']       = $this->postTags((int) $post['id']);
+
+        // Comments enabled?
+        $commentsEnabled = $this->settingBool('comments_enabled', true);
+        $comments        = [];
+        if ($commentsEnabled) {
+            $comments = (new \Core\Model('blog_comments'))
+                ->where('post_id', $post['id'])
+                ->where('status', 'approved')
+                ->orderBy('created_at', 'ASC')
+                ->get() ?: [];
+        }
+
+        $commentFlash = $this->session->flash('blog_comment_flash') ?: [];
+
+        $this->render('modules/blog/front/post', [
+            'post'            => $post,
+            'comments'        => $comments,
+            'commentsEnabled' => $commentsEnabled,
+            'commentFlash'    => is_array($commentFlash) ? $commentFlash : [],
+            'settings'        => $this->settings,
+            'csrf_token'      => $this->csrf->getToken(),
+            'baseUrl'         => $this->baseUrl,
+        ]);
+    }
+
+    public function category(string $slug): void
+    {
+        $category = (new \Core\Model('post_categories'))
+            ->where('slug', $slug)
+            ->get(1);
+
+        if (!$category) {
+            http_response_code(404);
+            $this->render('errors/404', ['baseUrl' => $this->baseUrl]);
+            return;
+        }
+
+        $page   = max(1, (int) ($this->input->get('page') ?? 1));
+        $offset = ($page - 1) * $this->perPage;
+
+        $posts = (new \Core\Model('posts'))
+            ->select('posts.id, posts.title, posts.slug, posts.excerpt, posts.published_at,
+                      posts.reading_time, posts.featured_image_url, users.name AS author_name')
+            ->join('users', 'users.id = posts.author_id', 'LEFT')
+            ->join('post_category_pivot', 'post_category_pivot.post_id = posts.id', 'INNER')
+            ->where('post_category_pivot.category_id', $category['id'])
+            ->where('posts.status', 'published')
+            ->whereNull('posts.deleted_at')
+            ->orderBy('posts.published_at', 'DESC')
+            ->limitOffset($this->perPage, $offset)
+            ->get() ?: [];
+
+        $total = (int) ((new \Core\Model('posts'))
+            ->join('post_category_pivot', 'post_category_pivot.post_id = posts.id', 'INNER')
+            ->where('post_category_pivot.category_id', $category['id'])
+            ->where('posts.status', 'published')
+            ->whereNull('posts.deleted_at')
+            ->totalRows() ?: 0);
+
+        foreach ($posts as &$p) {
+            $p['categories'] = $this->postCategories((int) $p['id']);
+        }
+        unset($p);
+
+        $this->render('modules/blog/front/category', [
+            'category' => $category,
+            'posts'    => $posts,
+            'total'    => $total,
+            'page'     => $page,
+            'pages'    => max(1, (int) ceil($total / $this->perPage)),
+            'settings' => $this->settings,
+            'baseUrl'  => $this->baseUrl,
+        ]);
+    }
+
+    public function submitComment(string $slug): void
+    {
+        $rawBase   = trim($this->settings['blog_base_path'] ?? 'blog', '/');
+        $blogBase  = $rawBase === '' ? '' : '/' . $rawBase;
+
+        $post = (new \Core\Model('posts'))
+            ->where('slug', $slug)
+            ->where('status', 'published')
+            ->whereNull('deleted_at')
+            ->get(1);
+
+        if (!$post) {
+            $this->redirect($this->baseUrl . ($blogBase ?: '/'));
+        }
+
+        // CSRF
+        $token = $this->input->post('csrf_token') ?? '';
+        if (!$this->csrf->validateToken($token)) {
+            $this->session->set('blog_comment_flash', ['type' => 'error', 'message' => 'Security token invalid. Please try again.']);
+            $this->redirect($this->baseUrl . $blogBase . '/' . $slug);
+        }
+
+        // Comments enabled?
+        if (!$this->settingBool('comments_enabled', true)) {
+            $this->redirect($this->baseUrl . $blogBase . '/' . $slug);
+        }
+
+        $authorName  = substr(trim($this->input->post('author_name',  false) ?? ''), 0, 120);
+        $authorEmail = substr(trim($this->input->post('author_email', false) ?? ''), 0, 180);
+        $body        = substr(trim($this->input->post('body',         false) ?? ''), 0, 2000);
+
+        if (!$authorName || !$body) {
+            $this->session->set('blog_comment_flash', ['type' => 'error', 'message' => 'Name and comment are required.']);
+            $this->redirect($this->baseUrl . $blogBase . '/' . $slug);
+        }
+
+        $requireApproval = $this->settingBool('comments_require_approval', true);
+        $ip = $_SERVER['HTTP_CF_CONNECTING_IP']
+            ?? $_SERVER['HTTP_X_FORWARDED_FOR']
+            ?? $_SERVER['REMOTE_ADDR']
+            ?? '';
+
+        (new \Core\Model('blog_comments'))->save([
+            'post_id'      => (int) $post['id'],
+            'author_name'  => $authorName,
+            'author_email' => $authorEmail ?: null,
+            'body'         => $body,
+            'status'       => $requireApproval ? 'pending' : 'approved',
+            'ip_address'   => substr($ip, 0, 45),
+        ]);
+
+        $msg = $requireApproval
+            ? 'Thanks! Your comment is awaiting moderation.'
+            : 'Comment posted successfully.';
+
+        $this->session->set('blog_comment_flash', ['type' => 'success', 'message' => $msg]);
+        $this->redirect($this->baseUrl . $blogBase . '/' . $slug);
+    }
+
+    private function postCategories(int $postId): array
+    {
+        return (new \Core\Model('post_categories'))
+            ->select('post_categories.id, post_categories.name, post_categories.slug')
+            ->join('post_category_pivot', 'post_category_pivot.category_id = post_categories.id', 'INNER')
+            ->where('post_category_pivot.post_id', $postId)
+            ->get() ?: [];
+    }
+
+    private function postTags(int $postId): array
+    {
+        return (new \Core\Model('post_tags'))
+            ->select('post_tags.id, post_tags.name, post_tags.slug')
+            ->join('post_tag_pivot', 'post_tag_pivot.tag_id = post_tags.id', 'INNER')
+            ->where('post_tag_pivot.post_id', $postId)
+            ->get() ?: [];
+    }
+
+    private function settingBool(string $key, bool $default = false): bool
+    {
+        $row = (new \Core\Model('settings'))
+            ->select('value')
+            ->where('key', $key)
+            ->where('grp', 'blog')
+            ->get(1);
+        return $row ? (bool) $row['value'] : $default;
+    }
+}
