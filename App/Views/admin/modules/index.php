@@ -178,7 +178,10 @@ function refreshPanels(onDone) {
     // Refresh sidebar nav so module links appear/disappear immediately
     var freshNav   = doc.querySelector('.vtx-sidebar-nav');
     var currentNav = document.querySelector('.vtx-sidebar-nav');
-    if (freshNav && currentNav) currentNav.innerHTML = freshNav.innerHTML;
+    if (freshNav && currentNav) {
+      currentNav.innerHTML = freshNav.innerHTML;
+      if (typeof window.vtxInitNavGroups === 'function') window.vtxInitNavGroups();
+    }
     attachToggleListeners();
     attachInstallListeners();
     attachUninstallListeners();

@@ -21,9 +21,10 @@ namespace App\CMS;
  */
 class ModuleManager
 {
-    private const MODULES_DIR = ROOT . 'App' . DS . 'Modules' . DS;
-    private const VIEWS_OUT   = ROOT . 'App' . DS . 'Views'   . DS . 'modules' . DS;
-    private const ROUTE_CACHE = ROOT . 'Cache' . DS . 'routes.cache';
+    private const MODULES_DIR = ROOT . 'App'    . DS . 'Modules' . DS;
+    private const VIEWS_OUT   = ROOT . 'App'    . DS . 'Views'   . DS . 'modules' . DS;
+    private const ASSETS_OUT  = ROOT . 'Public' . DS . 'assets'  . DS . 'modules' . DS;
+    private const ROUTE_CACHE = ROOT . 'Cache'  . DS . 'routes.cache';
 
     /** Prevent loadRoutes() from querying the DB more than once per request */
     private static bool $routesLoaded = false;
@@ -157,8 +158,9 @@ class ModuleManager
             return ['success' => false, 'message' => $e->getMessage()];
         }
 
-        // Deploy views (outside transaction — view files are not rolled back)
+        // Deploy views and assets (outside transaction — filesystem ops are not rolled back)
         self::deployViews($modDir, $slug);
+        self::deployAssets($modDir, $slug);
 
         ModuleLoader::refresh();
         self::clearRouteCache();
@@ -239,6 +241,7 @@ class ModuleManager
 
         if ($dirName) {
             self::removeViews($slug);
+            self::removeAssets($slug);
         }
 
         ModuleLoader::refresh();
@@ -362,8 +365,8 @@ class ModuleManager
     }
 
     /**
-     * Re-deploy views for an already-installed module.
-     * Use this when source views change without a full reinstall.
+     * Re-deploy views and assets for an already-installed module.
+     * Use this when source views or assets change without a full reinstall.
      */
     public static function redeployViews(string $slug): bool
     {
@@ -383,6 +386,32 @@ class ModuleManager
 
         $modDir = self::MODULES_DIR . $row['directory'];
         self::deployViews($modDir, $slug);
+        self::deployAssets($modDir, $slug);
+        return true;
+    }
+
+    /**
+     * Re-deploy only assets for an already-installed module.
+     * Mirrors redeployViews() for the Public/assets/modules/{slug}/ tree.
+     */
+    public static function redeployAssets(string $slug): bool
+    {
+        if (!self::validSlug($slug)) {
+            return false;
+        }
+
+        $row = (new \Core\Model('modules'))
+            ->select('directory')
+            ->where('slug', $slug)
+            ->where('status', 'enabled')
+            ->get(1);
+
+        if (!$row || empty($row['directory'])) {
+            return false;
+        }
+
+        $modDir = self::MODULES_DIR . $row['directory'];
+        self::deployAssets($modDir, $slug);
         return true;
     }
 
@@ -392,7 +421,6 @@ class ModuleManager
      */
     private static function deployViews(string $modDir, string $slug): void
     {
-        // Slug must be safe: only alphanumeric, hyphens, underscores
         if (!preg_match('/^[a-z0-9_\-]+$/i', $slug)) {
             throw new \RuntimeException("Invalid module slug '{$slug}' — must be alphanumeric/hyphens/underscores only.");
         }
@@ -409,6 +437,33 @@ class ModuleManager
     private static function removeViews(string $slug): void
     {
         $dest = self::VIEWS_OUT . $slug . DS;
+        if (is_dir($dest)) {
+            self::removeDir($dest);
+        }
+    }
+
+    /**
+     * Copy App/Modules/{Dir}/Assets/ → Public/assets/modules/{slug}/
+     * Makes module CSS/JS web-accessible without touching the global admin bundles.
+     */
+    private static function deployAssets(string $modDir, string $slug): void
+    {
+        if (!preg_match('/^[a-z0-9_\-]+$/i', $slug)) {
+            throw new \RuntimeException("Invalid module slug '{$slug}' — must be alphanumeric/hyphens/underscores only.");
+        }
+
+        $src = $modDir . DS . 'Assets' . DS;
+        if (!is_dir($src)) {
+            return;
+        }
+
+        self::copyDir($src, self::ASSETS_OUT . $slug . DS);
+    }
+
+    /** Remove Public/assets/modules/{slug}/ when a module is uninstalled */
+    private static function removeAssets(string $slug): void
+    {
+        $dest = self::ASSETS_OUT . $slug . DS;
         if (is_dir($dest)) {
             self::removeDir($dest);
         }

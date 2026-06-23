@@ -8,7 +8,16 @@
     <label class="vtx-label" for="cat_name">Name <span class="text-danger">*</span></label>
     <input class="form-control" type="text" id="cat_name" name="name"
            value="<?php echo htmlspecialchars($category['name'] ?? ''); ?>"
-           placeholder="e.g. Technology" required autofocus>
+           placeholder="e.g. Technology" required autofocus
+           data-vtx-slug-source>
+  </div>
+
+  <div class="vtx-field mb-3">
+    <label class="vtx-label" for="cat_slug">Slug</label>
+    <input class="form-control" type="text" id="cat_slug" name="slug"
+           value="<?php echo htmlspecialchars($category['slug'] ?? ''); ?>"
+           placeholder="auto-generated"
+           data-vtx-slug-target data-vtx-slug-source-id="cat_name">
   </div>
 
   <div class="vtx-field mb-3">
@@ -25,3 +34,4 @@
     </button>
   </div>
 </form>
+<script>Vtx.load(['slug'], function () { if (window.vtxSlug) window.vtxSlug.init(); });</script>

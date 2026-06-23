@@ -55,7 +55,7 @@ class LoginRateLimiter
     /** Record a failed attempt. */
     public function recordFailure(): void
     {
-        (new Model('login_attempts'))->save([
+        (new Model('login_attempts'))->withoutTimestamps()->save([
             'ip_address'  => $this->ip,
             'email'       => $this->email,
             'attempted_at' => date('Y-m-d H:i:s'),
@@ -111,7 +111,7 @@ class LoginRateLimiter
         $conn = (new Model('login_attempts'))->db;
         $conn->query('
             CREATE TABLE IF NOT EXISTS login_attempts (
-                id           SERIAL PRIMARY KEY,
+                id           UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
                 ip_address   VARCHAR(45)  NOT NULL,
                 email        VARCHAR(255) NOT NULL,
                 attempted_at TIMESTAMP    NOT NULL DEFAULT NOW()

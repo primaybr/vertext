@@ -49,14 +49,14 @@ class RolesController extends BaseController
     }
 
     /** GET /admin/roles/(\d+)/form — AJAX: returns edit form partial for modal */
-    public function editForm(int $id): void
+    public function editForm(string $id): void
     {
         $this->requirePermission('roles.manage');
         $role = $this->db('roles')->where('id', $id)->get(1);
         if (!$role) { $this->json(['success' => false, 'message' => 'Role not found.'], 404); }
 
         $rpRows    = $this->db('role_permissions')->where('role_id', $id)->get() ?: [];
-        $rolePerms = array_map('intval', array_column($rpRows, 'permission_id'));
+        $rolePerms = array_column($rpRows, 'permission_id');
         $perms     = $this->groupedPermissions();
 
         $this->renderPartial('admin/roles/_form', [
@@ -84,7 +84,7 @@ class RolesController extends BaseController
         }
 
         $slug   = strtolower(preg_replace('/[^a-z0-9]+/i', '-', $name));
-        $roleId = (int) $this->db('roles')->save([
+        $roleId = (string) $this->db('roles')->save([
             'name'        => $name,
             'slug'        => $slug,
             'description' => $desc,
@@ -94,7 +94,7 @@ class RolesController extends BaseController
             foreach ($permIds as $pid) {
                 $this->db('role_permissions')->withoutTimestamps()->ignoreDuplicate()->save([
                     'role_id'       => $roleId,
-                    'permission_id' => (int) $pid,
+                    'permission_id' => (string) $pid,
                 ]);
             }
         }
@@ -106,7 +106,7 @@ class RolesController extends BaseController
     }
 
     /** POST /admin/roles/(\d+)/update */
-    public function update(int $id): void
+    public function update(string $id): void
     {
         $this->requirePermission('roles.manage');
         $this->validateCsrf();
@@ -134,7 +134,7 @@ class RolesController extends BaseController
             foreach ($permIds as $pid) {
                 $this->db('role_permissions')->withoutTimestamps()->ignoreDuplicate()->save([
                     'role_id'       => $id,
-                    'permission_id' => (int) $pid,
+                    'permission_id' => (string) $pid,
                 ]);
             }
         }
@@ -146,7 +146,7 @@ class RolesController extends BaseController
     }
 
     /** POST /admin/roles/(\d+)/delete */
-    public function delete(int $id): void
+    public function delete(string $id): void
     {
         $this->requirePermission('roles.manage');
         $this->validateCsrf();

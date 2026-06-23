@@ -6,6 +6,9 @@ namespace App\Modules\Blog\Controllers\Admin;
 
 use App\Controllers\Admin\BaseController;
 use App\CMS\Auth;
+use App\Mail\Mailer;
+use App\Mail\MailMessage;
+use App\Mail\MailTemplate;
 
 /**
  * Blog comment moderation.
@@ -81,16 +84,58 @@ class CommentsController extends BaseController
         ], 'Comments', 'blog.comments');
     }
 
-    public function approve(int $id): void
+    public function approve(string $id): void
     {
         $this->requirePermission('comments.moderate');
         $this->validateCsrf();
+
+        $comment = $this->db('blog_comments')
+            ->select('blog_comments.id, blog_comments.author_name, blog_comments.author_email,
+                      blog_comments.body, posts.title AS post_title, posts.slug AS post_slug')
+            ->join('posts', 'posts.id = blog_comments.post_id', 'LEFT')
+            ->where('blog_comments.id', $id)
+            ->get(1);
+
         $this->db('blog_comments')->where('id', $id)->update(['status' => 'approved']);
         Auth::audit('comment.approve', 'blog_comments', $id);
+
+        if ($comment && !empty($comment['author_email'])) {
+            $this->sendCommentApprovedEmail($comment);
+        }
+
         $this->json(['success' => true, 'message' => 'Comment approved.']);
     }
 
-    public function spam(int $id): void
+    private function sendCommentApprovedEmail(array $comment): void
+    {
+        try {
+            $settings = array_column($this->db('settings')->get() ?: [], 'value', 'key');
+            $baseUrl  = $settings['site_url'] ?? $this->baseUrl;
+            $blogBase = $settings['blog_base_path'] ?? 'blog';
+            $postUrl  = rtrim($baseUrl, '/') . '/' . ltrim($blogBase, '/') . '/' . ($comment['post_slug'] ?? '');
+
+            $html = MailTemplate::render('comment_approved', [
+                'authorName'  => $comment['author_name'] ?? 'there',
+                'postTitle'   => $comment['post_title'] ?? 'the post',
+                'postUrl'     => $postUrl,
+                'commentBody' => $comment['body'] ?? '',
+                'siteName'    => $settings['site_name'] ?? 'Vertext CMS',
+                'siteUrl'     => $baseUrl,
+            ]);
+
+            $mailer  = Mailer::make();
+            $message = (new MailMessage())
+                ->to($comment['author_email'], $comment['author_name'] ?? '')
+                ->subject('Your comment was approved — ' . ($settings['site_name'] ?? 'Vertext CMS'))
+                ->htmlBody($html);
+
+            $mailer->send($message);
+        } catch (\Throwable) {
+            // Email failure must not break the approval flow
+        }
+    }
+
+    public function spam(string $id): void
     {
         $this->requirePermission('comments.moderate');
         $this->validateCsrf();
@@ -99,7 +144,7 @@ class CommentsController extends BaseController
         $this->json(['success' => true, 'message' => 'Comment marked as spam.']);
     }
 
-    public function delete(int $id): void
+    public function delete(string $id): void
     {
         $this->requirePermission('comments.delete');
         $this->validateCsrf();
@@ -114,7 +159,7 @@ class CommentsController extends BaseController
         $this->validateCsrf();
 
         $action = $this->input->post('bulk_action') ?? '';
-        $ids    = array_filter(array_map('intval', (array) ($this->input->post('ids', false) ?? [])));
+        $ids    = array_filter((array) ($this->input->post('ids', false) ?? []));
 
         if (empty($ids)) {
             $this->json(['success' => false, 'message' => 'No comments selected.']);

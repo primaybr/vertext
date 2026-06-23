@@ -59,7 +59,7 @@ class ModulesController extends BaseController
         $newStatus = $module['status'] === 'enabled' ? 'disabled' : 'enabled';
         $this->db('modules')->where('slug', $slug)->update(['status' => $newStatus]);
 
-        Auth::audit("module.{$newStatus}", 'modules', (int) $module['id'], ['slug' => $slug]);
+        Auth::audit("module.{$newStatus}", 'modules', (string) $module['id'], ['slug' => $slug]);
 
         ModuleLoader::refresh();
 
@@ -77,10 +77,14 @@ class ModulesController extends BaseController
         $result = ModuleManager::install($slug);
 
         if ($result['success']) {
-            $name = $result['name'] ?? $slug;
-            Auth::audit('module.install', 'modules', 0, ['slug' => $slug]);
+            $name     = $result['name'] ?? $slug;
+            Auth::audit('module.install', 'modules', '', ['slug' => $slug]);
             if ($this->isAjax()) {
-                $this->json(['success' => true, 'message' => "Module \"{$name}\" installed and enabled successfully."]);
+                $response = ['success' => true, 'message' => "Module \"{$name}\" installed and enabled successfully."];
+                if (!empty($result['setup_url'])) {
+                    $response['setup_url'] = $result['setup_url'];
+                }
+                $this->json($response);
             }
             $this->flash('success', "Module \"{$name}\" installed and enabled successfully.");
         } else {
@@ -116,7 +120,7 @@ class ModulesController extends BaseController
 
         if ($result['success']) {
             $name = $mod['name'] ?? $slug;
-            Auth::audit('module.uninstall', 'modules', 0, ['slug' => $slug]);
+            Auth::audit('module.uninstall', 'modules', '', ['slug' => $slug]);
             if ($this->isAjax()) {
                 $this->json(['success' => true, 'message' => "Module \"{$name}\" uninstalled successfully."]);
             }

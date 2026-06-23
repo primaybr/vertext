@@ -1,0 +1,15 @@
+{
+    "name":        "Pages",
+    "slug":        "pages",
+    "version":     "0.0.1",
+    "description": "Static page management — create and publish standalone pages on your site",
+    "author":      "Vertext",
+    "requires":    { "vertext": ">=0.0.2" },
+    "nav": {
+        "label":      "Pages",
+        "icon":       "pi-file",
+        "path":       "/admin/pages",
+        "active":     "pages",
+        "permission": "pages.view"
+    }
+}

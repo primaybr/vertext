@@ -13,7 +13,9 @@
      * Place a <input type="hidden" name="tag_names"> inside the container.
      */
     function VtxTags(opts) {
+        if (opts.el._vtxTags) return; // already initialized
         this.el      = opts.el;
+        this.el._vtxTags = this;
         this.hidden  = this.el.querySelector('input[type=hidden]');
         this.ajaxUrl = this.el.dataset.ajaxUrl || '';
         this._tags   = [];
@@ -149,24 +151,38 @@
 
             self.dropdown.innerHTML = '';
             results.slice(0, 8).forEach(function (item) {
-                var name = item.name || item;
-                if (self._tags.indexOf(name) !== -1) return;
+                var name    = item.name || item;
+                var isAdded = self._tags.indexOf(name) !== -1;
                 var row = document.createElement('div');
-                row.style.cssText = 'padding:.375rem .75rem;cursor:pointer;font-size:.875rem;' +
-                    'color:var(--ps-text-primary);';
-                row.textContent = name;
+                row.style.cssText = 'padding:.375rem .75rem;font-size:.875rem;display:flex;' +
+                    'justify-content:space-between;align-items:center;gap:.5rem;' +
+                    (isAdded
+                        ? 'color:var(--ps-text-muted);cursor:default;'
+                        : 'color:var(--ps-text-primary);cursor:pointer;');
+
+                var label = document.createElement('span');
+                label.textContent = name;
+                row.appendChild(label);
+
+                if (isAdded) {
+                    var badge = document.createElement('span');
+                    badge.textContent = 'added';
+                    badge.style.cssText = 'font-size:.6875rem;opacity:.6;flex-shrink:0;';
+                    row.appendChild(badge);
+                }
+
                 row.addEventListener('mousedown', function (e) {
                     e.preventDefault();
-                    self._add(name);
+                    if (!isAdded) self._add(name);
                     self.inputEl.value = '';
                     self._closeDropdown();
                 });
-                row.addEventListener('mouseover', function () {
-                    row.style.background = 'var(--ps-hover)';
-                });
-                row.addEventListener('mouseout', function () {
-                    row.style.background = '';
-                });
+
+                if (!isAdded) {
+                    row.addEventListener('mouseover', function () { row.style.background = 'var(--ps-hover)'; });
+                    row.addEventListener('mouseout',  function () { row.style.background = ''; });
+                }
+
                 self.dropdown.appendChild(row);
             });
 

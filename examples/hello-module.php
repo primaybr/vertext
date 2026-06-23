@@ -20,7 +20,7 @@ $moduleJson = <<<'JSON'
     "version": "1.0.0",
     "description": "A minimal hello-world module.",
     "author": "Your Name",
-    "requires": { "vertext": ">=0.0.1" },
+    "requires": { "vertext": ">=0.0.2" },
     "nav": {
         "label": "Hello",
         "icon": "pi-star",

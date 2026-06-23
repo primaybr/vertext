@@ -113,7 +113,7 @@ class Auth
     }
 
     /** Load user roles and permissions from DB */
-    public static function loadUserPermissions(int $userId): array
+    public static function loadUserPermissions(string $userId): array
     {
         $roles = [];
         $permissions = [];
@@ -142,7 +142,7 @@ class Auth
     }
 
     /** Log an admin action to audit_logs */
-    public static function audit(string $action, string $resourceType = '', int $resourceId = 0, array $details = []): void
+    public static function audit(string $action, string $resourceType = '', string $resourceId = '', array $details = []): void
     {
         $userId = self::id();
         if (!$userId) return;

@@ -27,7 +27,7 @@ class ModuleModel extends Model
     }
 
     /** Toggle module status (enabled/disabled) — cannot disable core modules */
-    public function toggleStatus(int $id): array
+    public function toggleStatus(string $id): array
     {
         $module = $this->where('id', $id)->get(1);
         if (!$module) {

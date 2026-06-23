@@ -88,12 +88,11 @@ class CategoriesController extends BaseController
             $this->json(['success' => false, 'message' => 'Category name is required.']);
         }
 
-        $slug = $this->makeSlug($name);
-        if ((int) ($this->db('post_categories')->where('slug', $slug)->totalRows() ?: 0) > 0) {
-            $slug .= '-' . time();
-        }
+        $rawSlug = trim($this->input->post('slug', false) ?? '');
+        $slug    = $rawSlug ? $this->makeSlug($rawSlug) : $this->makeSlug($name);
+        $slug    = $this->uniqueSlug('post_categories', $slug);
 
-        $id = (int) $this->db('post_categories')->save([
+        $id = (string) $this->db('post_categories')->save([
             'name'        => $name,
             'slug'        => $slug,
             'description' => $desc,
@@ -103,7 +102,7 @@ class CategoriesController extends BaseController
         $this->json(['success' => true, 'message' => "Category \"{$name}\" created."]);
     }
 
-    public function editForm(int $id): void
+    public function editForm(string $id): void
     {
         $this->requirePermission('categories.edit');
         $category = $this->db('post_categories')->where('id', $id)->get(1);
@@ -117,7 +116,7 @@ class CategoriesController extends BaseController
         ]);
     }
 
-    public function update(int $id): void
+    public function update(string $id): void
     {
         $this->requirePermission('categories.edit');
         $this->validateCsrf();
@@ -129,17 +128,25 @@ class CategoriesController extends BaseController
             $this->json(['success' => false, 'message' => 'Category name is required.']);
         }
 
-        $this->db('post_categories')->where('id', $id)->update([
-            'name'        => $name,
-            'description' => $desc,
-            'updated_at'  => date('Y-m-d H:i:s'),
-        ]);
+        $existing = $this->db('post_categories')->select('slug')->where('id', $id)->get(1);
+        $rawSlug  = trim($this->input->post('slug', false) ?? '');
+        $newSlug  = $rawSlug ? $this->makeSlug($rawSlug) : null;
+        if ($newSlug && $newSlug !== ($existing['slug'] ?? '')) {
+            $newSlug = $this->uniqueSlug('post_categories', $newSlug, $id);
+        }
+
+        $updateData = ['name' => $name, 'description' => $desc, 'updated_at' => date('Y-m-d H:i:s')];
+        if ($newSlug) {
+            $updateData['slug'] = $newSlug;
+        }
+
+        $this->db('post_categories')->where('id', $id)->update($updateData);
 
         Auth::audit('category.update', 'post_categories', $id, ['name' => $name]);
         $this->json(['success' => true, 'message' => 'Category updated.']);
     }
 
-    public function delete(int $id): void
+    public function delete(string $id): void
     {
         $this->requirePermission('categories.delete');
         $this->validateCsrf();
@@ -159,11 +166,26 @@ class CategoriesController extends BaseController
         }
     }
 
-    private function makeSlug(string $name): string
+    private function makeSlug(string $text): string
     {
-        $slug = strtolower(trim($name));
-        $slug = preg_replace('/[^a-z0-9\s\-]/', '', $slug);
-        $slug = preg_replace('/[\s\-]+/', '-', $slug);
-        return trim($slug, '-');
+        return \Core\Utilities\Text\Str::slug($text);
+    }
+
+    private function uniqueSlug(string $table, string $base, string $excludeId = ''): string
+    {
+        $slug   = $base;
+        $suffix = 2;
+        $q      = $this->db($table)->select('id')->where('slug', $slug);
+        if ($excludeId) {
+            $q->whereRaw('id != ?', [$excludeId]);
+        }
+        while ($q->get(1)) {
+            $slug = $base . '-' . $suffix++;
+            $q    = $this->db($table)->select('id')->where('slug', $slug);
+            if ($excludeId) {
+                $q->whereRaw('id != ?', [$excludeId]);
+            }
+        }
+        return $slug;
     }
 }

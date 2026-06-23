@@ -5,6 +5,77 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.0.2-alpha] — 2026-06-23
+
+Built on **Phuse 1.2.4** — all ORM, routing, session, and utility primitives come from the Phuse framework layer.
+
+### App — Mailer (`App/Mail/`)
+
+- **`Mailer`** — `Mailer::make()->send(MailMessage)`: PHP `mail()` driver and SMTP driver (native `fsockopen`, no external deps); reads config from `site_settings` at runtime
+- **`MailMessage`** — fluent builder: `to()`, `subject()`, `htmlBody()`, `textBody()`, `from()`
+- **`MailerConfig`** — maps `mail_driver`, `mail_host`, `mail_port`, `mail_username`, `mail_password`, `mail_encryption`, `mail_from_address`, `mail_from_name` settings
+- **`MailTemplate`** — `render(string $name, array $vars)` renders HTML email templates from `App/Mail/Templates/`
+- **Email templates** — `base.php` (shared layout), `comment_approved.php`, `comment_pending.php`, `welcome.php`, `contact_notification.php`, `contact_autoreply.php`
+- **Admin Mail Settings** — new "Mail" tab in Admin → Site Settings to configure all mail options
+
+### Core — Slug Component (`Public/assets/js/components/vtx-slug.js`)
+
+- Watches `[data-vtx-slug-source]` → writes `[data-vtx-slug-target]` with debounced 300ms slug generation
+- Mirrors `Str::slug()` logic: lowercase, non-alphanumeric → hyphen, collapse, trim
+- Stops auto-updating once user manually edits the slug field; "Reset" link re-enables it
+- Loaded on demand via `Vtx.load(['slug'], fn)`
+
+### Media Module (v0.0.2)
+
+- **Image resizing on upload** — originals wider than 1920 px are downscaled in-place; `resized` flag stored in DB
+- **Thumbnail generation** — 400×400 cover-crop thumbnail (`thumb_` prefix) generated for every uploaded image via `Core\Utilities\Image\Image`; stored as `thumbnail_path`
+- **Regenerate Thumbnails** — bulk action in the media grid processes up to 50 files per request; shows remaining count badge
+- **Grid thumbnails** — media grid and picker modal now display the 400 px thumbnail instead of the full original (faster loads)
+- Schema: `ALTER TABLE media_files ADD COLUMN IF NOT EXISTS thumbnail_path VARCHAR(500)` and `resized BOOLEAN DEFAULT FALSE` applied safely on existing installations
+
+### App — Public Theme System (`App/Theme/ThemeEngine`, `App/Themes/default/`)
+
+- **`ThemeEngine::render()`** — wraps any module front-end view in the active theme layout; captures view output with `ob_start`, injects as `$content` into `App/Themes/{theme}/layout.php`
+- **`ThemeEngine::activeTheme()`** — reads `settings` key `active_theme` (default: `default`)
+- **`ThemeEngine::deploy()`** — copies `App/Themes/{theme}/css|js|fonts|images/` to `Public/themes/{theme}/` on first render (auto-deploy, no manual step)
+- **Default theme** — clean responsive layout: sticky header, mobile hamburger nav, dynamic nav links (blog, gallery, contact), footer; CSS custom properties for accent/text/muted/border/bg colors
+- **`theme.json`** — declarative theme manifest: name, slug, version, description, author, assets
+- Blog front-end refactored to render through ThemeEngine (content-only views, no `<html>/<head>/<body>` wrapper)
+
+### Pages Module (v0.0.1)
+
+- `pages` table: UUID PK, title, slug (unique), content, excerpt, status, template, meta_title, meta_description, sort_order
+- 5 permissions: `pages.view/create/edit/delete/publish`
+- Admin AJAX CRUD with Quill editor, slug auto-generation, SEO fields
+- Front-end route `GET /([a-z0-9][a-z0-9\-]*)` renders published pages via ThemeEngine; returns 404 for unknown slugs
+
+### Gallery Module (v0.0.1)
+
+- `galleries` table: UUID PK, title, slug, description, cover_image_id (FK → media_files), status, meta fields
+- `gallery_items` table: gallery_id, media_file_id, caption, sort_order; cascade delete
+- 5 permissions: `gallery.view/create/edit/delete/publish`
+- Admin: album CRUD; manage items page with iframe media picker, AJAX add/remove, HTML5 drag-to-reorder (saves via `POST /reorder` with `X-CSRF-Token` header)
+- Front-end: album listing grid and single album view with pure CSS + vanilla JS lightbox (keyboard arrow/escape navigation)
+
+### Contact Form Module (v0.0.1)
+
+- `contact_submissions` table: UUID PK, name, email, subject, message, status (unread/read/spam), ip_address, submitted_at, read_at, replied_at
+- 3 permissions: `contact.view/delete/settings`
+- Admin inbox: filter by status (all/unread/read/spam), mark-read, mark-spam, delete; unread count badge in nav
+- Settings: admin notification email, auto-reply toggle, customizable auto-reply message
+- Front-end contact form with CSRF protection and rate limiting (1 submission per IP per 10 minutes)
+- On submit: sends admin notification email via Mailer; sends auto-reply to visitor if enabled
+
+### Videos Module (v0.0.1)
+
+- `videos` table: UUID PK, title, slug, provider (youtube/vimeo/other), embed_url, video_id, thumbnail_path, description, status, meta fields, sort_order
+- 5 permissions: `videos.view/create/edit/delete/publish`
+- Admin grid with poster thumbnail previews; AJAX CRUD modal with `vtx-slug` support
+- Poster thumbnail auto-fetch: YouTube `maxresdefault.jpg` cached locally; Vimeo poster via public API
+- Front-end: responsive video grid listing; single video page with lazy iframe (poster click loads player)
+
+---
+
 ## [Unreleased]
 
 ### Blog Module (v0.0.3) — 2026-06-21
@@ -103,10 +174,9 @@ APIs and database schema may change before the stable 1.0.0 release.
 
 ## Upcoming
 
-### [0.0.2-alpha] — planned
+### [0.0.3-alpha] — planned
 
-- Email notification system (comment approval, new user welcome)
-- Slug auto-generation from title
-- Image resizing on upload (thumbnail generation)
-- Public frontend theme system
-- More modules: Pages, Gallery, Contact Form
+- Comment email notifications (approval, new comment alert to post author)
+- New user welcome emails
+- Admin theme selector (switch active front-end theme from Site Settings)
+- Additional front-end theme options

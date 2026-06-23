@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Blog\Controllers\Front;
 
 use Core\Controller;
+use App\Theme\ThemeEngine;
 
 /**
  * Public-facing blog frontend.
@@ -60,13 +61,15 @@ class BlogController extends Controller
         }
         unset($p);
 
-        $this->render('modules/blog/front/index', [
-            'posts'    => $posts,
-            'total'    => $total,
-            'page'     => $page,
-            'pages'    => max(1, (int) ceil($total / $this->perPage)),
-            'settings' => $this->settings,
-            'baseUrl'  => $this->baseUrl,
+        ThemeEngine::render('modules/blog/front/index', [
+            'posts'            => $posts,
+            'total'            => $total,
+            'page'             => $page,
+            'pages'            => max(1, (int) ceil($total / $this->perPage)),
+            'settings'         => $this->settings,
+            'baseUrl'          => $this->baseUrl,
+            'page_title'       => $this->settings['blog_title'] ?? 'Blog',
+            'page_description' => $this->settings['blog_description'] ?? '',
         ]);
     }
 
@@ -102,14 +105,20 @@ class BlogController extends Controller
 
         $commentFlash = $this->session->flash('blog_comment_flash') ?: [];
 
-        $this->render('modules/blog/front/post', [
-            'post'            => $post,
-            'comments'        => $comments,
-            'commentsEnabled' => $commentsEnabled,
-            'commentFlash'    => is_array($commentFlash) ? $commentFlash : [],
-            'settings'        => $this->settings,
-            'csrf_token'      => $this->csrf->getToken(),
-            'baseUrl'         => $this->baseUrl,
+        $pageTitle = !empty($post['meta_title']) ? $post['meta_title'] : $post['title'];
+        $pageDesc  = $post['meta_description'] ?? $post['excerpt'] ?? '';
+
+        ThemeEngine::render('modules/blog/front/post', [
+            'post'             => $post,
+            'comments'         => $comments,
+            'commentsEnabled'  => $commentsEnabled,
+            'commentFlash'     => is_array($commentFlash) ? $commentFlash : [],
+            'settings'         => $this->settings,
+            'csrf_token'       => $this->csrf->getToken(),
+            'baseUrl'          => $this->baseUrl,
+            'page_title'       => $pageTitle,
+            'page_description' => $pageDesc,
+            'page_image'       => $post['featured_image_url'] ?? $this->settings['og_default_image'] ?? '',
         ]);
     }
 
@@ -152,14 +161,15 @@ class BlogController extends Controller
         }
         unset($p);
 
-        $this->render('modules/blog/front/category', [
-            'category' => $category,
-            'posts'    => $posts,
-            'total'    => $total,
-            'page'     => $page,
-            'pages'    => max(1, (int) ceil($total / $this->perPage)),
-            'settings' => $this->settings,
-            'baseUrl'  => $this->baseUrl,
+        ThemeEngine::render('modules/blog/front/category', [
+            'category'   => $category,
+            'posts'      => $posts,
+            'total'      => $total,
+            'page'       => $page,
+            'pages'      => max(1, (int) ceil($total / $this->perPage)),
+            'settings'   => $this->settings,
+            'baseUrl'    => $this->baseUrl,
+            'page_title' => ($category['name'] ?? '') . ' — ' . ($this->settings['blog_title'] ?? 'Blog'),
         ]);
     }
 

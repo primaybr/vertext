@@ -5,7 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{pageTitle}} — Vertext CMS</title>
   <link rel="stylesheet" href="{{assetsUrl}}css/styles.css?v=141">
-  <link rel="stylesheet" href="{{assetsUrl}}css/admin.css?v=4">
+  <link rel="stylesheet" href="{{assetsUrl}}css/admin.css?v=5">
+  <?php foreach (\App\CMS\ModuleLoader::assets()['css'] as $__mAsset): ?>
+  <link rel="stylesheet" href="<?php echo htmlspecialchars(($assetsUrl ?? '') . $__mAsset); ?>">
+  <?php endforeach; ?>
   <script>(function(){try{var t=localStorage.getItem('phuse-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})()</script>
 </head>
 <body>
@@ -190,6 +193,9 @@
 <script src="{{assetsUrl}}js/scripts.js?v=136"></script>
 <script>window.VTX_ASSETS_URL = '{{assetsUrl}}'; window.VTX_BASE_URL = '{{baseUrl}}';</script>
 <script src="{{assetsUrl}}js/admin.js?v=4"></script>
+<?php foreach (\App\CMS\ModuleLoader::assets()['js'] as $__mAsset): ?>
+<script src="<?php echo htmlspecialchars(($assetsUrl ?? '') . $__mAsset); ?>"></script>
+<?php endforeach; ?>
 
 <!-- CRUD form modal -->
 <div id="vtx-form-modal" class="modal fade" role="dialog" aria-modal="true" aria-labelledby="vtx-form-modal-title">

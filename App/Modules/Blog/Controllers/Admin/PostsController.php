@@ -89,6 +89,8 @@ class PostsController extends BaseController
 
         $categories = $this->db('post_categories')->select('id, name')->orderBy('name')->get() ?: [];
 
+        $blogBase = $this->db('settings')->where('key', 'blog_base_path')->get(1)['value'] ?? 'blog';
+
         $this->renderPartial('modules/blog/admin/posts/_form', [
             'post'          => null,
             'action'        => $this->baseUrl . '/admin/blog/posts/store',
@@ -96,6 +98,7 @@ class PostsController extends BaseController
             'postCatIds'    => [],
             'postTagNames'  => '',
             'mediaEnabled'  => ModuleLoader::isEnabled('media'),
+            'blogBase'      => $blogBase,
         ]);
     }
 
@@ -130,17 +133,16 @@ class PostsController extends BaseController
         // Sanitize body HTML (allow safe HTML tags from Quill)
         $body = $this->sanitizeHtml($body);
 
-        $slug = $this->makeSlug($title);
-        if ((int) ($this->db('posts')->where('slug', $slug)->totalRows() ?: 0) > 0) {
-            $slug .= '-' . time();
-        }
+        $rawSlug = trim($this->input->post('slug', false) ?? '');
+        $slug    = $rawSlug ? $this->makeSlug($rawSlug) : $this->makeSlug($title);
+        $slug    = $this->uniqueSlug('posts', $slug);
 
         $publishedAt = null;
         if ($status === 'published') {
             $publishedAt = $scheduledAt ? date('Y-m-d H:i:s', strtotime($scheduledAt)) : date('Y-m-d H:i:s');
         }
 
-        $postId = (int) $this->db('posts')->save([
+        $postId = (string) $this->db('posts')->save([
             'title'              => $title,
             'slug'               => $slug,
             'body'               => $body,
@@ -164,7 +166,7 @@ class PostsController extends BaseController
 
     // ── Edit form (modal partial) ──────────────────────────────────────────────
 
-    public function editForm(int $id): void
+    public function editForm(string $id): void
     {
         $this->requirePermission('posts.edit');
 
@@ -197,6 +199,8 @@ class PostsController extends BaseController
             }
         }
 
+        $blogBase = $this->db('settings')->where('key', 'blog_base_path')->get(1)['value'] ?? 'blog';
+
         $this->renderPartial('modules/blog/admin/posts/_form', [
             'post'          => $post,
             'action'        => $this->baseUrl . "/admin/blog/posts/{$id}/update",
@@ -204,12 +208,13 @@ class PostsController extends BaseController
             'postCatIds'    => $postCatIds,
             'postTagNames'  => $postTagNames,
             'mediaEnabled'  => ModuleLoader::isEnabled('media'),
+            'blogBase'      => $blogBase,
         ]);
     }
 
     // ── Update ─────────────────────────────────────────────────────────────────
 
-    public function update(int $id): void
+    public function update(string $id): void
     {
         $this->requirePermission('posts.edit');
         $this->validateCsrf();
@@ -242,6 +247,12 @@ class PostsController extends BaseController
 
         $body = $this->sanitizeHtml($body);
 
+        $rawSlug = trim($this->input->post('slug', false) ?? '');
+        $newSlug = $rawSlug ? $this->makeSlug($rawSlug) : null;
+        if ($newSlug && $newSlug !== ($existing['slug'] ?? '')) {
+            $newSlug = $this->uniqueSlug('posts', $newSlug, $id);
+        }
+
         $data = [
             'title'              => $title,
             'body'               => $body,
@@ -254,6 +265,9 @@ class PostsController extends BaseController
             'featured_image_url' => $featuredImgUrl ?: null,
             'updated_at'         => date('Y-m-d H:i:s'),
         ];
+        if ($newSlug) {
+            $data['slug'] = $newSlug;
+        }
 
         if ($status === 'published') {
             if (empty($existing['published_at'])) {
@@ -275,7 +289,7 @@ class PostsController extends BaseController
 
     // ── Delete ─────────────────────────────────────────────────────────────────
 
-    public function delete(int $id): void
+    public function delete(string $id): void
     {
         $this->requirePermission('posts.delete');
         $this->validateCsrf();
@@ -294,7 +308,7 @@ class PostsController extends BaseController
         $this->validateCsrf();
 
         $action = $this->input->post('bulk_action') ?? '';
-        $ids    = array_filter(array_map('intval', (array) ($this->input->post('ids', false) ?? [])));
+        $ids    = array_filter((array) ($this->input->post('ids', false) ?? []));
 
         if (empty($ids)) {
             $this->json(['success' => false, 'message' => 'No posts selected.']);
@@ -317,23 +331,26 @@ class PostsController extends BaseController
             default   => null,
         };
 
-        Auth::audit('posts.bulk', 'posts', 0, ['action' => $action, 'count' => count($ids)]);
+        Auth::audit('posts.bulk', 'posts', '', ['action' => $action, 'count' => count($ids)]);
         $this->json(['success' => true, 'message' => 'Bulk action applied.']);
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────────
 
-    private function syncCategories(int $postId, array $categoryIds): void
+    private function syncCategories(string $postId, array $categoryIds): void
     {
         $this->db('post_category_pivot')->where('post_id', $postId)->delete();
         foreach (array_unique($categoryIds) as $catId) {
-            if ($catId > 0) {
-                $this->db('post_category_pivot')->save(['post_id' => $postId, 'category_id' => $catId]);
+            if ($catId) {
+                $this->db('post_category_pivot')
+                    ->withoutTimestamps()
+                    ->setPrimaryKey('post_id')
+                    ->save(['post_id' => $postId, 'category_id' => (string) $catId]);
             }
         }
     }
 
-    private function syncTags(int $postId, string $tagNames): void
+    private function syncTags(string $postId, string $tagNames): void
     {
         $this->db('post_tag_pivot')->where('post_id', $postId)->delete();
 
@@ -351,11 +368,14 @@ class PostsController extends BaseController
 
             $existing = $this->db('post_tags')->where('slug', $slug)->get(1);
             if ($existing) {
-                $tagId = (int) $existing['id'];
+                $tagId = (string) $existing['id'];
             } else {
-                $tagId = (int) $this->db('post_tags')->save(['name' => $name, 'slug' => $slug]);
+                $tagId = (string) $this->db('post_tags')->save(['name' => $name, 'slug' => $slug]);
             }
-            $this->db('post_tag_pivot')->save(['post_id' => $postId, 'tag_id' => $tagId]);
+            $this->db('post_tag_pivot')
+                ->withoutTimestamps()
+                ->setPrimaryKey('post_id')
+                ->save(['post_id' => $postId, 'tag_id' => $tagId]);
         }
     }
 
@@ -387,11 +407,26 @@ class PostsController extends BaseController
         }
     }
 
-    private function makeSlug(string $title): string
+    private function makeSlug(string $text): string
     {
-        $slug = strtolower(trim($title));
-        $slug = preg_replace('/[^a-z0-9\s\-]/', '', $slug);
-        $slug = preg_replace('/[\s\-]+/', '-', $slug);
-        return trim($slug, '-');
+        return \Core\Utilities\Text\Str::slug($text);
+    }
+
+    private function uniqueSlug(string $table, string $base, string $excludeId = ''): string
+    {
+        $slug      = $base;
+        $suffix    = 2;
+        $q         = $this->db($table)->select('id')->where('slug', $slug);
+        if ($excludeId) {
+            $q->whereRaw('id != ?', [$excludeId]);
+        }
+        while ($q->get(1)) {
+            $slug = $base . '-' . $suffix++;
+            $q    = $this->db($table)->select('id')->where('slug', $slug);
+            if ($excludeId) {
+                $q->whereRaw('id != ?', [$excludeId]);
+            }
+        }
+        return $slug;
     }
 }

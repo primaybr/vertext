@@ -1,0 +1,15 @@
+{
+    "name":        "Contact",
+    "slug":        "contact",
+    "version":     "0.0.1",
+    "description": "Public contact form with admin inbox and email notifications",
+    "author":      "Vertext",
+    "requires":    { "vertext": ">=0.0.2" },
+    "nav": {
+        "label":      "Contact",
+        "icon":       "pi-envelope",
+        "path":       "/admin/contact",
+        "active":     "contact",
+        "permission": "contact.view"
+    }
+}

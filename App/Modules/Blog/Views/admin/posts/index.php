@@ -1,6 +1,6 @@
 <div class="vtx-page-head">
   <div>
-    <h1 class="vtx-page-title"><i class="pi pi-file-edit me-2 text-primary"></i>Posts</h1>
+    <h1 class="vtx-page-title"><i class="pi pi-edit me-2 text-primary"></i>Posts</h1>
     <p class="vtx-page-desc">Write, manage, and publish your blog content.</p>
   </div>
   <?php if (\App\CMS\Auth::can('posts.create')): ?>
@@ -17,7 +17,8 @@
 <div class="vtx-panel mb-3">
   <div class="vtx-filter-tabs">
     <a href="<?php echo $baseUrl; ?>/admin/blog/posts"
-       class="vtx-filter-tab <?php echo ($status ?? '') === '' ? 'active' : ''; ?>">
+       class="vtx-filter-tab <?php echo ($status ?? '') === '' ? 'active' : ''; ?>"
+       data-ajax-panel="posts-table-panel">
       All
       <span class="count"><?php echo array_sum($counts ?? []); ?></span>
     </a>
@@ -29,7 +30,8 @@
     ];
     foreach ($tabDefs as $key => $tab): ?>
     <a href="<?php echo $baseUrl; ?>/admin/blog/posts?status=<?php echo $key; ?>"
-       class="vtx-filter-tab <?php echo ($status ?? '') === $key ? 'active' : ''; ?>">
+       class="vtx-filter-tab <?php echo ($status ?? '') === $key ? 'active' : ''; ?>"
+       data-ajax-panel="posts-table-panel">
       <i class="pi <?php echo $tab['icon']; ?>"></i>
       <?php echo $tab['label']; ?>
       <?php if (isset($counts[$key])): ?>
@@ -41,10 +43,11 @@
 </div>
 
 <!-- Search + Bulk bar -->
-<div class="vtx-panel mb-3">
+<div class="vtx-panel mb-3" id="posts-search-bar" data-ajax-refreshable>
   <div class="vtx-panel-body" style="padding:.75rem 1rem;">
     <div style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;">
       <form method="GET" action="<?php echo $baseUrl; ?>/admin/blog/posts"
+            data-ajax-panel="posts-table-panel"
             style="display:flex;gap:.75rem;align-items:center;flex:1;min-width:200px;">
         <?php if (!empty($status)): ?>
         <input type="hidden" name="status" value="<?php echo htmlspecialchars($status); ?>">
@@ -55,7 +58,8 @@
         <button type="submit" class="btn btn-outline-secondary btn-sm">Search</button>
         <?php if (!empty($search)): ?>
         <a href="<?php echo $baseUrl; ?>/admin/blog/posts<?php echo $status ? '?status=' . $status : ''; ?>"
-           class="btn btn-link btn-sm text-muted">Clear</a>
+           class="btn btn-link btn-sm text-muted"
+           data-ajax-panel="posts-table-panel">Clear</a>
         <?php endif; ?>
       </form>
 
@@ -79,10 +83,10 @@
   </div>
 </div>
 
-<div class="vtx-panel">
+<div class="vtx-panel" id="posts-table-panel">
   <?php if (empty($posts)): ?>
   <div class="vtx-empty">
-    <div class="vtx-empty-ico"><i class="pi pi-file-edit"></i></div>
+    <div class="vtx-empty-ico"><i class="pi pi-edit"></i></div>
     <div class="vtx-empty-title">No posts<?php echo !empty($status) ? ' with status "' . htmlspecialchars($status) . '"' : ''; ?></div>
     <div class="vtx-empty-desc">
       <?php if (!empty($search)): ?>
@@ -202,68 +206,3 @@
   <?php endif; ?>
   <?php endif; ?>
 </div>
-
-<script>
-(function () {
-    var allCheck  = document.getElementById('vtx-check-all');
-    var bulkBar   = document.getElementById('vtx-bulk-bar');
-    var bulkCount = document.getElementById('vtx-bulk-count');
-
-    function getChecked() { return document.querySelectorAll('.vtx-row-check:checked'); }
-
-    function updateBulkBar() {
-        var n = getChecked().length;
-        if (bulkBar)   bulkBar.style.display = n > 0 ? 'flex' : 'none';
-        if (bulkCount) bulkCount.textContent  = n + ' selected';
-    }
-
-    if (allCheck) {
-        allCheck.addEventListener('change', function () {
-            document.querySelectorAll('.vtx-row-check').forEach(function (cb) {
-                cb.checked = allCheck.checked;
-            });
-            updateBulkBar();
-        });
-    }
-
-    document.querySelectorAll('.vtx-row-check').forEach(function (cb) {
-        cb.addEventListener('change', function () {
-            var all = document.querySelectorAll('.vtx-row-check');
-            if (allCheck) allCheck.checked = getChecked().length === all.length;
-            updateBulkBar();
-        });
-    });
-
-    window.vtxBulkSubmit = function (action) {
-        var checked = getChecked();
-        if (!checked.length) return;
-        var form        = document.getElementById('vtx-bulk-form');
-        var actionInput = document.getElementById('vtx-bulk-action');
-        if (!form || !actionInput) return;
-        form.querySelectorAll('[name="ids[]"]').forEach(function (el) { el.remove(); });
-        checked.forEach(function (cb) {
-            var inp = document.createElement('input');
-            inp.type = 'hidden'; inp.name = 'ids[]'; inp.value = cb.value;
-            form.appendChild(inp);
-        });
-        actionInput.value = action;
-        VtxAjax.postForm(form.action, form, function (ok, res) {
-            var msg = (res && res.message) ? res.message : (ok ? 'Done.' : 'An error occurred.');
-            Phuse.toast(msg, ok && res && res.success ? 'success' : 'error');
-            if (ok && res && res.success) location.reload();
-        });
-    };
-
-    window.vtxBulkConfirmDelete = function () {
-        var n = getChecked().length;
-        if (!n) return;
-        vtxConfirmModal({
-            title:        'Delete Posts',
-            message:      'Move ' + n + ' selected post(s) to trash?',
-            confirmLabel: 'Delete',
-            confirmClass: 'btn-danger',
-            onConfirm:    function () { window.vtxBulkSubmit('delete'); }
-        });
-    };
-}());
-</script>

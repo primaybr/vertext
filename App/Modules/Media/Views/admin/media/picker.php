@@ -14,6 +14,7 @@
            data-url="<?php echo htmlspecialchars($baseUrl); ?>/admin/media/upload"
            data-csrf="<?php echo htmlspecialchars($csrf_token ?? ''); ?>"
            data-accept="image/*"
+           data-max-mb="5"
            class="vtx-picker-upload-zone">
         <i class="pi pi-plus"></i> Upload
       </div>

@@ -1861,8 +1861,8 @@ class Model
         $result = $this->executeGet($limit, $offset);
 
         if ($result !== false && $result !== null) {
-            if ($limit == 1 && is_array($result) && isset($result['id'])) {
-                // Single record returned as associative array
+            if ($limit == 1 && is_array($result) && (empty($result) || !is_array(reset($result)))) {
+                // Single record returned as associative array (db->single() always returns this shape)
                 $result = $this->processSingleRecord($result);
             } elseif (is_array($result)) {
                 // Multiple records returned as array of arrays
@@ -1918,11 +1918,11 @@ class Model
 
                 if ($cachedResult !== null && $cachedResult !== false) {
                     if ($limit == 1) {
-                        // Check if cached result is already a single record (has 'id' key)
-                        if (is_array($cachedResult) && isset($cachedResult['id'])) {
+                        // If cached as a single associative row, return it directly
+                        if (is_array($cachedResult) && (empty($cachedResult) || !is_array(reset($cachedResult)))) {
                             return $cachedResult;
                         }
-                        // Otherwise, assume it's an array of records and take the first one
+                        // Otherwise it was cached as an array of records; take the first one
                         return is_array($cachedResult) && !empty($cachedResult) ? $cachedResult[0] : $cachedResult;
                     }
 

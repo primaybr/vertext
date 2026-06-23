@@ -15,6 +15,7 @@ class ModuleLoader
     /** Per-request cache: null = not loaded yet */
     private static ?array $enabled  = null;
     private static ?array $navItems = null;
+    private static ?array $assets   = null;
 
     /** Load enabled module data from DB into the static cache */
     private static function load(): void
@@ -78,10 +79,42 @@ class ModuleLoader
                     'subnav'     => $subnav,
                 ];
             }
+            // Build module asset URL paths (css/js relative to assetsUrl)
+            self::$assets = ['css' => [], 'js' => []];
+            foreach ($rows as $assetRow) {
+                $assetDir  = $assetRow['directory'] ?? '';
+                $assetSlug = $assetRow['slug']      ?? '';
+                if (!$assetDir || !preg_match('/^[A-Za-z][A-Za-z0-9_]*$/', $assetDir) || !$assetSlug) {
+                    continue;
+                }
+
+                $assetManifestFile = $modulesDir . $assetDir . DS . 'module.json';
+                if (!file_exists($assetManifestFile)) {
+                    continue;
+                }
+
+                $assetManifest = json_decode(file_get_contents($assetManifestFile), true);
+                $adminAssets   = $assetManifest['assets']['admin'] ?? [];
+                if (empty($adminAssets)) {
+                    continue;
+                }
+
+                $ver = rawurlencode($assetManifest['version'] ?? '1');
+                foreach ((array) ($adminAssets['css'] ?? []) as $p) {
+                    $p = ltrim((string) $p, '/');
+                    if ($p) self::$assets['css'][] = "modules/{$assetSlug}/{$p}?v={$ver}";
+                }
+                foreach ((array) ($adminAssets['js'] ?? []) as $p) {
+                    $p = ltrim((string) $p, '/');
+                    if ($p) self::$assets['js'][] = "modules/{$assetSlug}/{$p}?v={$ver}";
+                }
+            }
+
         } catch (\Exception) {
             // If DB is unavailable, allow everything (install/setup state)
             self::$enabled  = [];
             self::$navItems = [];
+            self::$assets   = ['css' => [], 'js' => []];
         }
     }
 
@@ -117,6 +150,17 @@ class ModuleLoader
     }
 
     /**
+     * Return admin asset URL paths (relative to assetsUrl) for all enabled modules.
+     * Returns ['css' => [...], 'js' => [...]] — paths include ?v= cache-buster.
+     * Prepend assetsUrl in your layout: $assetsUrl . $path
+     */
+    public static function assets(): array
+    {
+        self::load();
+        return self::$assets ?? ['css' => [], 'js' => []];
+    }
+
+    /**
      * Reset the per-request cache.
      * Call this immediately after a module status is toggled so that
      * subsequent isEnabled() calls within the same request see the new state.
@@ -125,5 +169,6 @@ class ModuleLoader
     {
         self::$enabled  = null;
         self::$navItems = null;
+        self::$assets   = null;
     }
 }

@@ -112,7 +112,7 @@ class BlogSettingsController extends BaseController
             ModuleManager::clearRouteCache();
         }
 
-        Auth::audit('blog.settings.save', 'settings', 0);
+        Auth::audit('blog.settings.save', 'settings');
         $this->json(['success' => true, 'message' => 'Blog settings saved.']);
     }
 

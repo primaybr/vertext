@@ -16,56 +16,14 @@
      *   data-target-preview-wrap="wrapId"     optional wrapper to show/hide
      *
      * @param {object} opts  { btn: Element }
+     *
+     * Static API:
+     *   VtxMediaPicker.open(function(url, id) { ... })
+     *   — opens the picker without a button; calls cb on selection.
      */
-    function VtxMediaPicker(opts) {
-        this.btn = opts.btn;
-        this._bind();
-        if (window.Vtx) Vtx._register('media-picker', this);
-    }
 
-    VtxMediaPicker.prototype._bind = function () {
-        var self = this;
-        var btn  = this.btn;
-
-        btn.addEventListener('click', function (e) {
-            e.preventDefault();
-
-            var pickerUrl = (window.VTX_BASE_URL || '') + '/admin/media/picker';
-
-            // Register the callback before opening
-            window.__vtxMediaPickerCallback = function (url, id) {
-                self._onSelect(url, id);
-                // Close the nested picker panel (not the full modal)
-                var pickerOverlay = document.getElementById('vtx-media-picker-overlay');
-                if (pickerOverlay) pickerOverlay.remove();
-                window.__vtxMediaPickerCallback = null;
-            };
-
-            self._openPickerPanel(pickerUrl);
-        });
-    };
-
-    VtxMediaPicker.prototype._onSelect = function (url, id) {
-        var btn  = this.btn;
-
-        var idInput  = document.getElementById(btn.dataset.targetIdInput  || '');
-        var urlInput = document.getElementById(btn.dataset.targetUrlInput || '');
-        var previewImg  = document.getElementById(btn.dataset.targetPreview    || '');
-        var previewWrap = document.getElementById(btn.dataset.targetPreviewWrap || '');
-
-        if (idInput)  idInput.value  = id  || '';
-        if (urlInput) urlInput.value = url || '';
-
-        if (previewImg && url) {
-            previewImg.src = url;
-            if (previewWrap) previewWrap.style.display = '';
-        }
-
-        btn.innerHTML = '<i class="pi pi-image" style="margin-right:.25rem;"></i>Change Image';
-    };
-
-    VtxMediaPicker.prototype._openPickerPanel = function (url) {
-        // Create an inline overlay within the modal body
+    // ── Shared overlay builder ────────────────────────────────────────────────
+    function openPickerOverlay(url) {
         var existing = document.getElementById('vtx-media-picker-overlay');
         if (existing) existing.remove();
 
@@ -102,26 +60,22 @@
         overlay.appendChild(panel);
         document.body.appendChild(overlay);
 
-        // Close on backdrop click
         overlay.addEventListener('click', function (e) {
             if (e.target === overlay) overlay.remove();
         });
 
-        // Load picker HTML
         VtxAjax.get(url, function (ok, html) {
             if (!ok) {
                 body.innerHTML = '<p style="color:var(--ps-danger);padding:1rem;">Failed to load media library.</p>';
                 return;
             }
             body.innerHTML = html;
-            // Run scripts inside the loaded picker HTML
             body.querySelectorAll('script').forEach(function (old) {
                 var s = document.createElement('script');
                 s.textContent = old.textContent;
                 old.parentNode.replaceChild(s, old);
             });
 
-            // Intercept picker pagination links to load inline
             body.addEventListener('click', function (e) {
                 var link = e.target.closest('a[data-picker-page]');
                 if (!link) return;
@@ -138,6 +92,66 @@
                 });
             });
         });
+    }
+
+    // ── Instance (button-driven) ──────────────────────────────────────────────
+    function VtxMediaPicker(opts) {
+        this.btn = opts.btn;
+        this._bind();
+        if (window.Vtx) Vtx._register('media-picker', this);
+    }
+
+    VtxMediaPicker.prototype._bind = function () {
+        var self = this;
+        var btn  = this.btn;
+
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+
+            var pickerUrl = (window.VTX_BASE_URL || '') + '/admin/media/picker';
+
+            window.__vtxMediaPickerCallback = function (url, id) {
+                self._onSelect(url, id);
+                var pickerOverlay = document.getElementById('vtx-media-picker-overlay');
+                if (pickerOverlay) pickerOverlay.remove();
+                window.__vtxMediaPickerCallback = null;
+            };
+
+            openPickerOverlay(pickerUrl);
+        });
+    };
+
+    VtxMediaPicker.prototype._onSelect = function (url, id) {
+        var btn  = this.btn;
+
+        var idInput     = document.getElementById(btn.dataset.targetIdInput     || '');
+        var urlInput    = document.getElementById(btn.dataset.targetUrlInput    || '');
+        var previewImg  = document.getElementById(btn.dataset.targetPreview     || '');
+        var previewWrap = document.getElementById(btn.dataset.targetPreviewWrap || '');
+
+        if (idInput)  idInput.value  = id  || '';
+        if (urlInput) urlInput.value = url || '';
+
+        if (previewImg && url) {
+            previewImg.src = url;
+            if (previewWrap) previewWrap.style.display = '';
+        }
+
+        btn.innerHTML = '<i class="pi pi-image" style="margin-right:.25rem;"></i>Change Image';
+    };
+
+    // ── Static: programmatic open (used by VtxEditor image handler) ──────────
+    VtxMediaPicker.open = function (onSelectFn) {
+        var pickerUrl = (window.VTX_BASE_URL || '') + '/admin/media/picker';
+
+        window.__vtxMediaPickerCallback = function (url, id) {
+            onSelectFn(url, id);
+            var overlay = document.getElementById('vtx-media-picker-overlay');
+            if (overlay) overlay.remove();
+            window.__vtxMediaPickerCallback = null;
+        };
+
+        openPickerOverlay(pickerUrl);
     };
 
     root.VtxMediaPicker = VtxMediaPicker;

@@ -102,18 +102,17 @@ class TagsController extends BaseController
             $this->json(['success' => false, 'message' => 'Tag name is required.']);
         }
 
-        $slug = $this->makeSlug($name);
-        if ((int) ($this->db('post_tags')->where('slug', $slug)->totalRows() ?: 0) > 0) {
-            $slug .= '-' . time();
-        }
+        $rawSlug = trim($this->input->post('slug', false) ?? '');
+        $slug    = $rawSlug ? $this->makeSlug($rawSlug) : $this->makeSlug($name);
+        $slug    = $this->uniqueSlug('post_tags', $slug);
 
-        $id = (int) $this->db('post_tags')->save(['name' => $name, 'slug' => $slug]);
+        $id = (string) $this->db('post_tags')->save(['name' => $name, 'slug' => $slug]);
 
         Auth::audit('tag.create', 'post_tags', $id, ['name' => $name]);
         $this->json(['success' => true, 'message' => "Tag \"{$name}\" created."]);
     }
 
-    public function editForm(int $id): void
+    public function editForm(string $id): void
     {
         $this->requirePermission('tags.edit');
         $tag = $this->db('post_tags')->where('id', $id)->get(1);
@@ -127,7 +126,7 @@ class TagsController extends BaseController
         ]);
     }
 
-    public function update(int $id): void
+    public function update(string $id): void
     {
         $this->requirePermission('tags.edit');
         $this->validateCsrf();
@@ -137,13 +136,25 @@ class TagsController extends BaseController
             $this->json(['success' => false, 'message' => 'Tag name is required.']);
         }
 
-        $this->db('post_tags')->where('id', $id)->update(['name' => $name]);
+        $existing = $this->db('post_tags')->select('slug')->where('id', $id)->get(1);
+        $rawSlug  = trim($this->input->post('slug', false) ?? '');
+        $newSlug  = $rawSlug ? $this->makeSlug($rawSlug) : null;
+        if ($newSlug && $newSlug !== ($existing['slug'] ?? '')) {
+            $newSlug = $this->uniqueSlug('post_tags', $newSlug, $id);
+        }
+
+        $updateData = ['name' => $name, 'updated_at' => date('Y-m-d H:i:s')];
+        if ($newSlug) {
+            $updateData['slug'] = $newSlug;
+        }
+
+        $this->db('post_tags')->where('id', $id)->update($updateData);
 
         Auth::audit('tag.update', 'post_tags', $id, ['name' => $name]);
         $this->json(['success' => true, 'message' => 'Tag updated.']);
     }
 
-    public function delete(int $id): void
+    public function delete(string $id): void
     {
         $this->requirePermission('tags.delete');
         $this->validateCsrf();
@@ -163,11 +174,26 @@ class TagsController extends BaseController
         }
     }
 
-    private function makeSlug(string $name): string
+    private function makeSlug(string $text): string
     {
-        $slug = strtolower(trim($name));
-        $slug = preg_replace('/[^a-z0-9\s\-]/', '', $slug);
-        $slug = preg_replace('/[\s\-]+/', '-', $slug);
-        return trim($slug, '-');
+        return \Core\Utilities\Text\Str::slug($text);
+    }
+
+    private function uniqueSlug(string $table, string $base, string $excludeId = ''): string
+    {
+        $slug   = $base;
+        $suffix = 2;
+        $q      = $this->db($table)->select('id')->where('slug', $slug);
+        if ($excludeId) {
+            $q->whereRaw('id != ?', [$excludeId]);
+        }
+        while ($q->get(1)) {
+            $slug = $base . '-' . $suffix++;
+            $q    = $this->db($table)->select('id')->where('slug', $slug);
+            if ($excludeId) {
+                $q->whereRaw('id != ?', [$excludeId]);
+            }
+        }
+        return $slug;
     }
 }

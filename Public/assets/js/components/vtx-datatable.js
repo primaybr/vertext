@@ -186,7 +186,11 @@
         function reload(url) {
             overlay.style.display = 'flex';
 
-            VtxAjax.get(url || window.location.href, function (ok, html) {
+            var reloadUrl = url || window.location.href;
+            var sep = reloadUrl.indexOf('?') >= 0 ? '&' : '?';
+            reloadUrl = reloadUrl + sep + '_=' + Date.now();
+
+            VtxAjax.get(reloadUrl, function (ok, html) {
                 overlay.style.display = 'none';
                 if (!ok) return;
 

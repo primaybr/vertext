@@ -39,7 +39,7 @@
         ['bold', 'italic', 'underline', 'strike'],
         [{ list: 'ordered' }, { list: 'bullet' }],
         ['blockquote', 'code-block'],
-        ['link'],
+        ['link', 'image'],
         ['clean']
     ];
 
@@ -47,15 +47,17 @@
      * VtxEditor
      *
      * @param {object} opts
-     *   container  {Element}   — div to render Quill into
-     *   textarea   {Element}   — hidden textarea synced on change
-     *   onWordCount {function} — called with word count on each change
+     *   container    {Element}   — div to render Quill into
+     *   textarea     {Element}   — hidden textarea synced on change
+     *   mediaPicker  {boolean}   — use VtxMediaPicker for image insertion
+     *   onWordCount  {function}  — called with word count on each change
      */
     function VtxEditor(opts) {
-        this.container   = opts.container;
-        this.textarea    = opts.textarea;
-        this.onWordCount = opts.onWordCount || null;
-        this._quill      = null;
+        this.container    = opts.container;
+        this.textarea     = opts.textarea;
+        this.onWordCount  = opts.onWordCount  || null;
+        this._mediaPicker = opts.mediaPicker  || false;
+        this._quill       = null;
         this._init();
     }
 
@@ -64,7 +66,30 @@
         loadQuill(function () {
             self._quill = new Quill(self.container, {
                 theme:   'snow',
-                modules: { toolbar: TOOLBAR },
+                modules: {
+                    toolbar: {
+                        container: TOOLBAR,
+                        handlers: {
+                            image: function () {
+                                var range = self._quill.getSelection(true);
+                                var idx   = range ? range.index : self._quill.getLength();
+
+                                function insertImage(url) {
+                                    if (!url) return;
+                                    self._quill.insertEmbed(idx, 'image', url, Quill.sources.USER);
+                                    self._quill.setSelection(idx + 1, Quill.sources.SILENT);
+                                }
+
+                                if (self._mediaPicker && window.VtxMediaPicker && window.VtxMediaPicker.open) {
+                                    window.VtxMediaPicker.open(function (url) { insertImage(url); });
+                                } else {
+                                    var url = window.prompt('Image URL:');
+                                    insertImage(url);
+                                }
+                            }
+                        }
+                    }
+                },
                 placeholder: 'Start writing…'
             });
 

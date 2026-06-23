@@ -1,14 +1,17 @@
 # Media Module
 
-The Media module (`slug: media`, version 0.0.1) provides a file upload library, a browsable grid interface, and a reusable media picker modal for use in other modules.
+The Media module (`slug: media`, version 0.0.2) provides a file upload library with automatic image resizing and thumbnail generation, a browsable grid interface, and a reusable media picker modal for use in other modules.
 
 ## Features
 
 - Drag-and-drop and click-to-upload file uploads
+- **Image resizing on upload** — originals wider than 1920 px are downscaled in-place; `resized` flag stored in DB
+- **400×400 thumbnail generation** — cover-crop thumbnail (`thumb_` prefix) created for every uploaded image; used in grid and picker for fast loading
+- **Bulk thumbnail regeneration** — "Regenerate Thumbnails" button processes up to 50 existing files per click; a badge shows how many are missing
 - Grid browser with pagination (24 files per page)
 - Image dimension storage (width, height)
 - Alt text and caption metadata editing
-- Organized storage by year/month (`uploads/2024/06/`)
+- Organized storage by year/month (`Public/uploads/YYYY/MM/`)
 - PHP execution blocked in upload directory via `.htaccess`
 - Reusable media picker modal (`vtx-media-picker`) for selecting images in other modules
 
@@ -31,10 +34,13 @@ Go to **Admin → Modules** and click **Install** next to Media. Creates the `me
 | `size` | INTEGER | File size in bytes |
 | `width` | INTEGER | Image width (null for non-images) |
 | `height` | INTEGER | Image height (null for non-images) |
+| `thumbnail_path` | VARCHAR(500) | Absolute path to 400×400 thumbnail file (null if not yet generated) |
+| `resized` | BOOLEAN | `true` if original was downscaled on upload |
 | `alt` | TEXT | Alt text |
 | `caption` | TEXT | Caption |
-| `uploaded_by` | BIGINT | FK → users.id |
+| `uploaded_by` | UUID | FK → users.id |
 | `created_at` | TIMESTAMP | Upload time |
+| `updated_at` | TIMESTAMP | Last metadata edit |
 
 ## Admin Routes
 
@@ -46,6 +52,7 @@ Go to **Admin → Modules** and click **Install** next to Media. Creates the `me
 | POST | `/admin/media/{id}/update` | Save metadata |
 | POST | `/admin/media/{id}/delete` | Delete file + record |
 | GET | `/admin/media/picker` | Media picker modal (used by vtx-media-picker) |
+| POST | `/admin/media/regen-thumbnails` | Bulk-generate missing thumbnails (up to 50 per call) |
 
 ## Permissions
 

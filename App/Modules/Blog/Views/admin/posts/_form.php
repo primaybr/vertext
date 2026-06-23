@@ -16,7 +16,25 @@ $p       = $editing ? $post : [];
     <label class="vtx-label" for="post-title">Title <span class="text-danger">*</span></label>
     <input class="form-control" type="text" id="post-title" name="title"
            value="<?php echo htmlspecialchars($p['title'] ?? ''); ?>"
-           placeholder="Post title…" required autofocus>
+           placeholder="Post title…" required autofocus
+           data-vtx-slug-source>
+  </div>
+
+  <!-- Slug -->
+  <div class="vtx-field mb-3">
+    <label class="vtx-label" for="post-slug">
+      Slug
+      <?php if ($editing): ?>
+      <span style="font-size:.75rem;font-weight:400;color:var(--ps-text-muted);"> — changing the slug will break existing links</span>
+      <?php endif; ?>
+    </label>
+    <div style="display:flex;align-items:center;gap:.5rem;">
+      <span style="font-size:.875rem;color:var(--ps-text-muted);white-space:nowrap;">/<?php echo htmlspecialchars(ltrim($blogBase ?? 'blog', '/')); ?>/</span>
+      <input class="form-control" type="text" id="post-slug" name="slug"
+             value="<?php echo htmlspecialchars($p['slug'] ?? ''); ?>"
+             placeholder="auto-generated-from-title"
+             data-vtx-slug-target data-vtx-slug-source-id="post-title">
+    </div>
   </div>
 
   <!-- Body: Quill editor -->
@@ -170,6 +188,11 @@ $p       = $editing ? $post : [];
 
 <script>
 (function () {
+    // Load slug component
+    Vtx.load(['slug'], function () {
+        if (window.vtxSlug) window.vtxSlug.init();
+    });
+
     // Featured image remove button
     var removeBtn = document.getElementById('post-featured-remove');
     if (removeBtn) {
@@ -196,14 +219,17 @@ $p       = $editing ? $post : [];
     initCharCounter('post-meta-title', 60);
     initCharCounter('post-meta-desc', 160);
 
-    // Load Quill editor and tags
-    Vtx.load(['editor', 'tags'], function () {
+    // Load editor, tags, and (when available) media picker together so the
+    // inline image handler has VtxMediaPicker ready before it can be triggered
+    var _editorComponents = ['editor', 'tags'<?php echo !empty($mediaEnabled) ? ", 'media-picker'" : ''; ?>];
+    Vtx.load(_editorComponents, function () {
         var editorEl = document.getElementById('post-body-editor');
         var hiddenEl = document.getElementById('post-body-hidden');
         if (editorEl && hiddenEl && window.VtxEditor) {
             var vtxEd = new VtxEditor({
-                container: editorEl,
-                textarea:  hiddenEl,
+                container:   editorEl,
+                textarea:    hiddenEl,
+                mediaPicker: <?php echo !empty($mediaEnabled) ? 'true' : 'false'; ?>,
                 onWordCount: function (words) {
                     var mins = Math.max(1, Math.round(words / 200));
                     var rt = document.getElementById('post-reading-time');
@@ -217,12 +243,11 @@ $p       = $editing ? $post : [];
 
         var tagsEl = document.querySelector('[data-vtx-tags]');
         if (tagsEl && window.VtxTags) new VtxTags({ el: tagsEl });
-    });
 
-    // Load media picker
-    Vtx.load(['media-picker'], function () {
+        <?php if (!empty($mediaEnabled)): ?>
         var pickerBtn = document.querySelector('[data-vtx-media-picker]');
         if (pickerBtn && window.VtxMediaPicker) new VtxMediaPicker({ btn: pickerBtn });
+        <?php endif; ?>
     });
 }());
 </script>

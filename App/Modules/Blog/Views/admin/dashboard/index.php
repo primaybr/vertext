@@ -13,7 +13,7 @@
 <!-- Stat Cards -->
 <div class="vtx-blog-stats">
   <div class="vtx-stat">
-    <div class="vtx-stat-ico blue"><i class="pi pi-file-edit"></i></div>
+    <div class="vtx-stat-ico blue"><i class="pi pi-edit"></i></div>
     <div class="vtx-stat-val"><?php echo number_format($totalPosts); ?></div>
     <div class="vtx-stat-lbl">Total Posts</div>
   </div>
@@ -80,12 +80,16 @@
           <?php echo ucfirst($p['status']); ?>
         </span>
         <div style="flex:1;min-width:0;">
-          <a href="{{baseUrl}}/admin/blog/posts/<?php echo $p['id']; ?>/form"
-             style="font-size:.8125rem;font-weight:500;color:var(--ps-text-primary);
-                    text-decoration:none;white-space:nowrap;overflow:hidden;
-                    text-overflow:ellipsis;display:block;">
+          <button type="button"
+                  data-form-url="{{baseUrl}}/admin/blog/posts/<?php echo $p['id']; ?>/form"
+                  data-form-title="Edit Post"
+                  data-form-size="modal-xl"
+                  style="background:none;border:none;padding:0;cursor:pointer;text-align:left;
+                         font-size:.8125rem;font-weight:500;color:var(--ps-text-primary);
+                         white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;
+                         width:100%;">
             <?php echo htmlspecialchars($p['title']); ?>
-          </a>
+          </button>
           <div style="font-size:.75rem;color:var(--ps-text-muted);">
             <?php echo htmlspecialchars($p['author_name'] ?? '—'); ?>
           </div>

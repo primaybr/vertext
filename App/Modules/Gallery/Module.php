@@ -1,0 +1,106 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Modules\Gallery;
+
+use App\CMS\ModuleInterface;
+
+class Module implements ModuleInterface
+{
+    public function install(\Core\Database\Connection $db): void
+    {
+        $db->query("CREATE TABLE IF NOT EXISTS galleries (
+            id               UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+            title            VARCHAR(255) NOT NULL,
+            slug             VARCHAR(255) NOT NULL UNIQUE,
+            description      TEXT,
+            cover_image_id   UUID,
+            status           VARCHAR(20)  NOT NULL DEFAULT 'draft',
+            meta_title       VARCHAR(255),
+            meta_description TEXT,
+            created_at       TIMESTAMP    DEFAULT NOW(),
+            updated_at       TIMESTAMP    DEFAULT NOW(),
+            created_by       UUID,
+            updated_by       UUID,
+            FOREIGN KEY (cover_image_id) REFERENCES media_files(id) ON DELETE SET NULL,
+            FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+            FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
+        )");
+        $db->execute();
+
+        $db->query("CREATE TABLE IF NOT EXISTS gallery_items (
+            id            UUID    PRIMARY KEY DEFAULT gen_random_uuid(),
+            gallery_id    UUID    NOT NULL,
+            media_file_id UUID    NOT NULL,
+            caption       TEXT,
+            sort_order    INT     NOT NULL DEFAULT 0,
+            created_at    TIMESTAMP DEFAULT NOW(),
+            FOREIGN KEY (gallery_id)    REFERENCES galleries(id)    ON DELETE CASCADE,
+            FOREIGN KEY (media_file_id) REFERENCES media_files(id) ON DELETE CASCADE
+        )");
+        $db->execute();
+
+        $permSql = "INSERT INTO permissions (name, slug, description, module)
+                    VALUES (:name, :slug, :desc, 'gallery')
+                    ON CONFLICT (slug) DO NOTHING";
+        foreach ([
+            ['View Gallery',    'gallery.view',    'Browse gallery albums'],
+            ['Create Galleries','gallery.create',  'Create new albums'],
+            ['Edit Galleries',  'gallery.edit',    'Edit album content and images'],
+            ['Delete Galleries','gallery.delete',  'Delete albums'],
+            ['Publish Galleries','gallery.publish','Change album status to published'],
+        ] as [$name, $slug, $desc]) {
+            $db->query($permSql);
+            $db->arrayBind([':name' => $name, ':slug' => $slug, ':desc' => $desc]);
+            $db->execute();
+        }
+
+        $db->query(
+            "INSERT INTO role_permissions (role_id, permission_id)
+             SELECT r.id, p.id
+             FROM   roles r, permissions p
+             WHERE  r.slug = 'administrator' AND p.module = 'gallery'
+             ON CONFLICT DO NOTHING"
+        );
+        $db->execute();
+    }
+
+    public function uninstall(\Core\Database\Connection $db): void
+    {
+        $db->query("DROP TABLE IF EXISTS gallery_items CASCADE");
+        $db->execute();
+        $db->query("DROP TABLE IF EXISTS galleries CASCADE");
+        $db->execute();
+
+        $db->query("DELETE FROM role_permissions WHERE permission_id IN (SELECT id FROM permissions WHERE module = 'gallery')");
+        $db->execute();
+        $db->query("DELETE FROM permissions WHERE module = 'gallery'");
+        $db->execute();
+    }
+
+    public function registerRoutes(\Core\Router $router): void
+    {
+        $ca = 'App\Modules\Gallery\Controllers\Admin\GalleriesController';
+        $ci = 'App\Modules\Gallery\Controllers\Admin\GalleryItemsController';
+        $cf = 'App\Modules\Gallery\Controllers\Front\GalleryController';
+
+        // Admin — album CRUD
+        $router->get('/admin/gallery',                                  $ca, 'index');
+        $router->get('/admin/gallery/form',                             $ca, 'createForm');
+        $router->post('/admin/gallery/store',                           $ca, 'store');
+        $router->get('/admin/gallery/([a-zA-Z0-9\-]+)/form',            $ca, 'editForm');
+        $router->post('/admin/gallery/([a-zA-Z0-9\-]+)/update',         $ca, 'update');
+        $router->post('/admin/gallery/([a-zA-Z0-9\-]+)/delete',         $ca, 'delete');
+
+        // Admin — album items
+        $router->get('/admin/gallery/([a-zA-Z0-9\-]+)/items',           $ci, 'index');
+        $router->post('/admin/gallery/([a-zA-Z0-9\-]+)/items/add',      $ci, 'add');
+        $router->post('/admin/gallery/([a-zA-Z0-9\-]+)/items/reorder',  $ci, 'reorder');
+        $router->post('/admin/gallery/([a-zA-Z0-9\-]+)/items/([a-zA-Z0-9\-]+)/remove', $ci, 'remove');
+
+        // Front-end
+        $router->get('/gallery',                   $cf, 'index');
+        $router->get('/gallery/([a-z0-9\-]+)',      $cf, 'album');
+    }
+}

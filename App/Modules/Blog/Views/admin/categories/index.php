@@ -12,22 +12,25 @@
   <?php endif; ?>
 </div>
 
-<div class="vtx-panel mb-3">
+<div class="vtx-panel mb-3" id="categories-search-bar" data-ajax-refreshable>
   <div class="vtx-panel-body" style="padding:.75rem 1rem;">
-    <form method="GET" action="{{baseUrl}}/admin/blog/categories" style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;">
+    <form method="GET" action="{{baseUrl}}/admin/blog/categories"
+          data-ajax-panel="categories-table-panel"
+          style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;">
       <div style="flex:1;min-width:200px;">
         <input class="form-control form-control-sm" type="search" name="search"
                value="<?php echo htmlspecialchars($search ?? ''); ?>" placeholder="Search categories…">
       </div>
       <button type="submit" class="btn btn-outline-secondary btn-sm">Search</button>
       <?php if (!empty($search)): ?>
-      <a href="{{baseUrl}}/admin/blog/categories" class="btn btn-link btn-sm text-muted">Clear</a>
+      <a href="{{baseUrl}}/admin/blog/categories" class="btn btn-link btn-sm text-muted"
+         data-ajax-panel="categories-table-panel">Clear</a>
       <?php endif; ?>
     </form>
   </div>
 </div>
 
-<div class="vtx-panel">
+<div class="vtx-panel" id="categories-table-panel">
   <?php if (empty($categories)): ?>
   <div class="vtx-empty">
     <div class="vtx-empty-ico"><i class="pi pi-layers"></i></div>
@@ -88,7 +91,8 @@
     <div style="display:flex;gap:.25rem;">
       <?php for ($p = 1; $p <= $pages; $p++): ?>
       <a href="?page=<?php echo $p; ?>&search=<?php echo urlencode($search ?? ''); ?>"
-         class="btn btn-sm <?php echo $p === $page ? 'btn-primary' : 'btn-outline-secondary'; ?>">
+         class="btn btn-sm <?php echo $p === $page ? 'btn-primary' : 'btn-outline-secondary'; ?>"
+         data-ajax-panel="categories-table-panel">
         <?php echo $p; ?>
       </a>
       <?php endfor; ?>

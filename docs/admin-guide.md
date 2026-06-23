@@ -92,6 +92,22 @@ Permissions follow the pattern `resource.action`:
 **Media module**:
 - `media.view`, `media.upload`, `media.edit`, `media.delete`
 
+**Pages module**:
+
+- `pages.view`, `pages.create`, `pages.edit`, `pages.delete`, `pages.publish`
+
+**Gallery module**:
+
+- `gallery.view`, `gallery.create`, `gallery.edit`, `gallery.delete`, `gallery.publish`
+
+**Contact module**:
+
+- `contact.view`, `contact.delete`, `contact.settings`
+
+**Videos module**:
+
+- `videos.view`, `videos.create`, `videos.edit`, `videos.delete`, `videos.publish`
+
 ## Settings
 
 `/admin/settings` — Requires `settings.view`.

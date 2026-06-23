@@ -112,7 +112,7 @@
     /* ── Vtx Component Loader ────────────────────────────────── */
     window.Vtx = (function () {
         var BASE     = (window.VTX_ASSETS_URL || '') + 'js/components/';
-        var VERSIONS = { search: 1, datatable: 1, select: 1, editor: 1, tags: 1, chart: 1, upload: 1, 'media-picker': 1 };
+        var VERSIONS = { search: 1, datatable: 2, select: 1, editor: 2, tags: 3, chart: 1, upload: 1, 'media-picker': 2, slug: 1 };
         var _loaded    = {};
         var _instances = {};
 
@@ -254,6 +254,7 @@
                             if (ok && res && res.success) {
                                 var row = btn.closest('tr');
                                 if (row) row.remove();
+                                document.dispatchEvent(new CustomEvent('vtx:crud:success', { detail: { action: 'delete' } }));
                             }
                         });
                     } else {
@@ -357,6 +358,7 @@
                 if (ok && res && res.success) {
                     window.vtxFormModalClose();
                     Phuse.toast(msg, 'success');
+                    document.dispatchEvent(new CustomEvent('vtx:crud:success', { detail: { action: 'save' } }));
                     // Prefer VtxDataTable.reload() when a table is registered; else DOMParser fallback
                     var dt = Vtx.getInstance('table');
                     if (dt) {
@@ -377,6 +379,87 @@
         });
     }
 
+    /* ── AJAX Panel Navigation ───────────────────────────────── */
+    // Fetches `url`, replaces #panelId, refreshes filter tabs and any
+    // [data-ajax-refreshable] panels, re-inits VtxDataTable, fires
+    // vtx:panel:replaced so pages can re-attach row-level listeners.
+    window.vtxAjaxNav = function (url, panelId, opts) {
+        var panel = document.getElementById(panelId);
+        if (!panel) { window.location.href = url; return; }
+
+        opts = opts || {};
+        panel.classList.add('vtx-loading');
+
+        var fetchUrl = url + (url.indexOf('?') >= 0 ? '&' : '?') + '_=' + Date.now();
+        VtxAjax.get(fetchUrl, function (ok, html) {
+            panel.classList.remove('vtx-loading');
+            if (!ok) return;
+
+            var doc = new DOMParser().parseFromString(html, 'text/html');
+
+            // Refresh filter tabs if present
+            var freshTabs = doc.querySelector('.vtx-filter-tabs');
+            var curTabs   = document.querySelector('.vtx-filter-tabs');
+            if (freshTabs && curTabs) curTabs.innerHTML = freshTabs.innerHTML;
+
+            // Refresh any panel that opted in to refresh on AJAX nav
+            document.querySelectorAll('[data-ajax-refreshable]').forEach(function (el) {
+                if (!el.id) return;
+                var fresh = doc.getElementById(el.id);
+                if (fresh) el.innerHTML = fresh.innerHTML;
+            });
+
+            // Replace the primary target panel
+            var freshPanel = doc.getElementById(panelId);
+            if (!freshPanel) return;
+
+            if (Vtx._instances['table']) Vtx._instances['table'] = [];
+            panel.innerHTML = freshPanel.innerHTML;
+
+            var newTbl = panel.querySelector('[data-vtx-table]');
+            if (newTbl) {
+                Vtx.load(['datatable'], function () {
+                    if (window.VtxDataTable) new VtxDataTable({ el: newTbl });
+                });
+            }
+
+            document.dispatchEvent(new CustomEvent('vtx:panel:replaced', {
+                detail: { panelId: panelId }
+            }));
+
+            if (!opts.silent) history.pushState(null, '', url);
+        });
+    };
+
+    function initAjaxNav() {
+        // Form submit → AJAX nav
+        document.addEventListener('submit', function (e) {
+            var form    = e.target;
+            var panelId = form.dataset.ajaxPanel;
+            if (!panelId) return;
+            e.preventDefault();
+
+            var params = new URLSearchParams();
+            new FormData(form).forEach(function (v, k) {
+                if (v !== '') params.append(k, v);
+            });
+            var qs  = params.toString();
+            var url = form.action + (qs ? '?' + qs : '');
+            window.vtxAjaxNav(url, panelId);
+        });
+
+        // Link click → AJAX nav
+        document.addEventListener('click', function (e) {
+            var link = e.target.closest('a[data-ajax-panel]');
+            if (!link) return;
+            e.preventDefault();
+            window.vtxAjaxNav(link.href, link.dataset.ajaxPanel);
+        });
+
+        // Browser back/forward: full reload to sync URL with content
+        window.addEventListener('popstate', function () { window.location.reload(); });
+    }
+
     /* ── AJAX Forms (e.g. Settings save) ────────────────────── */
     function initAjaxForms() {
         document.addEventListener('submit', function (e) {
@@ -392,6 +475,10 @@
                 if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = originalTxt; }
                 var msg = (res && res.message) ? res.message : (ok ? 'Saved.' : 'An error occurred.');
                 Phuse.toast(msg, ok && res && res.success ? 'success' : 'error');
+                if (ok && res && res.success) {
+                    var panelId = form.dataset.ajaxPanel;
+                    if (panelId && window.vtxAjaxNav) window.vtxAjaxNav(window.location.href, panelId, { silent: true });
+                }
             });
         });
     }
@@ -432,6 +519,9 @@
         initPasswordTogglesIn(document);
     }
 
+    /* ── Public API (called by partial refreshes e.g. module manager nav swap) */
+    window.vtxInitNavGroups = initNavGroups;
+
     /* ── Init ────────────────────────────────────────────────── */
     applyTheme();
 
@@ -442,6 +532,7 @@
         initConfirmModal();
         initFormModal();
         initAjaxForms();
+        initAjaxNav();
         initSetup();
         initPasswordToggle();
         syncThemeIcon();

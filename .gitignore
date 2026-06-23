@@ -17,3 +17,6 @@ Storage/db.php
 Storage/app.php
 Storage/installed.lock
 
+# Installed module views — deployed by the module installer, not source-controlled
+App/Views/modules/
+

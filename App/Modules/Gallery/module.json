@@ -1,0 +1,21 @@
+{
+    "name":        "Gallery",
+    "slug":        "gallery",
+    "version":     "0.0.1",
+    "description": "Public-facing photo albums using the Media library as the image source",
+    "author":      "Vertext",
+    "requires":    { "vertext": ">=0.0.2" },
+    "assets": {
+        "admin": {
+            "css": ["css/gallery-admin.css"],
+            "js":  ["js/gallery-admin.js"]
+        }
+    },
+    "nav": {
+        "label":      "Gallery",
+        "icon":       "pi-images",
+        "path":       "/admin/gallery",
+        "active":     "gallery",
+        "permission": "gallery.view"
+    }
+}

@@ -6,15 +6,21 @@
     "setup":       "/admin/blog/setup",
     "author":      "Vertext",
     "requires":    { "vertext": ">=0.0.1" },
+    "assets": {
+        "admin": {
+            "css": ["css/blog.css"],
+            "js":  ["js/blog.js"]
+        }
+    },
     "nav": {
         "label":      "Blog",
-        "icon":       "pi-file-edit",
+        "icon":       "pi-edit",
         "path":       "/admin/blog",
         "active":     "blog",
         "permission": "posts.view",
         "subnav": [
             { "label": "Dashboard",  "path": "/admin/blog",            "icon": "pi-home",      "permission": "posts.view"      },
-            { "label": "Posts",      "path": "/admin/blog/posts",      "icon": "pi-file-edit", "permission": "posts.view"      },
+            { "label": "Posts",      "path": "/admin/blog/posts",      "icon": "pi-edit", "permission": "posts.view"      },
             { "label": "Categories", "path": "/admin/blog/categories", "icon": "pi-layers",    "permission": "categories.view" },
             { "label": "Tags",       "path": "/admin/blog/tags",       "icon": "pi-tag",       "permission": "tags.view"       },
             { "label": "Comments",   "path": "/admin/blog/comments",   "icon": "pi-message",   "permission": "comments.view"   },

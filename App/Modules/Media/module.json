@@ -1,10 +1,16 @@
 {
     "name":        "Media",
     "slug":        "media",
-    "version":     "0.0.1",
+    "version":     "0.0.2",
     "description": "General-purpose media library: image upload, management, and picker for use by other modules",
     "author":      "Vertext",
     "requires":    { "vertext": ">=0.0.1" },
+    "assets": {
+        "admin": {
+            "css": ["css/media.css"],
+            "js":  ["js/media.js"]
+        }
+    },
     "nav": {
         "label":      "Media",
         "icon":       "pi-image",

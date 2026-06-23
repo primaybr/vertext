@@ -19,15 +19,15 @@ class Module implements ModuleInterface
     {
         // ── Core post table ───────────────────────────────────────────────────
         $db->query("CREATE TABLE IF NOT EXISTS posts (
-            id                SERIAL PRIMARY KEY,
+            id                UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
             title             VARCHAR(255) NOT NULL,
             slug              VARCHAR(255) UNIQUE NOT NULL,
             body              TEXT,
             excerpt           TEXT,
             status            VARCHAR(20)  DEFAULT 'draft',
-            author_id         INT,
+            author_id         UUID,
             published_at      TIMESTAMP,
-            featured_image_id INT,
+            featured_image_id UUID,
             featured_image_url VARCHAR(500),
             meta_title        VARCHAR(160),
             meta_description  VARCHAR(320),
@@ -53,7 +53,7 @@ class Module implements ModuleInterface
 
         // ── Categories ────────────────────────────────────────────────────────
         $db->query("CREATE TABLE IF NOT EXISTS post_categories (
-            id          SERIAL PRIMARY KEY,
+            id          UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
             name        VARCHAR(120) UNIQUE NOT NULL,
             slug        VARCHAR(120) UNIQUE NOT NULL,
             description TEXT,
@@ -63,8 +63,8 @@ class Module implements ModuleInterface
         $db->execute();
 
         $db->query("CREATE TABLE IF NOT EXISTS post_category_pivot (
-            post_id     INT NOT NULL,
-            category_id INT NOT NULL,
+            post_id     UUID NOT NULL,
+            category_id UUID NOT NULL,
             PRIMARY KEY (post_id, category_id),
             FOREIGN KEY (post_id)     REFERENCES posts(id)           ON DELETE CASCADE,
             FOREIGN KEY (category_id) REFERENCES post_categories(id) ON DELETE CASCADE
@@ -73,16 +73,20 @@ class Module implements ModuleInterface
 
         // ── Tags ──────────────────────────────────────────────────────────────
         $db->query("CREATE TABLE IF NOT EXISTS post_tags (
-            id         SERIAL PRIMARY KEY,
+            id         UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
             name       VARCHAR(80) UNIQUE NOT NULL,
             slug       VARCHAR(80) UNIQUE NOT NULL,
-            created_at TIMESTAMP DEFAULT NOW()
+            created_at TIMESTAMP DEFAULT NOW(),
+            updated_at TIMESTAMP DEFAULT NOW()
         )");
         $db->execute();
 
+        $db->query("ALTER TABLE post_tags ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW()");
+        $db->execute();
+
         $db->query("CREATE TABLE IF NOT EXISTS post_tag_pivot (
-            post_id INT NOT NULL,
-            tag_id  INT NOT NULL,
+            post_id UUID NOT NULL,
+            tag_id  UUID NOT NULL,
             PRIMARY KEY (post_id, tag_id),
             FOREIGN KEY (post_id) REFERENCES posts(id)     ON DELETE CASCADE,
             FOREIGN KEY (tag_id)  REFERENCES post_tags(id) ON DELETE CASCADE
@@ -91,16 +95,20 @@ class Module implements ModuleInterface
 
         // ── Comments ─────────────────────────────────────────────────────────
         $db->query("CREATE TABLE IF NOT EXISTS blog_comments (
-            id           SERIAL PRIMARY KEY,
-            post_id      INT NOT NULL,
+            id           UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+            post_id      UUID NOT NULL,
             author_name  VARCHAR(120) NOT NULL,
             author_email VARCHAR(180),
             body         TEXT NOT NULL,
             status       VARCHAR(20) DEFAULT 'pending',
             ip_address   VARCHAR(45),
             created_at   TIMESTAMP DEFAULT NOW(),
+            updated_at   TIMESTAMP DEFAULT NOW(),
             FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
         )");
+        $db->execute();
+
+        $db->query("ALTER TABLE blog_comments ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW()");
         $db->execute();
 
         // ── Permissions ───────────────────────────────────────────────────────
@@ -141,17 +149,28 @@ class Module implements ModuleInterface
         );
         $db->execute();
 
-        // ── Default settings ──────────────────────────────────────────────────
-        $settingSql = "INSERT INTO settings (key, value, grp, type, label)
-                       VALUES (:key, :val, 'blog', :type, :label)
-                       ON CONFLICT (key) DO NOTHING";
+        // ── Default settings (only seed if not already present) ──────────────
+        // Settings survive uninstall intentionally so that reinstalling
+        // pre-populates the setup wizard with the user's previous values.
         foreach ([
-            ['blog_base_path',     'blog', 'string', 'Blog Base Path'],
-            ['blog_redirect_paths', '[]',  'json',   'Blog Redirect Paths'],
+            ['blog_base_path',      'blog', 'string', 'Blog Base Path'],
+            ['blog_redirect_paths', '[]',   'json',   'Blog Redirect Paths'],
         ] as [$key, $val, $type, $label]) {
-            $db->query($settingSql);
-            $db->arrayBind([':key' => $key, ':val' => $val, ':type' => $type, ':label' => $label]);
-            $db->execute();
+            $exists = \Core\Model::on($db, 'settings')
+                ->select('id')
+                ->where('key', $key)
+                ->where('grp', 'blog')
+                ->get(1);
+
+            if (!$exists) {
+                \Core\Model::on($db, 'settings')->save([
+                    'key'   => $key,
+                    'value' => $val,
+                    'grp'   => 'blog',
+                    'type'  => $type,
+                    'label' => $label,
+                ]);
+            }
         }
     }
 
@@ -175,8 +194,8 @@ class Module implements ModuleInterface
         $db->query("DELETE FROM permissions WHERE module = 'blog'");
         $db->execute();
 
-        $db->query("DELETE FROM settings WHERE grp = 'blog'");
-        $db->execute();
+        // Settings are intentionally kept so that reinstalling pre-populates
+        // the setup wizard with the previously configured values.
     }
 
     public function registerRoutes(\Core\Router $router): void
@@ -192,9 +211,9 @@ class Module implements ModuleInterface
         $router->get('/admin/blog/posts',                   $c, 'index');
         $router->get('/admin/blog/posts/form',              $c, 'createForm');
         $router->post('/admin/blog/posts/store',            $c, 'store');
-        $router->get('/admin/blog/posts/(\d+)/form',        $c, 'editForm');
-        $router->post('/admin/blog/posts/(\d+)/update',     $c, 'update');
-        $router->post('/admin/blog/posts/(\d+)/delete',     $c, 'delete');
+        $router->get('/admin/blog/posts/([a-zA-Z0-9\-]+)/form',        $c, 'editForm');
+        $router->post('/admin/blog/posts/([a-zA-Z0-9\-]+)/update',     $c, 'update');
+        $router->post('/admin/blog/posts/([a-zA-Z0-9\-]+)/delete',     $c, 'delete');
         $router->post('/admin/blog/posts/bulk',             $c, 'bulk');
 
         // Categories
@@ -202,26 +221,26 @@ class Module implements ModuleInterface
         $router->get('/admin/blog/categories',              $cat, 'index');
         $router->get('/admin/blog/categories/form',         $cat, 'createForm');
         $router->post('/admin/blog/categories/store',       $cat, 'store');
-        $router->get('/admin/blog/categories/(\d+)/form',   $cat, 'editForm');
-        $router->post('/admin/blog/categories/(\d+)/update',$cat, 'update');
-        $router->post('/admin/blog/categories/(\d+)/delete',$cat, 'delete');
+        $router->get('/admin/blog/categories/([a-zA-Z0-9\-]+)/form',   $cat, 'editForm');
+        $router->post('/admin/blog/categories/([a-zA-Z0-9\-]+)/update',$cat, 'update');
+        $router->post('/admin/blog/categories/([a-zA-Z0-9\-]+)/delete',$cat, 'delete');
 
         // Tags
         $tag = $ns . 'TagsController';
         $router->get('/admin/blog/tags',                    $tag, 'index');
         $router->get('/admin/blog/tags/form',               $tag, 'createForm');
         $router->post('/admin/blog/tags/store',             $tag, 'store');
-        $router->get('/admin/blog/tags/(\d+)/form',         $tag, 'editForm');
-        $router->post('/admin/blog/tags/(\d+)/update',      $tag, 'update');
-        $router->post('/admin/blog/tags/(\d+)/delete',      $tag, 'delete');
+        $router->get('/admin/blog/tags/([a-zA-Z0-9\-]+)/form',         $tag, 'editForm');
+        $router->post('/admin/blog/tags/([a-zA-Z0-9\-]+)/update',      $tag, 'update');
+        $router->post('/admin/blog/tags/([a-zA-Z0-9\-]+)/delete',      $tag, 'delete');
         $router->get('/admin/blog/tags/search',             $tag, 'search');
 
         // Comments
         $cmt = $ns . 'CommentsController';
         $router->get('/admin/blog/comments',                        $cmt, 'index');
-        $router->post('/admin/blog/comments/(\d+)/approve',         $cmt, 'approve');
-        $router->post('/admin/blog/comments/(\d+)/spam',            $cmt, 'spam');
-        $router->post('/admin/blog/comments/(\d+)/delete',          $cmt, 'delete');
+        $router->post('/admin/blog/comments/([a-zA-Z0-9\-]+)/approve',         $cmt, 'approve');
+        $router->post('/admin/blog/comments/([a-zA-Z0-9\-]+)/spam',            $cmt, 'spam');
+        $router->post('/admin/blog/comments/([a-zA-Z0-9\-]+)/delete',          $cmt, 'delete');
         $router->post('/admin/blog/comments/bulk',                  $cmt, 'bulk');
 
         // Settings

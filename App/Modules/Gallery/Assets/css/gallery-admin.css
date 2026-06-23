@@ -1,0 +1,12 @@
+/* Gallery admin-specific styles */
+.vtx-gallery-item {
+    transition: opacity .15s;
+}
+
+.vtx-gallery-item[draggable="true"] {
+    cursor: grab;
+}
+
+.vtx-gallery-item[draggable="true"]:active {
+    cursor: grabbing;
+}

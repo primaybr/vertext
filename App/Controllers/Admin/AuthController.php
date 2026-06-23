@@ -77,7 +77,7 @@ class AuthController extends Controller
                 'type'    => 'error',
                 'message' => "Too many failed attempts. Please wait {$mins} minute(s) before trying again.",
             ]);
-            Auth::audit('login_blocked', 'auth', 0, ['email' => $email]);
+            Auth::audit('login_blocked', 'auth', '', ['email' => $email]);
             $this->redirect($this->baseUrl . '/admin/login');
         }
 
@@ -86,14 +86,14 @@ class AuthController extends Controller
         if (!$user) {
             $limiter->recordFailure();
             $this->session->set('flash', ['type' => 'error', 'message' => 'Invalid credentials. Please try again.']);
-            Auth::audit('login_failed', 'auth', 0, ['email' => $email]);
+            Auth::audit('login_failed', 'auth', '', ['email' => $email]);
             $this->redirect($this->baseUrl . '/admin/login');
         }
 
         $limiter->clearAttempts();
-        $permsData = Auth::loadUserPermissions((int) $user['id']);
+        $permsData = Auth::loadUserPermissions((string) $user['id']);
         Auth::login($user, $permsData['roles'], $permsData['permissions']);
-        Auth::audit('login', 'auth', (int)$user['id']);
+        Auth::audit('login', 'auth', (string) $user['id']);
 
         $this->redirect($this->baseUrl . '/admin/dashboard');
     }

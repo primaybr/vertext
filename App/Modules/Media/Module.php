@@ -18,20 +18,36 @@ class Module implements ModuleInterface
     public function install(\Core\Database\Connection $db): void
     {
         $db->query("CREATE TABLE IF NOT EXISTS media_files (
-            id            SERIAL PRIMARY KEY,
-            filename      VARCHAR(260) NOT NULL,
-            original_name VARCHAR(260) NOT NULL,
-            mime_type     VARCHAR(100) NOT NULL,
-            size          INT          NOT NULL DEFAULT 0,
-            width         SMALLINT,
-            height        SMALLINT,
-            alt_text      VARCHAR(255),
-            caption       TEXT,
-            uploaded_by   INT,
-            created_at    TIMESTAMP    DEFAULT NOW(),
+            id             UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+            filename       VARCHAR(260) NOT NULL,
+            original_name  VARCHAR(260) NOT NULL,
+            mime_type      VARCHAR(100) NOT NULL,
+            size           INT          NOT NULL DEFAULT 0,
+            width          SMALLINT,
+            height         SMALLINT,
+            alt_text       VARCHAR(255),
+            caption        TEXT,
+            thumbnail_path VARCHAR(500),
+            resized        BOOLEAN      DEFAULT FALSE,
+            uploaded_by    UUID,
+            created_at     TIMESTAMP    DEFAULT NOW(),
+            updated_at     TIMESTAMP    DEFAULT NOW(),
             FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE SET NULL
         )");
         $db->execute();
+
+        // Upgrade columns for existing installations
+        foreach ([
+            "ALTER TABLE media_files ADD COLUMN IF NOT EXISTS thumbnail_path VARCHAR(500)",
+            "ALTER TABLE media_files ADD COLUMN IF NOT EXISTS resized BOOLEAN DEFAULT FALSE",
+        ] as $alterSql) {
+            try {
+                $db->query($alterSql);
+                $db->execute();
+            } catch (\Exception) {
+                // Column already exists — safe to ignore
+            }
+        }
 
         $permSql = "INSERT INTO permissions (name, slug, description, module)
                     VALUES (:name, :slug, :desc, 'media')
@@ -65,10 +81,12 @@ class Module implements ModuleInterface
         $htaccess = $uploadsDir . DS . '.htaccess';
         if (!file_exists($htaccess)) {
             file_put_contents($htaccess,
-                "Options -ExecCGI\n" .
-                "AddHandler cgi-script .php .php3 .php4 .php5 .phtml .pl .py .jsp .asp .htm .shtml .sh .cgi\n" .
-                "RemoveHandler .php .phtml\n" .
-                "php_flag engine off\n"
+                "Options -ExecCGI -Indexes\n" .
+                "RemoveHandler .php .php3 .php4 .php5 .phtml .pl .py .jsp .asp .sh .cgi\n" .
+                "RemoveType .php .phtml\n\n" .
+                "<FilesMatch \"\\.(php[0-9]?|phtml|pl|py|jsp|asp|sh|cgi)$\">\n" .
+                "    Require all denied\n" .
+                "</FilesMatch>\n"
             );
         }
     }
@@ -90,11 +108,12 @@ class Module implements ModuleInterface
         $c  = 'App\Modules\Media\Controllers\Admin\MediaController';
         $cp = 'App\Modules\Media\Controllers\Admin\MediaPickerController';
 
-        $router->get('/admin/media',                  $c,  'index');
-        $router->post('/admin/media/upload',          $c,  'upload');
-        $router->get('/admin/media/(\d+)/edit-form',  $c,  'editForm');
-        $router->post('/admin/media/(\d+)/update',    $c,  'update');
-        $router->post('/admin/media/(\d+)/delete',    $c,  'delete');
+        $router->get('/admin/media',                               $c,  'index');
+        $router->post('/admin/media/upload',                       $c,  'upload');
+        $router->post('/admin/media/regen-thumbnails',             $c,  'regenThumbnails');
+        $router->get('/admin/media/([a-zA-Z0-9\-]+)/edit-form',   $c,  'editForm');
+        $router->post('/admin/media/([a-zA-Z0-9\-]+)/update',     $c,  'update');
+        $router->post('/admin/media/([a-zA-Z0-9\-]+)/delete',     $c,  'delete');
 
         $router->get('/admin/media/picker',           $cp, 'index');
     }

@@ -1,0 +1,11 @@
+{
+    "name":        "Default",
+    "slug":        "default",
+    "version":     "0.0.1",
+    "description": "Clean, minimal, responsive theme for the public front-end",
+    "author":      "Vertext",
+    "assets": {
+        "css": ["css/theme.css"],
+        "js":  ["js/theme.js"]
+    }
+}

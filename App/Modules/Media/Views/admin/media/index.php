@@ -4,12 +4,22 @@
     <h1 class="vtx-page-title"><i class="pi pi-image me-2 text-primary"></i>Media Library</h1>
     <p class="vtx-page-desc">Upload and manage images used across your site.</p>
   </div>
-  <?php if (\App\CMS\Auth::can('media.upload')): ?>
-  <button type="button" class="btn btn-primary"
-          id="vtx-media-upload-btn">
-    <i class="pi pi-plus me-1"></i> Upload
-  </button>
-  <?php endif; ?>
+  <div style="display:flex;gap:.5rem;align-items:center;">
+    <?php if (\App\CMS\Auth::can('media.edit') && ($missingThumbCount ?? 0) > 0): ?>
+    <button type="button" class="btn btn-outline-secondary btn-sm"
+            id="vtx-regen-thumbs-btn" title="Generate missing thumbnails">
+      <i class="pi pi-refresh me-1"></i>
+      Regenerate Thumbnails
+      <span class="vtx-badge" style="background:var(--ps-warning);color:#000;font-size:.7rem;padding:.15rem .4rem;border-radius:999px;margin-left:.25rem;"><?php echo (int)($missingThumbCount ?? 0); ?></span>
+    </button>
+    <?php endif; ?>
+    <?php if (\App\CMS\Auth::can('media.upload')): ?>
+    <button type="button" class="btn btn-primary"
+            id="vtx-media-upload-btn">
+      <i class="pi pi-plus me-1"></i> Upload
+    </button>
+    <?php endif; ?>
+  </div>
 </div>
 
 <!-- Upload Zone (hidden by default) -->
@@ -20,24 +30,14 @@
          data-url="{{baseUrl}}/admin/media/upload"
          data-csrf="{{csrf_token}}"
          data-accept="image/*"
+         data-max-mb="5"
          style="border:2px dashed var(--ps-border);border-radius:8px;padding:2.5rem;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;">
       <i class="pi pi-image" style="font-size:2rem;color:var(--ps-text-muted);display:block;margin-bottom:.75rem;"></i>
       <div style="font-size:.9375rem;font-weight:500;color:var(--ps-text-secondary);">Drag &amp; drop images here</div>
-      <div style="font-size:.8125rem;color:var(--ps-text-muted);margin-top:.25rem;">or click to browse — JPG, PNG, GIF, WebP · max 2 MB</div>
+      <div style="font-size:.8125rem;color:var(--ps-text-muted);margin-top:.25rem;">or click to browse — JPG, PNG, GIF, WebP · max 5 MB</div>
     </div>
   </div>
 </div>
-<script>
-document.getElementById('vtx-media-upload-btn').addEventListener('click', function () {
-    var zone = document.getElementById('vtx-upload-zone');
-    zone.style.display = zone.style.display === 'none' ? '' : 'none';
-});
-document.addEventListener('vtx:upload:done', function (e) {
-    if (e.detail && e.detail.file) {
-        location.reload();
-    }
-});
-</script>
 <?php endif; ?>
 
 <!-- Search -->
@@ -70,7 +70,7 @@ document.addEventListener('vtx:upload:done', function (e) {
       <?php foreach ($files as $f): ?>
       <div class="vtx-media-card" data-id="<?php echo $f['id']; ?>">
         <div class="vtx-media-thumb">
-          <img src="<?php echo htmlspecialchars($f['url']); ?>"
+          <img src="<?php echo htmlspecialchars($f['thumbnail_url'] ?? $f['url']); ?>"
                alt="<?php echo htmlspecialchars($f['alt_text'] ?? $f['original_name']); ?>"
                loading="lazy">
         </div>
@@ -142,4 +142,41 @@ document.addEventListener('vtx:upload:done', function (e) {
   <?php endif; ?>
 </div>
 
-<script>Vtx.load('upload');</script>
+<?php if (\App\CMS\Auth::can('media.edit')): ?>
+<script>
+(function () {
+    var btn = document.getElementById('vtx-regen-thumbs-btn');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="pi pi-spin pi-refresh me-1"></i> Generating…';
+        var fd = new FormData();
+        fd.append('csrf_token', '{{csrf_token}}');
+        fetch('{{baseUrl}}/admin/media/regen-thumbnails', { method: 'POST', body: fd })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                if (d.success) {
+                    if (d.remaining > 0) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="pi pi-refresh me-1"></i> Regenerate Thumbnails <span style="background:var(--ps-warning);color:#000;font-size:.7rem;padding:.15rem .4rem;border-radius:999px;margin-left:.25rem;">' + d.remaining + '</span>';
+                    } else {
+                        btn.style.display = 'none';
+                    }
+                    if (window.vtxToast) window.vtxToast(d.message, 'success');
+                    else alert(d.message);
+                    // Reload grid to show new thumbnails
+                    if (d.processed > 0) setTimeout(function () { window.location.reload(); }, 1200);
+                } else {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="pi pi-refresh me-1"></i> Regenerate Thumbnails';
+                    if (window.vtxToast) window.vtxToast(d.message || 'Failed.', 'error');
+                }
+            })
+            .catch(function () {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="pi pi-refresh me-1"></i> Regenerate Thumbnails';
+            });
+    });
+}());
+</script>
+<?php endif; ?>

@@ -16,7 +16,7 @@ return [
     'siteName'    => 'Vertext',
     'description' => '',
     'assetUrl'    => '/assets',
-    'version'     => '0.0.1-alpha',
+    'version'     => '0.0.2-alpha',
 ];
 ```
 
@@ -84,6 +84,8 @@ $setting->set('site_name', 'My New Title');
 
 ### Default Settings Keys
 
+**General** (`grp = 'general'`):
+
 | Key | Description |
 |-----|-------------|
 | `site_name` | Site display name |
@@ -95,6 +97,20 @@ $setting->set('site_name', 'My New Title');
 | `date_format` | Date display format |
 | `time_format` | Time display format |
 | `maintenance_mode` | `1` or `0` — enables/disables the site for non-admins |
+| `active_theme` | Active public theme slug (default: `default`) |
+
+**Mail** (`grp = 'mail'`):
+
+| Key | Description |
+| --- | ----------- |
+| `mail_driver` | `mail` (PHP mail()) or `smtp` |
+| `mail_host` | SMTP server hostname |
+| `mail_port` | SMTP port (default: `587`) |
+| `mail_username` | SMTP username |
+| `mail_password` | SMTP password |
+| `mail_encryption` | `tls`, `ssl`, or empty |
+| `mail_from_address` | Sender email address |
+| `mail_from_name` | Sender display name |
 
 ### Adding Custom Settings
 

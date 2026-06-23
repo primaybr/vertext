@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\Controllers\Admin;
 
 use App\CMS\Auth;
+use App\Mail\Mailer;
+use App\Mail\MailMessage;
+use App\Mail\MailTemplate;
 
 /**
  * Admin Users Controller — CRUD for CMS users
@@ -66,14 +69,14 @@ class UsersController extends BaseController
     }
 
     /** GET /admin/users/(\d+)/form — AJAX: returns edit form partial for modal */
-    public function editForm(int $id): void
+    public function editForm(string $id): void
     {
         $this->requirePermission('users.update');
         $user = $this->db('users')->where('id', $id)->whereNull('deleted_at')->get(1);
         if (!$user) { $this->json(['success' => false, 'message' => 'User not found.'], 404); }
 
         $rpRows      = $this->db('user_roles')->where('user_id', $id)->get() ?: [];
-        $userRoleIds = array_map('intval', array_column($rpRows, 'role_id'));
+        $userRoleIds = array_column($rpRows, 'role_id');
         $roles       = $this->db('roles')->orderBy('name', 'ASC')->get() ?: [];
 
         $this->renderPartial('admin/users/_form', [
@@ -104,7 +107,7 @@ class UsersController extends BaseController
         }
 
         $hash   = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
-        $userId = (int) $this->db('users')->save([
+        $userId = (string) $this->db('users')->save([
             'name'     => $name,
             'email'    => $email,
             'password' => $hash,
@@ -115,19 +118,44 @@ class UsersController extends BaseController
             foreach ($roleIds as $roleId) {
                 $this->db('user_roles')->withoutTimestamps()->ignoreDuplicate()->save([
                     'user_id' => $userId,
-                    'role_id' => (int) $roleId,
+                    'role_id' => (string) $roleId,
                 ]);
             }
         }
 
         Auth::audit('user.create', 'users', $userId, ['email' => $email]);
+        $this->sendWelcomeEmail($name, $email);
         if ($this->isAjax()) { $this->json(['success' => true, 'message' => "User \"{$name}\" created successfully."]); }
         $this->flash('success', "User \"{$name}\" created successfully.");
         $this->redirect($this->baseUrl . '/admin/users');
     }
 
+    private function sendWelcomeEmail(string $name, string $email): void
+    {
+        try {
+            $settings = array_column($this->db('settings')->get() ?: [], 'value', 'key');
+            $html = MailTemplate::render('welcome', [
+                'userName'  => $name,
+                'userEmail' => $email,
+                'loginUrl'  => rtrim($settings['site_url'] ?? $this->baseUrl, '/') . '/admin/login',
+                'siteName'  => $settings['site_name'] ?? 'Vertext CMS',
+                'siteUrl'   => $settings['site_url'] ?? $this->baseUrl,
+            ]);
+
+            $mailer  = Mailer::make();
+            $message = (new MailMessage())
+                ->to($email, $name)
+                ->subject('Welcome to ' . ($settings['site_name'] ?? 'Vertext CMS'))
+                ->htmlBody($html);
+
+            $mailer->send($message);
+        } catch (\Throwable) {
+            // Email failure must not break user creation
+        }
+    }
+
     /** POST /admin/users/(\d+)/update */
-    public function update(int $id): void
+    public function update(string $id): void
     {
         $this->requirePermission('users.update');
         $this->validateCsrf();
@@ -168,7 +196,7 @@ class UsersController extends BaseController
             foreach ($roleIds as $roleId) {
                 $this->db('user_roles')->withoutTimestamps()->ignoreDuplicate()->save([
                     'user_id' => $id,
-                    'role_id' => (int) $roleId,
+                    'role_id' => (string) $roleId,
                 ]);
             }
         }
@@ -180,12 +208,12 @@ class UsersController extends BaseController
     }
 
     /** POST /admin/users/(\d+)/delete */
-    public function delete(int $id): void
+    public function delete(string $id): void
     {
         $this->requirePermission('users.delete');
         $this->validateCsrf();
 
-        if ($id === (int)($this->currentUser['id'] ?? 0)) {
+        if ($id === ($this->currentUser['id'] ?? '')) {
             if ($this->isAjax()) { $this->json(['success' => false, 'message' => 'You cannot delete your own account.']); }
             $this->flash('error', 'You cannot delete your own account.');
             $this->redirect($this->baseUrl . '/admin/users');

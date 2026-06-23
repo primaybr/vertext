@@ -1,0 +1,19 @@
+{
+    "name":        "Videos",
+    "slug":        "videos",
+    "version":     "0.0.1",
+    "description": "YouTube and Vimeo embed management with public video grid",
+    "author":      "Vertext",
+    "requires":    { "vertext": ">=0.0.2" },
+    "nav": {
+        "label":      "Videos",
+        "icon":       "pi-video",
+        "path":       "/admin/videos",
+        "active":     "videos",
+        "permission": "videos.view"
+    },
+    "assets": {
+        "css": ["css/videos-admin.css"],
+        "js":  ["js/videos-admin.js"]
+    }
+}

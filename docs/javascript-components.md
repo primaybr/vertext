@@ -177,6 +177,38 @@ Tag input field with autocomplete.
 
 ---
 
+## vtx-slug
+
+Auto-generates a URL slug from a title input field. Loaded on demand via `Vtx.load(['slug'], fn)`.
+
+```html
+<input type="text"  name="title" data-vtx-slug-source placeholder="Post title">
+<input type="text"  name="slug"  data-vtx-slug-target placeholder="auto-generated">
+```
+
+```js
+Vtx.load(['slug'], function () {
+    Vtx.slug.init(
+        document.querySelector('[data-vtx-slug-source]'),
+        document.querySelector('[data-vtx-slug-target]')
+    );
+});
+```
+
+**Behaviour:**
+
+- Watches the source input (debounced 300 ms) and writes a slug to the target
+- Slug logic mirrors `Str::slug()`: lowercase, non-alphanumeric → hyphen, collapse, trim
+- Once the user manually edits the target field, auto-generation stops and a **Reset** link appears to re-enable it
+- Has no effect when the target already has a value on page load (edit forms)
+
+| Attribute | Element | Description |
+| --------- | ------- | ----------- |
+| `data-vtx-slug-source` | `<input>` | The field whose value is slugified |
+| `data-vtx-slug-target` | `<input>` | The slug field that receives the generated value |
+
+---
+
 ## vtx-upload
 
 Drag-and-drop file uploader with progress bar.

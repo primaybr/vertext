@@ -42,6 +42,7 @@ class BlogDashboardController extends BaseController
                 [':since' => date('Y-m-d', strtotime('-29 days'))]
             )
             ->whereRaw('published_at IS NOT NULL', [])
+            ->groupBy('DATE(published_at)')
             ->get() ?: [];
 
         // Build a 30-day label/value array (fill gaps with 0)

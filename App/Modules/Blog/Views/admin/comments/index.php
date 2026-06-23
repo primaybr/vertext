@@ -17,7 +17,8 @@
     ];
     foreach ($tabs as $key => $tab): ?>
     <a href="{{baseUrl}}/admin/blog/comments?status=<?php echo $key; ?>"
-       class="vtx-filter-tab <?php echo ($status ?? 'pending') === $key ? 'active' : ''; ?>">
+       class="vtx-filter-tab <?php echo ($status ?? 'pending') === $key ? 'active' : ''; ?>"
+       data-ajax-panel="comments-list-panel">
       <i class="pi <?php echo $tab['icon']; ?>"></i>
       <?php echo $tab['label']; ?>
       <?php if (isset($counts[$key])): ?>
@@ -28,7 +29,7 @@
   </div>
 </div>
 
-<div class="vtx-panel">
+<div class="vtx-panel" id="comments-list-panel">
   <?php if (empty($comments)): ?>
   <div class="vtx-empty">
     <div class="vtx-empty-ico"><i class="pi pi-message"></i></div>
@@ -71,19 +72,19 @@
         </div>
         <div style="display:flex;gap:.375rem;flex-shrink:0;align-items:center;">
           <?php if ($c['status'] !== 'approved' && \App\CMS\Auth::can('comments.moderate')): ?>
-          <form method="POST" action="{{baseUrl}}/admin/blog/comments/<?php echo $c['id']; ?>/approve" style="display:inline;">
+          <form method="POST" action="{{baseUrl}}/admin/blog/comments/<?php echo $c['id']; ?>/approve"
+                style="display:inline;" data-ajax-form data-ajax-panel="comments-list-panel">
             <input type="hidden" name="csrf_token" value="{{csrf_token}}">
-            <button type="submit" class="btn btn-outline-secondary btn-sm" title="Approve"
-                    data-ajax-form data-toast="Comment approved.">
+            <button type="submit" class="btn btn-outline-secondary btn-sm" title="Approve">
               <i class="pi pi-check-circle"></i>
             </button>
           </form>
           <?php endif; ?>
           <?php if ($c['status'] !== 'spam' && \App\CMS\Auth::can('comments.moderate')): ?>
-          <form method="POST" action="{{baseUrl}}/admin/blog/comments/<?php echo $c['id']; ?>/spam" style="display:inline;">
+          <form method="POST" action="{{baseUrl}}/admin/blog/comments/<?php echo $c['id']; ?>/spam"
+                style="display:inline;" data-ajax-form data-ajax-panel="comments-list-panel">
             <input type="hidden" name="csrf_token" value="{{csrf_token}}">
-            <button type="submit" class="btn btn-outline-secondary btn-sm" title="Spam"
-                    data-ajax-form data-toast="Marked as spam.">
+            <button type="submit" class="btn btn-outline-secondary btn-sm" title="Spam">
               <i class="pi pi-x-circle"></i>
             </button>
           </form>

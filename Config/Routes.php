@@ -33,18 +33,18 @@ $router->get('/admin/dashboard', 'Admin\DashboardController', 'index');
 // ── Users ─────────────────────────────────────────────────────────────────────
 $router->get('/admin/users',                        'Admin\UsersController', 'index');
 $router->post('/admin/users/store',                 'Admin\UsersController', 'store');
-$router->post('/admin/users/(\d+)/update',          'Admin\UsersController', 'update');
-$router->post('/admin/users/(\d+)/delete',          'Admin\UsersController', 'delete');
+$router->post('/admin/users/([a-zA-Z0-9\-]+)/update',          'Admin\UsersController', 'update');
+$router->post('/admin/users/([a-zA-Z0-9\-]+)/delete',          'Admin\UsersController', 'delete');
 $router->get('/admin/users/form',                   'Admin\UsersController', 'createForm');
-$router->get('/admin/users/(\d+)/form',             'Admin\UsersController', 'editForm');
+$router->get('/admin/users/([a-zA-Z0-9\-]+)/form',             'Admin\UsersController', 'editForm');
 
 // ── Roles ─────────────────────────────────────────────────────────────────────
 $router->get('/admin/roles',                        'Admin\RolesController', 'index');
 $router->post('/admin/roles/store',                 'Admin\RolesController', 'store');
-$router->post('/admin/roles/(\d+)/update',          'Admin\RolesController', 'update');
-$router->post('/admin/roles/(\d+)/delete',          'Admin\RolesController', 'delete');
+$router->post('/admin/roles/([a-zA-Z0-9\-]+)/update',          'Admin\RolesController', 'update');
+$router->post('/admin/roles/([a-zA-Z0-9\-]+)/delete',          'Admin\RolesController', 'delete');
 $router->get('/admin/roles/form',                   'Admin\RolesController', 'createForm');
-$router->get('/admin/roles/(\d+)/form',             'Admin\RolesController', 'editForm');
+$router->get('/admin/roles/([a-zA-Z0-9\-]+)/form',             'Admin\RolesController', 'editForm');
 
 // ── Modules ───────────────────────────────────────────────────────────────────
 $router->get('/admin/modules',                                   'Admin\ModulesController', 'index');
@@ -54,9 +54,11 @@ $router->post('/admin/modules/([a-z0-9\-\_]+)/uninstall',         'Admin\Modules
 $router->post('/admin/modules/([a-z0-9\-\_]+)/sync-views',        'Admin\ModulesController', 'syncViews');
 
 // ── Settings ──────────────────────────────────────────────────────────────────
-$router->get('/admin/settings',             'Admin\SettingsController', 'index');
-$router->post('/admin/settings/save',       'Admin\SettingsController', 'save');
-$router->post('/admin/settings/clear-cache','Admin\SettingsController', 'clearCache');
+$router->get('/admin/settings',              'Admin\SettingsController', 'index');
+$router->post('/admin/settings/save',        'Admin\SettingsController', 'save');
+$router->post('/admin/settings/save-mail',   'Admin\SettingsController', 'saveMail');
+$router->post('/admin/settings/test-mail',   'Admin\SettingsController', 'testMail');
+$router->post('/admin/settings/clear-cache', 'Admin\SettingsController', 'clearCache');
 
 // ── Non-core module routes (loaded from DB, only when CMS is installed) ────────
 \App\CMS\ModuleManager::loadRoutes($router);

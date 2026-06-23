@@ -6,6 +6,10 @@ namespace App\Controllers\Admin;
 
 use App\CMS\Auth;
 use Core\Folder\Path;
+use App\Mail\Mailer;
+use App\Mail\MailerConfig;
+use App\Mail\MailMessage;
+use App\Mail\MailTemplate;
 
 /**
  * Admin Settings Controller
@@ -13,6 +17,17 @@ use Core\Folder\Path;
 class SettingsController extends BaseController
 {
     protected string $module = 'cms-settings';
+
+    private const MAIL_KEYS = [
+        'mail_driver'       => 'mail',
+        'mail_host'         => '',
+        'mail_port'         => '587',
+        'mail_username'     => '',
+        'mail_password'     => '',
+        'mail_encryption'   => 'tls',
+        'mail_from_address' => '',
+        'mail_from_name'    => '',
+    ];
 
     public function __construct()
     {
@@ -23,6 +38,8 @@ class SettingsController extends BaseController
     public function index(): void
     {
         $this->requirePermission('settings.view');
+
+        $this->ensureMailSettings();
 
         $rows = $this->db('settings')->orderBy('grp', 'ASC')->orderBy('key', 'ASC')->get() ?: [];
         $settings = [];
@@ -63,6 +80,57 @@ class SettingsController extends BaseController
         $this->redirect($this->baseUrl . '/admin/settings');
     }
 
+    /** POST /admin/settings/save-mail */
+    public function saveMail(): void
+    {
+        $this->requirePermission('settings.manage');
+
+        $token = $this->input->post('csrf_token') ?? '';
+        if (!$this->csrf->validateToken($token)) {
+            $this->json(['success' => false, 'message' => 'Security token invalid.'], 403);
+        }
+
+        foreach (array_keys(self::MAIL_KEYS) as $key) {
+            $value = $this->input->post($key, false) ?? '';
+            $this->upsertSetting($key, $value, 'mail');
+        }
+
+        Auth::audit('settings.save_mail', 'settings');
+        $this->json(['success' => true, 'message' => 'Mail settings saved.']);
+    }
+
+    /** POST /admin/settings/test-mail */
+    public function testMail(): void
+    {
+        $this->requirePermission('settings.manage');
+
+        $token = $this->input->post('csrf_token') ?? '';
+        if (!$this->csrf->validateToken($token)) {
+            $this->json(['success' => false, 'message' => 'Security token invalid.'], 403);
+        }
+
+        $toEmail = $this->currentUser['email'] ?? '';
+        if (!$toEmail) {
+            $this->json(['success' => false, 'message' => 'No email address found for your account.']);
+        }
+
+        $rows     = $this->db('settings')->get() ?: [];
+        $settings = array_column($rows, 'value', 'key');
+
+        $mailer  = new Mailer(MailerConfig::fromSettings($settings));
+        $html    = '<p>This is a test email from Vertext CMS to confirm your mail settings are working correctly.</p>';
+        $message = (new MailMessage())
+            ->to($toEmail, $this->currentUser['name'] ?? '')
+            ->subject('Test email from Vertext CMS')
+            ->htmlBody($html);
+
+        if ($mailer->send($message)) {
+            $this->json(['success' => true, 'message' => "Test email sent to {$toEmail}."]);
+        } else {
+            $this->json(['success' => false, 'message' => 'Send failed: ' . $mailer->getLastError()]);
+        }
+    }
+
     /** POST /admin/settings/clear-cache */
     public function clearCache(): void
     {
@@ -82,6 +150,30 @@ class SettingsController extends BaseController
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private function ensureMailSettings(): void
+    {
+        foreach (self::MAIL_KEYS as $key => $default) {
+            $exists = $this->db('settings')->where('key', $key)->get(1);
+            if (!$exists) {
+                $this->db('settings')
+                    ->withoutTimestamps()
+                    ->save(['key' => $key, 'value' => $default, 'type' => 'string', 'grp' => 'mail', 'label' => $key, 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')]);
+            }
+        }
+    }
+
+    private function upsertSetting(string $key, string $value, string $grp = 'general'): void
+    {
+        $exists = $this->db('settings')->where('key', $key)->get(1);
+        if ($exists) {
+            $this->db('settings')->where('key', $key)->update(['value' => $value]);
+        } else {
+            $this->db('settings')
+                ->withoutTimestamps()
+                ->save(['key' => $key, 'value' => $value, 'type' => 'string', 'grp' => $grp, 'label' => $key, 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')]);
+        }
+    }
 
     private function deleteCacheFiles(string $dir): int
     {

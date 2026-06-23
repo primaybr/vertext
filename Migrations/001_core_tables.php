@@ -20,7 +20,7 @@ class Migration_001_CoreTables
         $this->pdo->exec("
             -- Settings (key-value global config)
             CREATE TABLE IF NOT EXISTS settings (
-                id          SERIAL PRIMARY KEY,
+                id          UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
                 key         VARCHAR(120) UNIQUE NOT NULL,
                 value       TEXT,
                 type        VARCHAR(20)  DEFAULT 'string',
@@ -32,7 +32,7 @@ class Migration_001_CoreTables
 
             -- Users
             CREATE TABLE IF NOT EXISTS users (
-                id          SERIAL PRIMARY KEY,
+                id          UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
                 name        VARCHAR(120) NOT NULL,
                 email       VARCHAR(180) UNIQUE NOT NULL,
                 password    VARCHAR(255) NOT NULL,
@@ -45,7 +45,7 @@ class Migration_001_CoreTables
 
             -- Roles
             CREATE TABLE IF NOT EXISTS roles (
-                id          SERIAL PRIMARY KEY,
+                id          UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
                 name        VARCHAR(80)  UNIQUE NOT NULL,
                 slug        VARCHAR(80)  UNIQUE NOT NULL,
                 description TEXT,
@@ -56,18 +56,19 @@ class Migration_001_CoreTables
 
             -- Permissions
             CREATE TABLE IF NOT EXISTS permissions (
-                id          SERIAL PRIMARY KEY,
+                id          UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
                 name        VARCHAR(120) UNIQUE NOT NULL,
                 slug        VARCHAR(120) UNIQUE NOT NULL,
                 description TEXT,
                 module      VARCHAR(80),
-                created_at  TIMESTAMP    DEFAULT NOW()
+                created_at  TIMESTAMP    DEFAULT NOW(),
+                updated_at  TIMESTAMP    DEFAULT NOW()
             );
 
             -- Role ↔ Permission pivot
             CREATE TABLE IF NOT EXISTS role_permissions (
-                role_id       INT NOT NULL,
-                permission_id INT NOT NULL,
+                role_id       UUID NOT NULL,
+                permission_id UUID NOT NULL,
                 PRIMARY KEY (role_id, permission_id),
                 FOREIGN KEY (role_id)       REFERENCES roles(id)       ON DELETE CASCADE,
                 FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE
@@ -75,8 +76,8 @@ class Migration_001_CoreTables
 
             -- User ↔ Role pivot
             CREATE TABLE IF NOT EXISTS user_roles (
-                user_id INT NOT NULL,
-                role_id INT NOT NULL,
+                user_id UUID NOT NULL,
+                role_id UUID NOT NULL,
                 PRIMARY KEY (user_id, role_id),
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
                 FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE
@@ -84,7 +85,7 @@ class Migration_001_CoreTables
 
             -- Modules
             CREATE TABLE IF NOT EXISTS modules (
-                id           SERIAL PRIMARY KEY,
+                id           UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
                 name         VARCHAR(120) UNIQUE NOT NULL,
                 slug         VARCHAR(120) UNIQUE NOT NULL,
                 version      VARCHAR(20),
@@ -99,11 +100,11 @@ class Migration_001_CoreTables
 
             -- Audit Logs
             CREATE TABLE IF NOT EXISTS audit_logs (
-                id            SERIAL PRIMARY KEY,
-                user_id       INT,
+                id            UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+                user_id       UUID,
                 action        VARCHAR(120) NOT NULL,
                 resource_type VARCHAR(80),
-                resource_id   INT,
+                resource_id   TEXT,
                 details       JSONB,
                 ip_address    VARCHAR(45),
                 user_agent    TEXT,
