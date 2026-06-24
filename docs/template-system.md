@@ -4,7 +4,7 @@ Vertext uses a custom template engine with double-brace syntax, filters, and raw
 
 ## Variable Output
 
-### Escaped Output (default — safe for HTML)
+### Escaped Output (default - safe for HTML)
 
 ```html
 <h1>{{ $post->title }}</h1>
@@ -24,7 +24,7 @@ Only use `{!! !!}` for content you control or have already sanitized (e.g. Quill
 ### Template Comments
 
 ```html
-{# This is a comment — not rendered in HTML output #}
+{# This is a comment - not rendered in HTML output #}
 ```
 
 ## Conditionals and Loops
@@ -63,7 +63,7 @@ $this->adminRender(
 ### Partial (No Layout)
 
 ```php
-// Returns rendered HTML string — used for AJAX modal responses
+// Returns rendered HTML string - used for AJAX modal responses
 $html = $this->renderPartial('admin/posts/_form', ['post' => null]);
 echo $html;
 ```

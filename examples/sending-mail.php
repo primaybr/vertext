@@ -3,7 +3,7 @@
  * Example: Sending Email with the Vertext Mail System
  *
  * The mail system lives in App/Mail/. It uses PHP's built-in mail()
- * or a native SMTP driver — no Composer dependencies required.
+ * or a native SMTP driver - no Composer dependencies required.
  *
  * Configure mail settings in Admin → Settings → Mail before sending.
  */
@@ -62,7 +62,7 @@ class MyController extends BaseController
     {
         // ... save item to DB ...
 
-        // Send notification — failure must not break the user flow
+        // Send notification - failure must not break the user flow
         try {
             $html = MailTemplate::render('my_template', [
                 'siteName' => 'My Site',
@@ -74,7 +74,7 @@ class MyController extends BaseController
                 ->htmlBody($html);
             Mailer::make()->send($message);
         } catch (\Throwable) {
-            // swallow — notification failure is non-critical
+            // swallow - notification failure is non-critical
         }
 
         $this->json(['success' => true, 'message' => 'Item saved.']);
@@ -93,7 +93,7 @@ ob_start();
 <p>Your order <strong>#<?php echo htmlspecialchars($orderId); ?></strong> has been received.</p>
 <?php
 $emailContent = ob_get_clean();
-$emailTitle   = 'Order Confirmation — ' . ($siteName ?? 'Vertext');
+$emailTitle   = 'Order Confirmation - ' . ($siteName ?? 'Vertext');
 include __DIR__ . '/base.php'; // shared HTML email wrapper
 
 // Then render it:

@@ -150,9 +150,9 @@ class ContactFormController extends Controller
 
             $msg = (new MailMessage())
                 ->to($senderEmail, $name)
-                ->subject("We received your message — {$siteName}")
+                ->subject("We received your message - {$siteName}")
                 ->htmlBody($html)
-                ->textBody("{$customMsg}\n\n— {$siteName}");
+                ->textBody("{$customMsg}\n\n- {$siteName}");
 
             Mailer::make()->send($msg);
         } catch (\Throwable) {

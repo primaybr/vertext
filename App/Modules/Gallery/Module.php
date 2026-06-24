@@ -10,6 +10,17 @@ class Module implements ModuleInterface
 {
     public function install(\Core\Database\Connection $db): void
     {
+        // Detect users.id type so created_by/updated_by use a compatible type for JOINs
+        $userIdType = 'UUID';
+        try {
+            $r = \Core\Model::on($db, 'information_schema.columns')
+                ->select('data_type')->where('table_name', 'users')
+                ->where('column_name', 'id')->where('table_schema', 'public')->get(1);
+            if ($r && stripos($r['data_type'] ?? '', 'int') !== false) {
+                $userIdType = 'BIGINT';
+            }
+        } catch (\Exception) {}
+
         $db->query("CREATE TABLE IF NOT EXISTS galleries (
             id               UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
             title            VARCHAR(255) NOT NULL,
@@ -21,13 +32,52 @@ class Module implements ModuleInterface
             meta_description TEXT,
             created_at       TIMESTAMP    DEFAULT NOW(),
             updated_at       TIMESTAMP    DEFAULT NOW(),
-            created_by       UUID,
-            updated_by       UUID,
-            FOREIGN KEY (cover_image_id) REFERENCES media_files(id) ON DELETE SET NULL,
-            FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
-            FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
+            created_by       {$userIdType},
+            updated_by       {$userIdType}
         )");
         $db->execute();
+
+        // Correct column types if table was created before this detection was added
+        if ($userIdType === 'BIGINT') {
+            foreach (['created_by', 'updated_by'] as $col) {
+                try {
+                    $db->query("SAVEPOINT sp_fix_gal_{$col}"); $db->execute();
+                    $cr = \Core\Model::on($db, 'information_schema.columns')
+                        ->select('data_type')->where('table_name', 'galleries')
+                        ->where('column_name', $col)->where('table_schema', 'public')->get(1);
+                    if ($cr && strtolower($cr['data_type'] ?? '') === 'uuid') {
+                        $db->query("ALTER TABLE galleries DROP COLUMN IF EXISTS {$col}"); $db->execute();
+                        $db->query("ALTER TABLE galleries ADD COLUMN {$col} BIGINT"); $db->execute();
+                    }
+                    $db->query("RELEASE SAVEPOINT sp_fix_gal_{$col}"); $db->execute();
+                } catch (\Exception) {
+                    try { $db->query("ROLLBACK TO SAVEPOINT sp_fix_gal_{$col}"); $db->execute(); } catch (\Exception) {}
+                }
+            }
+        }
+
+        // FKs added separately - cover_image_id always safe (media_files.id is UUID),
+        // created_by/updated_by guarded in case users.id type doesn't match UUID yet.
+        // SAVEPOINT/ROLLBACK TO clears the aborted-transaction state on failure.
+        try {
+            $db->query("SAVEPOINT sp_galleries_cover_fk"); $db->execute();
+            $db->query("ALTER TABLE galleries DROP CONSTRAINT IF EXISTS galleries_cover_image_id_fkey"); $db->execute();
+            $db->query("ALTER TABLE galleries ADD CONSTRAINT galleries_cover_image_id_fkey FOREIGN KEY (cover_image_id) REFERENCES media_files(id) ON DELETE SET NULL"); $db->execute();
+            $db->query("RELEASE SAVEPOINT sp_galleries_cover_fk"); $db->execute();
+        } catch (\Exception) {
+            try { $db->query("ROLLBACK TO SAVEPOINT sp_galleries_cover_fk"); $db->execute(); } catch (\Exception) {}
+        }
+
+        try {
+            $db->query("SAVEPOINT sp_galleries_users_fk"); $db->execute();
+            $db->query("ALTER TABLE galleries DROP CONSTRAINT IF EXISTS galleries_created_by_fkey"); $db->execute();
+            $db->query("ALTER TABLE galleries ADD CONSTRAINT galleries_created_by_fkey FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL"); $db->execute();
+            $db->query("ALTER TABLE galleries DROP CONSTRAINT IF EXISTS galleries_updated_by_fkey"); $db->execute();
+            $db->query("ALTER TABLE galleries ADD CONSTRAINT galleries_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL"); $db->execute();
+            $db->query("RELEASE SAVEPOINT sp_galleries_users_fk"); $db->execute();
+        } catch (\Exception) {
+            try { $db->query("ROLLBACK TO SAVEPOINT sp_galleries_users_fk"); $db->execute(); } catch (\Exception) {}
+        }
 
         $db->query("CREATE TABLE IF NOT EXISTS gallery_items (
             id            UUID    PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -85,7 +135,7 @@ class Module implements ModuleInterface
         $ci = 'App\Modules\Gallery\Controllers\Admin\GalleryItemsController';
         $cf = 'App\Modules\Gallery\Controllers\Front\GalleryController';
 
-        // Admin — album CRUD
+        // Admin - album CRUD
         $router->get('/admin/gallery',                                  $ca, 'index');
         $router->get('/admin/gallery/form',                             $ca, 'createForm');
         $router->post('/admin/gallery/store',                           $ca, 'store');
@@ -93,7 +143,7 @@ class Module implements ModuleInterface
         $router->post('/admin/gallery/([a-zA-Z0-9\-]+)/update',         $ca, 'update');
         $router->post('/admin/gallery/([a-zA-Z0-9\-]+)/delete',         $ca, 'delete');
 
-        // Admin — album items
+        // Admin - album items
         $router->get('/admin/gallery/([a-zA-Z0-9\-]+)/items',           $ci, 'index');
         $router->post('/admin/gallery/([a-zA-Z0-9\-]+)/items/add',      $ci, 'add');
         $router->post('/admin/gallery/([a-zA-Z0-9\-]+)/items/reorder',  $ci, 'reorder');

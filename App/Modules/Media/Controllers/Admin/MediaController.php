@@ -72,7 +72,7 @@ class MediaController extends BaseController
         // Count files missing thumbnails for the regen button badge
         $missingThumbCount = (int) ($this->db('media_files')
             ->whereRaw("mime_type LIKE 'image/%'")
-            ->whereRaw("(thumbnail_path IS NULL OR thumbnail_path = '')")
+            ->whereRaw("(thumbnail_path IS NULL OR thumbnail_path = :empty)", [':empty' => ''])
             ->totalRows() ?: 0);
 
         $this->adminRender('modules/media/admin/media/index', [
@@ -203,7 +203,7 @@ class MediaController extends BaseController
         $rows = $this->db('media_files')
             ->select('id, filename, width, height')
             ->whereRaw("mime_type LIKE 'image/%'")
-            ->whereRaw("(thumbnail_path IS NULL OR thumbnail_path = '')")
+            ->whereRaw("(thumbnail_path IS NULL OR thumbnail_path = :empty)", [':empty' => ''])
             ->limitOffset(50, 0)
             ->get() ?: [];
 
@@ -249,14 +249,14 @@ class MediaController extends BaseController
 
         $remaining = (int) ($this->db('media_files')
             ->whereRaw("mime_type LIKE 'image/%'")
-            ->whereRaw("(thumbnail_path IS NULL OR thumbnail_path = '')")
+            ->whereRaw("(thumbnail_path IS NULL OR thumbnail_path = :empty)", [':empty' => ''])
             ->totalRows() ?: 0);
 
         $this->json([
             'success'   => true,
             'processed' => $done,
             'remaining' => $remaining,
-            'message'   => "{$done} thumbnail(s) generated." . ($remaining > 0 ? " {$remaining} still pending — run again." : ' All done.'),
+            'message'   => "{$done} thumbnail(s) generated." . ($remaining > 0 ? " {$remaining} still pending - run again." : ' All done.'),
         ]);
     }
 

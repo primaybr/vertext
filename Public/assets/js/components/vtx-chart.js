@@ -1,4 +1,4 @@
-/* vtx-chart.js — Chart.js v4 wrapper for Vertext CMS */
+/* vtx-chart.js - Chart.js v4 wrapper for Vertext CMS */
 (function (root) {
     'use strict';
 

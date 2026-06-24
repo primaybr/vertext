@@ -44,7 +44,7 @@ class Auth
         return is_array($userData) ? $userData : null;
     }
 
-    /** Log a user in — saves session data */
+    /** Log a user in - saves session data */
     public static function login(array $user, array $roles = [], array $permissions = []): void
     {
         $session = self::session();
@@ -86,7 +86,7 @@ class Auth
         return in_array($role, $roles, true);
     }
 
-    /** Attempt login from database — returns user array or null on failure. */
+    /** Attempt login from database - returns user array or null on failure. */
     public static function attempt(string $email, string $password): ?array
     {
         try {
@@ -148,7 +148,7 @@ class Auth
         if (!$userId) return;
 
         try {
-            // audit_logs uses created_at DEFAULT NOW() — withoutTimestamps() prevents the ORM
+            // audit_logs uses created_at DEFAULT NOW() - withoutTimestamps() prevents the ORM
             // from injecting created_at/updated_at and colliding with the table schema.
             (new Model('audit_logs'))->withoutTimestamps()->save([
                 'user_id'       => $userId,

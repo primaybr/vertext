@@ -10,8 +10,8 @@ use App\Theme\ThemeEngine;
 /**
  * Public gallery front-end.
  *
- * GET /gallery          → index()  — album grid
- * GET /gallery/{slug}   → album($slug) — lightbox view
+ * GET /gallery          → index()  - album grid
+ * GET /gallery/{slug}   → album($slug) - lightbox view
  */
 class GalleryController extends Controller
 {

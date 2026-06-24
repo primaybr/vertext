@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * Base email HTML wrapper.
  * Usage: include this file; set $emailTitle, $emailContent, $siteName, $siteUrl before including.
@@ -33,7 +33,7 @@ p{margin:0 0 12px;line-height:1.6;color:#475569}
   </div>
   <div class="footer">
     &copy; <?php echo date('Y'); ?> <a href="<?php echo htmlspecialchars($siteUrl ?? '#'); ?>"><?php echo htmlspecialchars($siteName ?? 'Vertext CMS'); ?></a>
-    &nbsp;&middot;&nbsp; Powered by <a href="https://github.com/your-username/vertext">Vertext CMS</a>
+    &nbsp;&middot;&nbsp; Powered by <a href="https://github.com/primaybr/vertext">Vertext CMS</a>
   </div>
 </div>
 </body>

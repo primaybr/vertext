@@ -7,7 +7,7 @@
     "requires":    { "vertext": ">=0.0.2" },
     "nav": {
         "label":      "Contact",
-        "icon":       "pi-envelope",
+        "icon":       "pi-mail",
         "path":       "/admin/contact",
         "active":     "contact",
         "permission": "contact.view"

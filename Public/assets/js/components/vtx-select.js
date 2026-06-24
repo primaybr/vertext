@@ -1,4 +1,4 @@
-/* Vertext CMS — VtxSelect Component v1.0.0
+/* Vertext CMS - VtxSelect Component v1.0.0
  *
  * Declarative:  <select data-vtx-select data-searchable data-placeholder="Choose…">
  * Imperative:   new Vtx.Select({ el: selectEl, searchable: true, placeholder: 'Choose…' })

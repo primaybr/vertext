@@ -28,7 +28,7 @@ $userId = Auth::id();
 
 // ── Checking permissions ──────────────────────────────────────────────────────
 
-// Returns bool — reads from session (no DB query)
+// Returns bool - reads from session (no DB query)
 if (Auth::can('posts.publish')) {
     echo '<button>Publish</button>';
 }
@@ -109,7 +109,7 @@ class ProfileController extends BaseController
 // ── Logout ────────────────────────────────────────────────────────────────────
 
 // Auth::logout() destroys the session and redirects to /admin/login
-// It is called by Admin\AuthController::processLogout() — you don't need to call it directly
+// It is called by Admin\AuthController::processLogout() - you don't need to call it directly
 // unless building a custom flow.
 Auth::logout(); // destroys session, does NOT redirect automatically
 header('Location: /admin/login');

@@ -1,35 +1,35 @@
 # Vertext CMS
 
-![Version](https://img.shields.io/badge/version-0.0.2--alpha-blue)
+![Version](https://img.shields.io/badge/version-0.0.2b--alpha-blue)
 ![PHP](https://img.shields.io/badge/PHP-8.2%2B-777BB4)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 **Modular PHP CMS built for developers.**
 
-Vertext is a lightweight, extensible content management system written in PHP 8.2+. It provides a professional admin panel, role-based access control, and a clean module system so you can ship exactly the features you need — nothing more.
+Vertext is a lightweight, extensible content management system written in PHP 8.2+. It provides a professional admin panel, role-based access control, and a clean module system so you can ship exactly the features you need - nothing more.
 
-> **Built on [Phuse 1.2.4](https://github.com/primaybr/phuse)** — Vertext is powered by the Phuse framework, which provides the ORM, router, session manager, input helpers, validator, and core utilities. 
+> **Built on [Phuse 1.2.4](https://github.com/primaybr/phuse)** - Vertext is powered by the Phuse framework, which provides the ORM, router, session manager, input helpers, validator, and core utilities. 
 
 ---
 
 ## Features
 
-- **Modular architecture** — install, enable, disable, and uninstall modules without touching core code
-- **Role-based access control** — fine-grained permissions per resource and action; custom roles
-- **Admin panel** — responsive sidebar UI with dark/light theme, flash messages, and audit trail
-- **Public theme system** — `ThemeEngine` wraps all front-end module views in a shared theme layout; ships a clean default theme
-- **Email notifications** — built-in Mailer (PHP mail + SMTP); contact notifications, comment approvals, auto-replies
-- **Slug auto-generation** — `vtx-slug` component generates URL slugs from titles across all module forms
-- **Blog module** — posts, categories, tags, comment moderation, Quill editor, SEO fields, public frontend
-- **Media module** — file upload with image resizing + 400×400 thumbnail generation; grid browser; reusable picker modal
-- **Pages module** — static page CRUD with front-end rendering via ThemeEngine
-- **Gallery module** — photo albums backed by Media library; drag-to-reorder; CSS lightbox
-- **Contact Form module** — public contact form, admin inbox, email notifications, auto-reply
-- **Videos module** — YouTube/Vimeo embed management; poster thumbnail caching; lazy iframe player
-- **Setup wizard** — guided 5-step installation with DB connection testing
-- **Security** — CSRF protection, bcrypt passwords, session hardening, login rate limiting, audit logs
-- **PostgreSQL** — full native support via PDO with connection pooling and query caching
-- **vtx-* component library** — chart, datatable, rich-text editor, media picker, tag input, upload, slug, and more
+- **Modular architecture** - install, enable, disable, and uninstall modules without touching core code
+- **Role-based access control** - fine-grained permissions per resource and action; custom roles
+- **Admin panel** - responsive sidebar UI with dark/light theme, flash messages, and audit trail
+- **Public theme system** - `ThemeEngine` wraps all front-end module views in a shared theme layout; ships a clean default theme
+- **Email notifications** - built-in Mailer (PHP mail + SMTP); contact notifications, comment approvals, auto-replies
+- **Slug auto-generation** - `vtx-slug` component generates URL slugs from titles across all module forms
+- **Blog module** - posts, categories, tags, comment moderation, Quill editor, SEO fields, public frontend
+- **Media module** - file upload with image resizing + 400×400 thumbnail generation; grid browser; reusable picker modal
+- **Pages module** - static page CRUD with front-end rendering via ThemeEngine
+- **Gallery module** - photo albums backed by Media library; drag-to-reorder; CSS lightbox
+- **Contact Form module** - public contact form, admin inbox, email notifications, auto-reply
+- **Videos module** - YouTube/Vimeo embed management; poster thumbnail caching; lazy iframe player
+- **Setup wizard** - guided 5-step installation with DB connection testing
+- **Security** - CSRF protection, bcrypt passwords, session hardening, login rate limiting, audit logs
+- **PostgreSQL** - full native support via PDO with connection pooling and query caching
+- **vtx-* component library** - chart, datatable, rich-text editor, media picker, tag input, upload, slug, and more
 
 ---
 
@@ -73,12 +73,12 @@ vertext/
 │   ├── Mail/             # Mailer, MailMessage, MailTemplate + Templates/
 │   ├── Models/           # Database models
 │   ├── Modules/          # Installable modules (Blog, Media, Pages, ...)
-│   ├── Theme/            # ThemeEngine — wraps front-end views in a theme layout
+│   ├── Theme/            # ThemeEngine - wraps front-end views in a theme layout
 │   ├── Themes/           # Theme source files (default/layout.php, css/, js/)
 │   └── Views/            # Templates (admin + deployed module views)
-├── Core/                 # Framework internals — do not modify
+├── Core/                 # Framework internals - do not modify
 ├── Config/               # Routes, Database, Paths config
-├── Public/               # Web root — only this is web-accessible
+├── Public/               # Web root - only this is web-accessible
 │   ├── assets/           # CSS, JS, images
 │   ├── themes/           # Deployed theme assets (auto-generated)
 │   └── index.php         # Front controller
@@ -168,4 +168,4 @@ See [docs/security.md](docs/security.md) for a full description of Vertext's sec
 
 ## License
 
-MIT License — see `LICENSE` file for details.
+MIT License - see `LICENSE` file for details.

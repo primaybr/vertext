@@ -59,9 +59,9 @@ Managed via **Admin → Contact → Settings**:
 | Setting key | Default | Description |
 | ----------- | ------- | ----------- |
 | `contact_path` | `contact` | URL path for the contact form (informational; route is currently fixed to `/contact`) |
-| `contact_admin_email` | — | Email address to notify on new submissions |
+| `contact_admin_email` | - | Email address to notify on new submissions |
 | `contact_auto_reply` | `0` | `1` to send an auto-reply to the visitor |
-| `contact_auto_reply_msg` | — | Custom text for the auto-reply body |
+| `contact_auto_reply_msg` | - | Custom text for the auto-reply body |
 
 ## Permissions
 

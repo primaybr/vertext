@@ -1,4 +1,4 @@
-/* vtx-upload.js — Drag-and-drop file upload zone for Vertext CMS */
+/* vtx-upload.js - Drag-and-drop file upload zone for Vertext CMS */
 (function (root) {
     'use strict';
 

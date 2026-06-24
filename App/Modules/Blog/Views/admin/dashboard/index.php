@@ -39,7 +39,7 @@
 <!-- Posts over last 30 days -->
 <div class="vtx-panel mb-4">
   <div class="vtx-panel-head">
-    <span class="vtx-panel-title">Published Posts — Last 30 Days</span>
+    <span class="vtx-panel-title">Published Posts - Last 30 Days</span>
   </div>
   <div class="vtx-panel-body" style="padding:1.25rem 1rem .5rem;">
     <canvas data-vtx-chart
@@ -91,7 +91,7 @@
             <?php echo htmlspecialchars($p['title']); ?>
           </button>
           <div style="font-size:.75rem;color:var(--ps-text-muted);">
-            <?php echo htmlspecialchars($p['author_name'] ?? '—'); ?>
+            <?php echo htmlspecialchars($p['author_name'] ?? '-'); ?>
           </div>
         </div>
         <div style="font-size:.75rem;color:var(--ps-text-muted);flex-shrink:0;">
@@ -123,7 +123,7 @@
             <?php echo htmlspecialchars($c['author_name']); ?>
           </span>
           <span style="font-size:.75rem;color:var(--ps-text-muted);flex-shrink:0;">
-            on <em><?php echo htmlspecialchars($c['post_title'] ?? '—'); ?></em>
+            on <em><?php echo htmlspecialchars($c['post_title'] ?? '-'); ?></em>
           </span>
         </div>
         <p style="font-size:.8125rem;color:var(--ps-text-secondary);margin:0;
@@ -139,4 +139,4 @@
 
 </div>
 
-<script>Vtx.load('chart');</script>
+<script>Vtx.load(['chart']);</script>

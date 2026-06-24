@@ -5,9 +5,9 @@ The Media module (`slug: media`, version 0.0.2) provides a file upload library w
 ## Features
 
 - Drag-and-drop and click-to-upload file uploads
-- **Image resizing on upload** — originals wider than 1920 px are downscaled in-place; `resized` flag stored in DB
-- **400×400 thumbnail generation** — cover-crop thumbnail (`thumb_` prefix) created for every uploaded image; used in grid and picker for fast loading
-- **Bulk thumbnail regeneration** — "Regenerate Thumbnails" button processes up to 50 existing files per click; a badge shows how many are missing
+- **Image resizing on upload** - originals wider than 1920 px are downscaled in-place; `resized` flag stored in DB
+- **400×400 thumbnail generation** - cover-crop thumbnail (`thumb_` prefix) created for every uploaded image; used in grid and picker for fast loading
+- **Bulk thumbnail regeneration** - "Regenerate Thumbnails" button processes up to 50 existing files per click; a badge shows how many are missing
 - Grid browser with pagination (24 files per page)
 - Image dimension storage (width, height)
 - Alt text and caption metadata editing
@@ -65,7 +65,7 @@ Go to **Admin → Modules** and click **Install** next to Media. Creates the `me
 
 ## Upload Security
 
-- MIME type validated via `finfo` — not just extension
+- MIME type validated via `finfo` - not just extension
 - Extension validated against a configurable allowlist
 - Uploaded files stored as `timestamp_hexrandom.ext` to prevent predictable paths
 - Files organized under `Public/uploads/YYYY/MM/`
@@ -111,9 +111,9 @@ Admin views are deployed to `App/Views/modules/media/admin/media/`:
 
 ```
 admin/media/
-├── index.php         — Grid browser with upload zone
-├── picker.php        — Modal picker interface (loaded in iframe/ajax)
-└── _edit_form.php    — Metadata edit form (alt text, caption)
+├── index.php         - Grid browser with upload zone
+├── picker.php        - Modal picker interface (loaded in iframe/ajax)
+└── _edit_form.php    - Metadata edit form (alt text, caption)
 ```
 
 ## Linking Media in Your Module

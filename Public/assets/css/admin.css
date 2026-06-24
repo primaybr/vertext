@@ -1,5 +1,5 @@
 /* =============================================================
-   Vertext CMS — Admin Panel Styles
+   Vertext CMS - Admin Panel Styles
    Extends Phuse Framework CSS. Load after styles.css.
    ============================================================= */
 
@@ -745,7 +745,7 @@
     position: relative;
 }
 
-/* Connecting line — from right edge of current dot to left edge of next dot */
+/* Connecting line - from right edge of current dot to left edge of next dot */
 .vtx-step-item:not(:last-child)::after {
     content: '';
     position: absolute;
@@ -914,7 +914,7 @@
 
 /* ── Dark Mode ───────────────────────────────────────────────── */
 
-/* Token overrides — bg-base anchored to #14171e, scale rises from there:
+/* Token overrides - bg-base anchored to #14171e, scale rises from there:
    bg-base (#14171e) → bg-surface (#1d2133) → bg-subtle (#272d40)   */
 [data-theme=dark] {
     --ps-bg-base:           #14171e;
@@ -1409,7 +1409,7 @@
 }
 
 /* ── Modal size overrides (admin.js sets compound class on dialog element) ── */
-/* compound selectors needed — descendant selectors in styles.css won't apply  */
+/* compound selectors needed - descendant selectors in styles.css won't apply  */
 .modal-dialog.modal-sm { max-width: 300px; }
 .modal-dialog.modal-lg { max-width: min(860px, calc(100vw - 2rem)); }
 .modal-dialog.modal-xl { max-width: min(1100px, calc(100vw - 2rem)); }

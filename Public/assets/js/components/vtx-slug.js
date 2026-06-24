@@ -1,5 +1,5 @@
 /**
- * vtx-slug — Auto-generate URL slugs from a source input.
+ * vtx-slug - Auto-generate URL slugs from a source input.
  *
  * Usage:
  *   <input id="title" data-vtx-slug-source>
@@ -21,6 +21,8 @@
   }
 
   function initSlugPair(sourceEl, targetEl) {
+    if (targetEl._vtxSlugInit) return; // prevent duplicate listeners on re-init
+    targetEl._vtxSlugInit = true;
     var auto = true; // auto-fill active flag
     var resetLink = null;
 

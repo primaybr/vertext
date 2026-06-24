@@ -1,4 +1,4 @@
-/* vtx-tags.js — Tag chip input with AJAX autocomplete for Vertext CMS */
+/* vtx-tags.js - Tag chip input with AJAX autocomplete for Vertext CMS */
 (function (root) {
     'use strict';
 

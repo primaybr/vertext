@@ -86,7 +86,7 @@ abstract class BaseController extends Controller
         ]);
     }
 
-    /** Return a fresh ORM Model instance for the given table (admin shorthand — returns directly, unlike model() which attaches to $this). */
+    /** Return a fresh ORM Model instance for the given table (admin shorthand - returns directly, unlike model() which attaches to $this). */
     protected function db(string $table): \Core\Model
     {
         return new \Core\Model($table);
@@ -101,7 +101,7 @@ abstract class BaseController extends Controller
         }
     }
 
-    /** Render a view as a raw HTML partial (no layout) — for AJAX modal loading */
+    /** Render a view as a raw HTML partial (no layout) - for AJAX modal loading */
     protected function renderPartial(string $view, array $data = []): void
     {
         $data['csrf_token'] = $this->csrf->getToken();

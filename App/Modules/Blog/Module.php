@@ -7,7 +7,7 @@ namespace App\Modules\Blog;
 use App\CMS\ModuleInterface;
 
 /**
- * Blog Module v2 — lifecycle class
+ * Blog Module v2 - lifecycle class
  *
  * Manages tables, permissions, and route registration for the full-featured
  * blog: posts, categories, tags, comments, analytics dashboard, settings,
@@ -18,6 +18,17 @@ class Module implements ModuleInterface
     public function install(\Core\Database\Connection $db): void
     {
         // ── Core post table ───────────────────────────────────────────────────
+        // Detect users.id type so author_id uses a compatible type for JOINs
+        $userIdType = 'UUID';
+        try {
+            $r = \Core\Model::on($db, 'information_schema.columns')
+                ->select('data_type')->where('table_name', 'users')
+                ->where('column_name', 'id')->where('table_schema', 'public')->get(1);
+            if ($r && stripos($r['data_type'] ?? '', 'int') !== false) {
+                $userIdType = 'BIGINT';
+            }
+        } catch (\Exception) {}
+
         $db->query("CREATE TABLE IF NOT EXISTS posts (
             id                UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
             title             VARCHAR(255) NOT NULL,
@@ -25,7 +36,7 @@ class Module implements ModuleInterface
             body              TEXT,
             excerpt           TEXT,
             status            VARCHAR(20)  DEFAULT 'draft',
-            author_id         UUID,
+            author_id         {$userIdType},
             published_at      TIMESTAMP,
             featured_image_id UUID,
             featured_image_url VARCHAR(500),
@@ -34,14 +45,42 @@ class Module implements ModuleInterface
             reading_time      SMALLINT     DEFAULT 0,
             created_at        TIMESTAMP    DEFAULT NOW(),
             updated_at        TIMESTAMP    DEFAULT NOW(),
-            deleted_at        TIMESTAMP,
-            FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE SET NULL
+            deleted_at        TIMESTAMP
         )");
         $db->execute();
 
+        // FK added separately - survives when users.id type doesn't match UUID yet.
+        // SAVEPOINT/ROLLBACK TO clears the aborted-transaction state on failure.
+        try {
+            $db->query("SAVEPOINT sp_posts_author_fk"); $db->execute();
+            $db->query("ALTER TABLE posts DROP CONSTRAINT IF EXISTS posts_author_id_fkey"); $db->execute();
+            $db->query("ALTER TABLE posts ADD CONSTRAINT posts_author_id_fkey FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE SET NULL"); $db->execute();
+            $db->query("RELEASE SAVEPOINT sp_posts_author_fk"); $db->execute();
+        } catch (\Exception) {
+            try { $db->query("ROLLBACK TO SAVEPOINT sp_posts_author_fk"); $db->execute(); } catch (\Exception) {}
+        }
+
+        // Correct author_id type if the table was created before this detection was added
+        // (safe: only runs when there is a type mismatch, which implies no valid data exists)
+        if ($userIdType === 'BIGINT') {
+            try {
+                $db->query("SAVEPOINT sp_fix_author_type"); $db->execute();
+                $cr = \Core\Model::on($db, 'information_schema.columns')
+                    ->select('data_type')->where('table_name', 'posts')
+                    ->where('column_name', 'author_id')->where('table_schema', 'public')->get(1);
+                if ($cr && strtolower($cr['data_type'] ?? '') === 'uuid') {
+                    $db->query("ALTER TABLE posts DROP COLUMN IF EXISTS author_id"); $db->execute();
+                    $db->query("ALTER TABLE posts ADD COLUMN author_id BIGINT"); $db->execute();
+                }
+                $db->query("RELEASE SAVEPOINT sp_fix_author_type"); $db->execute();
+            } catch (\Exception) {
+                try { $db->query("ROLLBACK TO SAVEPOINT sp_fix_author_type"); $db->execute(); } catch (\Exception) {}
+            }
+        }
+
         // Safely add new columns to an existing posts table (re-install safe)
         foreach ([
-            "ALTER TABLE posts ADD COLUMN IF NOT EXISTS featured_image_id  INT",
+            "ALTER TABLE posts ADD COLUMN IF NOT EXISTS featured_image_id  UUID",
             "ALTER TABLE posts ADD COLUMN IF NOT EXISTS featured_image_url VARCHAR(500)",
             "ALTER TABLE posts ADD COLUMN IF NOT EXISTS meta_title         VARCHAR(160)",
             "ALTER TABLE posts ADD COLUMN IF NOT EXISTS meta_description   VARCHAR(320)",

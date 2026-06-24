@@ -1,6 +1,6 @@
 <?php
 /**
- * Email: new comment pending review — sent to admin/post author.
+ * Email: new comment pending review - sent to admin/post author.
  * Variables: $authorName, $authorEmail, $postTitle, $postUrl, $moderateUrl,
  *            $commentBody, $siteName, $siteUrl
  */
@@ -22,5 +22,5 @@ ob_start();
 </p>
 <?php
 $emailContent = ob_get_clean();
-$emailTitle   = 'New comment pending review — ' . ($siteName ?? 'Vertext CMS');
+$emailTitle   = 'New comment pending review - ' . ($siteName ?? 'Vertext CMS');
 include __DIR__ . '/base.php';

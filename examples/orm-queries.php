@@ -3,7 +3,7 @@
  * Example: Common ORM Query Patterns
  *
  * Demonstrates the most common query builder patterns used in Vertext modules.
- * All queries use parameterized statements — no raw string concatenation needed.
+ * All queries use parameterized statements - no raw string concatenation needed.
  */
 
 // Assume $db is available via $this->db in a controller, or:
@@ -99,7 +99,7 @@ $pager = new \Core\Utilities\Pagination\Pager($total, $perPage, $page, '/blog');
 $total    = $db->table('posts')->select('COUNT(*) AS n')->first()->n;
 $maxViews = $db->table('posts')->select('MAX(views) AS m')->where('status', 'published')->first()->m;
 
-// Group by category — count posts per category
+// Group by category - count posts per category
 $counts = $db->table('post_category_pivot pcp')
     ->select(['pc.name', 'COUNT(*) AS post_count'])
     ->join('post_categories pc', 'pcp.category_id = pc.id', 'INNER')

@@ -1,5 +1,5 @@
 <?php
-// Media Picker partial — loaded via CRUD form modal
+// Media Picker partial - loaded via CRUD form modal
 // On image click → window.__vtxMediaPickerCallback(url, id)
 ?>
 <div class="vtx-media-picker-wrap">

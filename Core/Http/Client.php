@@ -55,7 +55,7 @@ class Client
     /**
      * Explicit list of trusted proxy IPs. Only when REMOTE_ADDR matches one of
      * these will forwarding headers (X-Forwarded-For, CF-Connecting-IP, etc.)
-     * be trusted. Empty by default — meaning REMOTE_ADDR is always the source.
+     * be trusted. Empty by default - meaning REMOTE_ADDR is always the source.
      */
     private static array $trustedProxies = [];
 

@@ -18,5 +18,5 @@ ob_start();
 <p style="font-size:13px;color:#94a3b8;">You received this email because you left a comment on <?php echo htmlspecialchars($siteName ?? 'our site'); ?>.</p>
 <?php
 $emailContent = ob_get_clean();
-$emailTitle   = 'Your comment was approved — ' . ($siteName ?? 'Vertext CMS');
+$emailTitle   = 'Your comment was approved - ' . ($siteName ?? 'Vertext CMS');
 include __DIR__ . '/base.php';

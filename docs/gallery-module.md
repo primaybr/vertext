@@ -1,6 +1,6 @@
 # Gallery Module
 
-The Gallery module (`slug: gallery`, version 0.0.1) adds public photo albums to Vertext. Albums are backed by the Media library — images are selected from files already uploaded to Media, not uploaded separately.
+The Gallery module (`slug: gallery`, version 0.0.1) adds public photo albums to Vertext. Albums are backed by the Media library - images are selected from files already uploaded to Media, not uploaded separately.
 
 ## Features
 

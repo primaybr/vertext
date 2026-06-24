@@ -169,7 +169,7 @@ class BlogController extends Controller
             'pages'      => max(1, (int) ceil($total / $this->perPage)),
             'settings'   => $this->settings,
             'baseUrl'    => $this->baseUrl,
-            'page_title' => ($category['name'] ?? '') . ' — ' . ($this->settings['blog_title'] ?? 'Blog'),
+            'page_title' => ($category['name'] ?? '') . ' - ' . ($this->settings['blog_title'] ?? 'Blog'),
         ]);
     }
 

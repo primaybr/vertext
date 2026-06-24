@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\CMS;
 
 /**
- * ModuleLoader — reads module status from the database and gates controller access.
+ * ModuleLoader - reads module status from the database and gates controller access.
  *
  * Uses a static per-request cache so the DB is queried at most once per request.
  * Call refresh() after toggling a module status to reset the cache.
@@ -151,7 +151,7 @@ class ModuleLoader
 
     /**
      * Return admin asset URL paths (relative to assetsUrl) for all enabled modules.
-     * Returns ['css' => [...], 'js' => [...]] — paths include ?v= cache-buster.
+     * Returns ['css' => [...], 'js' => [...]] - paths include ?v= cache-buster.
      * Prepend assetsUrl in your layout: $assetsUrl . $path
      */
     public static function assets(): array

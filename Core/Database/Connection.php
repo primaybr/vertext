@@ -123,7 +123,7 @@ class Connection
     {
         try {
             if (!empty($params)) {
-                // Caller passed explicit params — PDO binds them (all as PARAM_STR).
+                // Caller passed explicit params - PDO binds them (all as PARAM_STR).
                 return $this->statement->execute($params);
             }
             // Parameters were already bound type-correctly via arrayBind() → bindValue().

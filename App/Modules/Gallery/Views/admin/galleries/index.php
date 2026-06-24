@@ -12,7 +12,7 @@
   <?php endif; ?>
 </div>
 
-<div class="vtx-panel">
+<div class="vtx-panel" id="galleries-table-panel">
   <?php if (empty($galleries)): ?>
   <div class="vtx-empty">
     <div class="vtx-empty-ico"><i class="pi pi-images"></i></div>

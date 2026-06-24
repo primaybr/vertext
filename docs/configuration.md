@@ -4,7 +4,7 @@ Vertext uses layered configuration. Base settings live in `Config/`, and runtime
 
 ## Config Files
 
-### Config/Config.php — Application Settings
+### Config/Config.php - Application Settings
 
 The main config file. **Do not commit** user-specific overrides here; use `Storage/app.php` instead.
 
@@ -27,7 +27,7 @@ return [
 | `baseUrl` | Used by `URI::redirect()` and link generation |
 | `version` | CMS version string (shown in admin footer) |
 
-### Storage/app.php — Runtime Site Settings
+### Storage/app.php - Runtime Site Settings
 
 Written by the setup wizard. Merges over `Config/Config.php`. Do not hand-edit unless necessary.
 
@@ -40,7 +40,7 @@ return [
 ];
 ```
 
-### Storage/db.php — Database Credentials
+### Storage/db.php - Database Credentials
 
 Written by the setup wizard. Never commit this file (already in `.gitignore`).
 
@@ -57,7 +57,7 @@ return [
 ];
 ```
 
-### Config/Routes.php — Route Definitions
+### Config/Routes.php - Route Definitions
 
 Registers all application routes. Core admin routes are here. Module routes are loaded dynamically via `ModuleManager::loadRoutes($router)`. Add custom public routes at the bottom.
 
@@ -66,7 +66,7 @@ Registers all application routes. Core admin routes are here. Module routes are 
 $router->get('/contact', 'Web\ContactController', 'index');
 ```
 
-### Config/Database.php — Database Config Loader
+### Config/Database.php - Database Config Loader
 
 Loads `Storage/db.php` when installed, or falls back to defaults. You generally never touch this file.
 
@@ -96,7 +96,7 @@ $setting->set('site_name', 'My New Title');
 | `timezone` | PHP timezone string (e.g. `Asia/Jakarta`) |
 | `date_format` | Date display format |
 | `time_format` | Time display format |
-| `maintenance_mode` | `1` or `0` — enables/disables the site for non-admins |
+| `maintenance_mode` | `1` or `0` - enables/disables the site for non-admins |
 | `active_theme` | Active public theme slug (default: `default`) |
 
 **Mail** (`grp = 'mail'`):

@@ -40,7 +40,7 @@ interface ModuleInterface {
 
 ### install(Connection $db)
 
-Called when admin installs the module. Create tables, seed permissions. **Always wrap in a transaction** — the manager handles this automatically.
+Called when admin installs the module. Create tables, seed permissions. **Always wrap in a transaction** - the manager handles this automatically.
 
 ```php
 public function install(Connection $db): void
@@ -152,7 +152,7 @@ Toggles `status` in the `modules` table. Disabled modules have their routes and 
 
 ### View Deployment
 
-Module views are copied to `App/Views/modules/{slug}/` during install. This is what templates render. To update views after editing source files, use **Sync Views** in the Module Manager. **Never edit `App/Views/modules/` directly** — those files are owned by the install lifecycle.
+Module views are copied to `App/Views/modules/{slug}/` during install. This is what templates render. To update views after editing source files, use **Sync Views** in the Module Manager. **Never edit `App/Views/modules/` directly** - those files are owned by the install lifecycle.
 
 ### Uninstallation
 
@@ -190,6 +190,6 @@ From a module controller:
 // With base admin layout
 return $this->adminRender('modules/my-module/admin/items/index', $data, 'Items', 'my-module');
 
-// Partial (no layout — for AJAX modal responses)
+// Partial (no layout - for AJAX modal responses)
 return $this->renderPartial('modules/my-module/admin/items/_form', $data);
 ```

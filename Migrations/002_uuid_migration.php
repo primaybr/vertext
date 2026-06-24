@@ -3,10 +3,10 @@
 declare(strict_types=1);
 
 /**
- * Vertext CMS — Migration 002: Convert all primary keys from SERIAL to UUID
+ * Vertext CMS - Migration 002: Convert all primary keys from SERIAL to UUID
  *
  * Converts all tables that used SERIAL/INTEGER primary keys to UUID.
- * Preserves all existing data — foreign key references are re-mapped
+ * Preserves all existing data - foreign key references are re-mapped
  * by joining on the new UUID column before swapping.
  *
  * Run order matters due to FK dependencies:
@@ -96,7 +96,7 @@ class Migration_002_UuidMigration
     }
 
     /**
-     * Convert a pivot/junction table — no single id column, FK columns are INT, no outbound FKs from id.
+     * Convert a pivot/junction table - no single id column, FK columns are INT, no outbound FKs from id.
      * Drops FK constraints, re-adds UUID FK columns by joining on the new UUID ids.
      *
      * @param string   $table
@@ -217,7 +217,7 @@ class Migration_002_UuidMigration
             $this->pdo->exec("ALTER TABLE posts ADD FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE SET NULL");
         }
 
-        // Convert posts.featured_image_id (INT → UUID, no FK enforced — media module may not be installed)
+        // Convert posts.featured_image_id (INT → UUID, no FK enforced - media module may not be installed)
         $imgType = $this->columnType('posts', 'featured_image_id');
         if ($imgType && str_contains(strtolower($imgType), 'int')) {
             $this->pdo->exec("ALTER TABLE posts ALTER COLUMN featured_image_id TYPE UUID USING NULL");
@@ -353,7 +353,7 @@ class Migration_002_UuidMigration
 
     public function down(): void
     {
-        // UUID→SERIAL downgrade is destructive (data loss) — not supported.
+        // UUID→SERIAL downgrade is destructive (data loss) - not supported.
         throw new \RuntimeException('Migration 002 cannot be rolled back. Restore from backup if needed.');
     }
 }

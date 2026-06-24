@@ -4,7 +4,7 @@ The Vertext admin panel lives at `/admin`. All sections require authentication a
 
 ## Dashboard
 
-`/admin` — Shows a high-level overview of the system:
+`/admin` - Shows a high-level overview of the system:
 
 - Total users, roles, and modules
 - Site settings summary
@@ -14,18 +14,18 @@ The Vertext admin panel lives at `/admin`. All sections require authentication a
 
 ### Login
 
-`/admin/login` — Standard username/password login form.
+`/admin/login` - Standard username/password login form.
 
 - **Rate limiting**: After repeated failures, the account is temporarily locked (brute-force protection via `LoginRateLimiter`).
 - **Session security**: Session ID is regenerated on successful login. Cookies are `HttpOnly`, `Secure`, and `SameSite=Strict`.
 
 ### Logout
 
-`/admin/logout` — Destroys the session and clears all session data.
+`/admin/logout` - Destroys the session and clears all session data.
 
 ## User Management
 
-`/admin/users` — Requires `users.view` permission.
+`/admin/users` - Requires `users.view` permission.
 
 ### User Fields
 
@@ -46,11 +46,11 @@ The Vertext admin panel lives at `/admin`. All sections require authentication a
 | Edit | `users.update` |
 | Delete (soft) | `users.delete` |
 
-Deletion is a soft-delete — the user record is kept with `deleted_at` set. Deleted users cannot log in.
+Deletion is a soft-delete - the user record is kept with `deleted_at` set. Deleted users cannot log in.
 
 ## Role Management
 
-`/admin/roles` — Requires `roles.view` permission.
+`/admin/roles` - Requires `roles.view` permission.
 
 Roles group permissions together. Users can have multiple roles; their effective permissions are the union of all assigned roles.
 
@@ -58,7 +58,7 @@ Roles group permissions together. Users can have multiple roles; their effective
 
 | Role | Description |
 |------|-------------|
-| Administrator | Full system access (system role — cannot be deleted) |
+| Administrator | Full system access (system role - cannot be deleted) |
 | Editor | Can manage content in installed modules |
 | Author | Can create content but not publish or delete |
 
@@ -110,7 +110,7 @@ Permissions follow the pattern `resource.action`:
 
 ## Settings
 
-`/admin/settings` — Requires `settings.view`.
+`/admin/settings` - Requires `settings.view`.
 
 Edit core site settings via a form. Click **Save Settings** to persist. Only whitelisted keys are accepted; arbitrary key injection is blocked.
 
@@ -118,7 +118,7 @@ Edit core site settings via a form. Click **Save Settings** to persist. Only whi
 
 ## Module Manager
 
-`/admin/modules` — Requires `modules.view`.
+`/admin/modules` - Requires `modules.view`.
 
 Lists all discovered modules (from `App/Modules/`) and their current status.
 
@@ -133,7 +133,7 @@ Lists all discovered modules (from `App/Modules/`) and their current status.
 
 ### When to Sync Views
 
-After updating a module's view files during development, click **Sync Views** to redeploy them. Never edit files in `App/Views/modules/` directly — they are owned by the install lifecycle and will be overwritten.
+After updating a module's view files during development, click **Sync Views** to redeploy them. Never edit files in `App/Views/modules/` directly - they are owned by the install lifecycle and will be overwritten.
 
 ## Admin Navigation
 
@@ -157,6 +157,6 @@ Logs are stored in the `audit_logs` table. The Dashboard shows the most recent e
 ## Security Headers
 
 All admin responses include the following HTTP headers:
-- `Content-Security-Policy` — restricts asset sources
-- `X-Frame-Options: DENY` — prevents clickjacking
-- `X-Content-Type-Options: nosniff` — prevents MIME sniffing
+- `Content-Security-Policy` - restricts asset sources
+- `X-Frame-Options: DENY` - prevents clickjacking
+- `X-Content-Type-Options: nosniff` - prevents MIME sniffing

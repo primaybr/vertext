@@ -40,7 +40,7 @@
         <?php foreach ($roles as $role): ?>
         <tr>
           <td class="cell-primary"><?php echo htmlspecialchars($role['name']); ?></td>
-          <td class="cell-muted"><?php echo htmlspecialchars($role['description'] ?? '—'); ?></td>
+          <td class="cell-muted"><?php echo htmlspecialchars($role['description'] ?? '-'); ?></td>
           <td>
             <span style="font-size:.8125rem;font-weight:600;"><?php echo (int)($role['perm_count'] ?? 0); ?></span>
             <span class="cell-muted ms-1">permissions</span>

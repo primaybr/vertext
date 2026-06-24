@@ -93,7 +93,7 @@ class Mailer
         $ok = @mail($toLabel, $subject, $body, $headers);
 
         if (!$ok) {
-            $this->lastError = 'mail() returned false — check server mail configuration.';
+            $this->lastError = 'mail() returned false - check server mail configuration.';
             $this->logger->write('mailer/mailer', 'warning', $this->lastError);
         }
 

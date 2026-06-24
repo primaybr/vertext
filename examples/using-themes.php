@@ -46,7 +46,7 @@ class MyController extends Controller
             ThemeEngine::render('modules/mymodule/front/index', [
                 'items'      => [],
                 'baseUrl'    => $this->baseUrl,
-                'page_title' => '404 — Not Found',
+                'page_title' => '404 - Not Found',
             ]);
             return;
         }
@@ -64,7 +64,7 @@ class MyController extends Controller
 // ── 2. Writing a content-only front-end view ──────────────────────────────────
 /*
 // App/Modules/MyModule/Views/front/index.php
-// No <html>/<head>/<body> — ThemeEngine's layout.php provides those.
+// No <html>/<head>/<body> - ThemeEngine's layout.php provides those.
 // $baseUrl, $items, and any other $data keys are available via extract().
 
 ?>

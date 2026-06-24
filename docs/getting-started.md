@@ -16,9 +16,9 @@ Vertext is a modular PHP CMS designed for developers. It provides a full admin p
 
 Place the project in your web server's document root. The public entry point is `Public/index.php`.
 
-**Apache** — point your virtual host `DocumentRoot` to the `Public/` directory. The included `.htaccess` handles URL rewriting.
+**Apache** - point your virtual host `DocumentRoot` to the `Public/` directory. The included `.htaccess` handles URL rewriting.
 
-**Nginx** — configure your server block:
+**Nginx** - configure your server block:
 ```nginx
 root /path/to/vertext/Public;
 index index.php;
@@ -42,11 +42,11 @@ Open your browser and navigate to `http://your-domain/setup`. The wizard guides 
 
 | Step | What happens |
 |------|--------------|
-| 1 — Requirements | Checks PHP version, extensions, and directory permissions |
-| 2 — Database | Enter your PostgreSQL credentials; wizard creates all tables |
-| 3 — Admin User | Create the initial administrator account |
-| 4 — Site Config | Set site name, URL, and timezone |
-| 5 — Complete | CMS is installed; redirected to login |
+| 1 - Requirements | Checks PHP version, extensions, and directory permissions |
+| 2 - Database | Enter your PostgreSQL credentials; wizard creates all tables |
+| 3 - Admin User | Create the initial administrator account |
+| 4 - Site Config | Set site name, URL, and timezone |
+| 5 - Complete | CMS is installed; redirected to login |
 
 After completion, `Storage/installed.lock` and `Storage/db.php` are written. The setup wizard is automatically disabled once these files exist.
 
@@ -56,11 +56,11 @@ Navigate to `/admin/login` and sign in with the admin credentials you created in
 
 ## First Steps After Installation
 
-1. **Explore the Dashboard** — `/admin` shows system stats and recent activity.
-2. **Install modules** — Go to **Admin → Modules** and install Blog and Media.
-3. **Create users** — Go to **Admin → Users** to add additional team members.
-4. **Configure roles** — Go to **Admin → Roles** to create custom roles with granular permissions.
-5. **Adjust settings** — Go to **Admin → Settings** to update site name, URL, and timezone.
+1. **Explore the Dashboard** - `/admin` shows system stats and recent activity.
+2. **Install modules** - Go to **Admin → Modules** and install Blog and Media.
+3. **Create users** - Go to **Admin → Users** to add additional team members.
+4. **Configure roles** - Go to **Admin → Roles** to create custom roles with granular permissions.
+5. **Adjust settings** - Go to **Admin → Settings** to update site name, URL, and timezone.
 
 ## Development vs Production
 
@@ -82,12 +82,12 @@ vertext/
 │   ├── Models/           # Database models
 │   ├── Modules/          # Installable modules (Blog, Media, ...)
 │   └── Views/            # Template files
-├── Core/                 # Framework internals — do not modify
+├── Core/                 # Framework internals - do not modify
 ├── Config/               # Application config (Routes, Database, paths)
-├── Public/               # Web root — only this directory is web-accessible
+├── Public/               # Web root - only this directory is web-accessible
 │   ├── assets/           # CSS, JS, images
 │   └── index.php         # Front controller
-├── Storage/              # Runtime-generated config (db.php, app.php) — gitignored
+├── Storage/              # Runtime-generated config (db.php, app.php) - gitignored
 ├── Cache/                # Query and template cache files
 ├── Logs/                 # Application logs
 └── Migrations/           # Database schema files
@@ -95,7 +95,7 @@ vertext/
 
 ## Next Steps
 
-- [Configuration](configuration.md) — all config keys explained
-- [Admin Guide](admin-guide.md) — managing users, roles, and modules
-- [Module System](module-system.md) — how modules work
-- [Creating a Module](creating-a-module.md) — build your own module
+- [Configuration](configuration.md) - all config keys explained
+- [Admin Guide](admin-guide.md) - managing users, roles, and modules
+- [Module System](module-system.md) - how modules work
+- [Creating a Module](creating-a-module.md) - build your own module

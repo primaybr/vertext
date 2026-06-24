@@ -1,6 +1,6 @@
 # Mail System
 
-Vertext ships a lightweight mail system in `App/Mail/`. It has no external dependencies — it uses PHP's built-in `mail()` function or a native SMTP driver built on `fsockopen`.
+Vertext ships a lightweight mail system in `App/Mail/`. It has no external dependencies - it uses PHP's built-in `mail()` function or a native SMTP driver built on `fsockopen`.
 
 ## Classes
 
@@ -18,13 +18,13 @@ Mail settings are managed through **Admin → Settings → Mail** and stored in 
 | Setting key | Default | Description |
 | ----------- | ------- | ----------- |
 | `mail_driver` | `mail` | `mail` (PHP mail()) or `smtp` |
-| `mail_host` | — | SMTP hostname |
+| `mail_host` | - | SMTP hostname |
 | `mail_port` | `587` | SMTP port |
-| `mail_username` | — | SMTP username |
-| `mail_password` | — | SMTP password |
+| `mail_username` | - | SMTP username |
+| `mail_password` | - | SMTP password |
 | `mail_encryption` | `tls` | `tls`, `ssl`, or empty |
-| `mail_from_address` | — | Sender address (falls back to `admin_email`) |
-| `mail_from_name` | — | Sender name (falls back to `site_name`) |
+| `mail_from_address` | - | Sender address (falls back to `admin_email`) |
+| `mail_from_name` | - | Sender name (falls back to `site_name`) |
 
 Use the **Send Test Email** button in Admin → Settings → Mail to verify your configuration.
 
@@ -48,7 +48,7 @@ if (!$ok) {
 }
 ```
 
-`Mailer::make()` is the standard factory — it reads all mail settings from the database and builds the appropriate driver.
+`Mailer::make()` is the standard factory - it reads all mail settings from the database and builds the appropriate driver.
 
 ## MailMessage API
 
@@ -82,11 +82,11 @@ $html = MailTemplate::render('welcome', [
 
 | Template | Variables | Used by |
 | -------- | --------- | ------- |
-| `welcome` | `userName`, `userEmail`, `loginUrl`, `siteName`, `siteUrl` | UsersController — new user welcome |
-| `comment_approved` | `authorName`, `postTitle`, `postUrl`, `commentBody`, `siteName`, `siteUrl` | CommentsController — approval notification |
-| `comment_pending` | `authorName`, `authorEmail`, `postTitle`, `postUrl`, `moderateUrl`, `commentBody`, `siteName`, `siteUrl` | CommentsController — pending review alert |
-| `contact_notification` | `senderName`, `senderEmail`, `subject`, `messageBody`, `submittedAt`, `inboxUrl`, `siteName`, `siteUrl` | Contact module — admin notification |
-| `contact_autoreply` | `senderName`, `customMessage`, `siteName`, `siteUrl` | Contact module — visitor auto-reply |
+| `welcome` | `userName`, `userEmail`, `loginUrl`, `siteName`, `siteUrl` | UsersController - new user welcome |
+| `comment_approved` | `authorName`, `postTitle`, `postUrl`, `commentBody`, `siteName`, `siteUrl` | CommentsController - approval notification |
+| `comment_pending` | `authorName`, `authorEmail`, `postTitle`, `postUrl`, `moderateUrl`, `commentBody`, `siteName`, `siteUrl` | CommentsController - pending review alert |
+| `contact_notification` | `senderName`, `senderEmail`, `subject`, `messageBody`, `submittedAt`, `inboxUrl`, `siteName`, `siteUrl` | Contact module - admin notification |
+| `contact_autoreply` | `senderName`, `customMessage`, `siteName`, `siteUrl` | Contact module - visitor auto-reply |
 
 ### Creating a Custom Template
 
@@ -98,7 +98,7 @@ Create `App/Mail/Templates/my_template.php`:
 <p>Your custom message here.</p>
 <?php
 $emailContent = ob_get_clean();
-$emailTitle   = 'My Email — ' . ($siteName ?? 'Vertext');
+$emailTitle   = 'My Email - ' . ($siteName ?? 'Vertext');
 include __DIR__ . '/base.php';
 ```
 
@@ -114,13 +114,13 @@ $html = MailTemplate::render('my_template', [
 
 ## Error Handling
 
-`Mailer::send()` returns `bool`. On failure, `getLastError()` returns a descriptive message. All exceptions are caught internally and written to the application log — a failed notification never crashes the user-facing request.
+`Mailer::send()` returns `bool`. On failure, `getLastError()` returns a descriptive message. All exceptions are caught internally and written to the application log - a failed notification never crashes the user-facing request.
 
 ```php
 try {
     Mailer::make()->send($msg);
 } catch (\Throwable) {
-    // never thrown — Mailer catches internally
+    // never thrown - Mailer catches internally
 }
 ```
 

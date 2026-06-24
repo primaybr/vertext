@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Vertext CMS — Core Tables Migration
+ * Vertext CMS - Core Tables Migration
  * Creates all core database tables for PostgreSQL.
  */
 class Migration_001_CoreTables

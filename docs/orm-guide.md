@@ -78,7 +78,7 @@ $model->where('status', 'published')->orWhere('status', '=', 'featured');
 // IN clause
 $model->whereIn(['status' => ['published', 'featured']]);
 
-// Raw WHERE (use sparingly — no binding)
+// Raw WHERE (use sparingly - no binding)
 $model->whereQuery("title ILIKE '%php%'");
 
 // Multiple conditions at once

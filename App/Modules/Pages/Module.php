@@ -10,6 +10,17 @@ class Module implements ModuleInterface
 {
     public function install(\Core\Database\Connection $db): void
     {
+        // Detect users.id type so created_by/updated_by use a compatible type for JOINs
+        $userIdType = 'UUID';
+        try {
+            $r = \Core\Model::on($db, 'information_schema.columns')
+                ->select('data_type')->where('table_name', 'users')
+                ->where('column_name', 'id')->where('table_schema', 'public')->get(1);
+            if ($r && stripos($r['data_type'] ?? '', 'int') !== false) {
+                $userIdType = 'BIGINT';
+            }
+        } catch (\Exception) {}
+
         $db->query("CREATE TABLE IF NOT EXISTS pages (
             id               UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
             title            VARCHAR(255) NOT NULL,
@@ -23,12 +34,42 @@ class Module implements ModuleInterface
             sort_order       INT          NOT NULL DEFAULT 0,
             created_at       TIMESTAMP    DEFAULT NOW(),
             updated_at       TIMESTAMP    DEFAULT NOW(),
-            created_by       UUID,
-            updated_by       UUID,
-            FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
-            FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
+            created_by       {$userIdType},
+            updated_by       {$userIdType}
         )");
         $db->execute();
+
+        // Correct column types if table was created before this detection was added
+        if ($userIdType === 'BIGINT') {
+            foreach (['created_by', 'updated_by'] as $col) {
+                try {
+                    $db->query("SAVEPOINT sp_fix_pages_{$col}"); $db->execute();
+                    $cr = \Core\Model::on($db, 'information_schema.columns')
+                        ->select('data_type')->where('table_name', 'pages')
+                        ->where('column_name', $col)->where('table_schema', 'public')->get(1);
+                    if ($cr && strtolower($cr['data_type'] ?? '') === 'uuid') {
+                        $db->query("ALTER TABLE pages DROP COLUMN IF EXISTS {$col}"); $db->execute();
+                        $db->query("ALTER TABLE pages ADD COLUMN {$col} BIGINT"); $db->execute();
+                    }
+                    $db->query("RELEASE SAVEPOINT sp_fix_pages_{$col}"); $db->execute();
+                } catch (\Exception) {
+                    try { $db->query("ROLLBACK TO SAVEPOINT sp_fix_pages_{$col}"); $db->execute(); } catch (\Exception) {}
+                }
+            }
+        }
+
+        // FKs added separately - survives when users.id type doesn't match UUID yet.
+        // SAVEPOINT/ROLLBACK TO clears the aborted-transaction state on failure.
+        try {
+            $db->query("SAVEPOINT sp_pages_users_fk"); $db->execute();
+            $db->query("ALTER TABLE pages DROP CONSTRAINT IF EXISTS pages_created_by_fkey"); $db->execute();
+            $db->query("ALTER TABLE pages ADD CONSTRAINT pages_created_by_fkey FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL"); $db->execute();
+            $db->query("ALTER TABLE pages DROP CONSTRAINT IF EXISTS pages_updated_by_fkey"); $db->execute();
+            $db->query("ALTER TABLE pages ADD CONSTRAINT pages_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL"); $db->execute();
+            $db->query("RELEASE SAVEPOINT sp_pages_users_fk"); $db->execute();
+        } catch (\Exception) {
+            try { $db->query("ROLLBACK TO SAVEPOINT sp_pages_users_fk"); $db->execute(); } catch (\Exception) {}
+        }
 
         $permSql = "INSERT INTO permissions (name, slug, description, module)
                     VALUES (:name, :slug, :desc, 'pages')
@@ -80,7 +121,7 @@ class Module implements ModuleInterface
         $router->post('/admin/pages/([a-zA-Z0-9\-]+)/update',     $ca, 'update');
         $router->post('/admin/pages/([a-zA-Z0-9\-]+)/delete',     $ca, 'delete');
 
-        // Front-end — registered last so it doesn't shadow admin routes
+        // Front-end - registered last so it doesn't shadow admin routes
         $router->get('/([a-z0-9][a-z0-9\-]*)',                   $cf, 'show');
     }
 }

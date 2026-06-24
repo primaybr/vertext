@@ -3,13 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{pageTitle}} — Vertext CMS</title>
+  <title>{{pageTitle}} - Vertext CMS</title>
   <link rel="stylesheet" href="{{assetsUrl}}css/styles.css?v=141">
   <link rel="stylesheet" href="{{assetsUrl}}css/admin.css?v=5">
   <?php foreach (\App\CMS\ModuleLoader::assets()['css'] as $__mAsset): ?>
   <link rel="stylesheet" href="<?php echo htmlspecialchars(($assetsUrl ?? '') . $__mAsset); ?>">
   <?php endforeach; ?>
   <script>(function(){try{var t=localStorage.getItem('phuse-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})()</script>
+  <script>window.VTX_ASSETS_URL = '{{assetsUrl}}'; window.VTX_BASE_URL = '{{baseUrl}}';</script>
+  <script src="{{assetsUrl}}js/admin.js?v=4"></script>
 </head>
 <body>
 
@@ -191,8 +193,6 @@
 </div>
 
 <script src="{{assetsUrl}}js/scripts.js?v=136"></script>
-<script>window.VTX_ASSETS_URL = '{{assetsUrl}}'; window.VTX_BASE_URL = '{{baseUrl}}';</script>
-<script src="{{assetsUrl}}js/admin.js?v=4"></script>
 <?php foreach (\App\CMS\ModuleLoader::assets()['js'] as $__mAsset): ?>
 <script src="<?php echo htmlspecialchars(($assetsUrl ?? '') . $__mAsset); ?>"></script>
 <?php endforeach; ?>
@@ -203,7 +203,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="vtx-form-modal-title"></h5>
-        <button type="button" class="btn-close" id="vtx-form-modal-close" aria-label="Close"></button>
+        <button type="button" class="btn-close" id="vtx-form-modal-close" aria-label="Close"><i class="pi pi-x"></i></button>
       </div>
       <div class="modal-body" id="vtx-form-modal-body" style="padding:1.25rem;">
         <div style="text-align:center;padding:2rem;color:var(--ps-text-muted);">Loading…</div>
@@ -218,7 +218,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="vtx-confirm-title"></h5>
-        <button type="button" class="btn-close" id="vtx-modal-close" aria-label="Close"></button>
+        <button type="button" class="btn-close" id="vtx-modal-close" aria-label="Close"><i class="pi pi-x"></i></button>
       </div>
       <div class="modal-body">
         <p id="vtx-confirm-message" style="margin:0;font-size:.9375rem;color:var(--ps-text-secondary);"></p>

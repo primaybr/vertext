@@ -16,7 +16,7 @@
     <label class="vtx-label" for="page-slug">
       Slug
       <?php if ($editing): ?>
-      <span style="font-size:.75rem;font-weight:400;color:var(--ps-text-muted);"> — changing the slug will break existing links</span>
+      <span style="font-size:.75rem;font-weight:400;color:var(--ps-text-muted);"> - changing the slug will break existing links</span>
       <?php endif; ?>
     </label>
     <div style="display:flex;align-items:center;gap:.5rem;">

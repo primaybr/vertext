@@ -16,7 +16,7 @@ class Welcome extends Controller
 
     public function index(): void
     {
-        // Not installed yet — send to setup wizard
+        // Not installed yet - send to setup wizard
         if (!Installer::isInstalled()) {
             header('Location: ' . $this->baseUrl . '/setup');
             exit;
@@ -30,7 +30,7 @@ class Welcome extends Controller
                 $settings[$row['key']] = $row['value'];
             }
         } catch (\Exception) {
-            // DB unavailable — fall through to defaults
+            // DB unavailable - fall through to defaults
         }
 
         $this->render('default/landing', [

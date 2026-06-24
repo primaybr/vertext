@@ -8,7 +8,7 @@ use App\Controllers\Admin\BaseController;
 use App\CMS\Auth;
 
 /**
- * Contact inbox — view and manage form submissions.
+ * Contact inbox - view and manage form submissions.
  *
  * GET  /admin/contact                  → index()
  * GET  /admin/contact/{id}             → view($id)

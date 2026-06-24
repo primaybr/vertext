@@ -140,7 +140,7 @@
           </td>
           <td><span class="vtx-tag <?php echo $statusClass; ?>"><?php echo ucfirst($post['status']); ?></span></td>
           <td style="font-size:.8125rem;color:var(--ps-text-muted);">
-            <?php echo ($post['reading_time'] ?? 0) > 0 ? $post['reading_time'] . ' min' : '—'; ?>
+            <?php echo ($post['reading_time'] ?? 0) > 0 ? $post['reading_time'] . ' min' : '-'; ?>
           </td>
           <td style="font-size:.8125rem;color:var(--ps-text-muted);">
             <?php echo !empty($post['published_at'])

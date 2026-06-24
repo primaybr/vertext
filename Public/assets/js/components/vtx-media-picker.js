@@ -1,4 +1,4 @@
-/* vtx-media-picker.js — Media library picker for Vertext CMS */
+/* vtx-media-picker.js - Media library picker for Vertext CMS */
 (function (root) {
     'use strict';
 
@@ -19,7 +19,7 @@
      *
      * Static API:
      *   VtxMediaPicker.open(function(url, id) { ... })
-     *   — opens the picker without a button; calls cb on selection.
+     *   - opens the picker without a button; calls cb on selection.
      */
 
     // ── Shared overlay builder ────────────────────────────────────────────────

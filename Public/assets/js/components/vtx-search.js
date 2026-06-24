@@ -1,4 +1,4 @@
-/* Vertext CMS — VtxSearch Component v1.0.0
+/* Vertext CMS - VtxSearch Component v1.0.0
  *
  * Declarative:  <input data-vtx-search data-target="#tbody" data-url="/admin/posts">
  * Imperative:   new Vtx.Search({ input: el, target: '#tbody', url: '/admin/posts' })

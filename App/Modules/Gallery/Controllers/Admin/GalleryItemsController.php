@@ -110,7 +110,7 @@ class GalleryItemsController extends BaseController
         ]);
     }
 
-    /** Reorder items — accepts JSON body [{ id, sort_order }, ...] */
+    /** Reorder items - accepts JSON body [{ id, sort_order }, ...] */
     public function reorder(string $galleryId): void
     {
         $this->requirePermission('gallery.edit');

@@ -1,6 +1,6 @@
 <?php
 /**
- * Email: new contact form submission — sent to admin.
+ * Email: new contact form submission - sent to admin.
  * Variables: $senderName, $senderEmail, $subject, $messageBody,
  *            $submittedAt, $inboxUrl, $siteName, $siteUrl
  */
@@ -22,5 +22,5 @@ ob_start();
 </p>
 <?php
 $emailContent = ob_get_clean();
-$emailTitle   = 'New contact message — ' . ($siteName ?? 'Vertext CMS');
+$emailTitle   = 'New contact message - ' . ($siteName ?? 'Vertext CMS');
 include __DIR__ . '/base.php';

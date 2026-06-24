@@ -11,7 +11,7 @@ The Videos module (`slug: videos`, version 0.0.1) manages YouTube and Vimeo embe
 - Status workflow (`draft` / `published`)
 - SEO meta fields
 - Public video grid with thumbnail previews and play icon
-- Single video page with lazy iframe player — poster shown first, iframe injected on click
+- Single video page with lazy iframe player - poster shown first, iframe injected on click
 - `sort_order` for manual listing control
 
 ## Installation
@@ -92,8 +92,8 @@ When a video is saved, the controller:
 2. Fetches the poster image from `img.youtube.com/vi/{id}/maxresdefault.jpg` (YouTube) or the Vimeo public API
 3. Saves the image to `Public/uploads/video-thumbs/{provider}_{id}.jpg`
 
-If the fetch fails, the video is still saved — thumbnail is non-critical. On the public grid, a YouTube fallback URL (`hqdefault.jpg`) is used when no local thumbnail exists.
+If the fetch fails, the video is still saved - thumbnail is non-critical. On the public grid, a YouTube fallback URL (`hqdefault.jpg`) is used when no local thumbnail exists.
 
 ## Lazy Iframe Player
 
-On the single video page, the full `<iframe>` is not loaded on page load — only the poster image is shown. When the user clicks the poster, the iframe is injected and playback starts immediately (`autoplay=1`). This avoids unnecessary network requests and improves page performance.
+On the single video page, the full `<iframe>` is not loaded on page load - only the poster image is shown. When the user clicks the poster, the iframe is injected and playback starts immediately (`autoplay=1`). This avoids unnecessary network requests and improves page performance.

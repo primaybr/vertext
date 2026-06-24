@@ -141,22 +141,22 @@ Admin views are deployed to `App/Views/modules/blog/admin/`:
 
 ```
 admin/
-├── dashboard/index.php       — Analytics and stats
-├── posts/index.php           — Post list with search and bulk actions
-├── posts/_form.php           — Create/edit post (Quill editor, media picker, tag input)
-├── categories/index.php      — Category list
-├── categories/_form.php      — Category form
-├── tags/index.php            — Tag list
-├── tags/_form.php            — Tag form
-├── comments/index.php        — Comment moderation
-└── settings/index.php        — Blog settings
+├── dashboard/index.php       - Analytics and stats
+├── posts/index.php           - Post list with search and bulk actions
+├── posts/_form.php           - Create/edit post (Quill editor, media picker, tag input)
+├── categories/index.php      - Category list
+├── categories/_form.php      - Category form
+├── tags/index.php            - Tag list
+├── tags/_form.php            - Tag form
+├── comments/index.php        - Comment moderation
+└── settings/index.php        - Blog settings
 ```
 
 Public views are deployed to `App/Views/modules/blog/front/`:
 
 ```
 front/
-├── index.php     — Blog home (list with pagination)
-├── post.php      — Single post with comment form
-└── category.php  — Category filtered list
+├── index.php     - Blog home (list with pagination)
+├── post.php      - Single post with comment form
+└── category.php  - Category filtered list
 ```

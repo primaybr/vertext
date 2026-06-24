@@ -12,9 +12,9 @@ use Core\Utilities\Str;
  * Admin video management.
  *
  * GET  /admin/videos                          → index()
- * GET  /admin/videos/form                     → form()          [modal — create]
+ * GET  /admin/videos/form                     → form()          [modal - create]
  * POST /admin/videos/store                    → store()
- * GET  /admin/videos/{id}/form                → editForm($id)   [modal — edit]
+ * GET  /admin/videos/{id}/form                → editForm($id)   [modal - edit]
  * POST /admin/videos/{id}/update              → update($id)
  * POST /admin/videos/{id}/delete              → delete($id)
  */

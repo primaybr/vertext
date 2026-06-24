@@ -117,9 +117,9 @@ class PostsController extends BaseController
         $metaDesc        = trim($this->input->post('meta_description', false) ?? '');
         $scheduledAt     = trim($this->input->post('published_at', false) ?? '');
         $readingTime     = max(0, (int) ($this->input->post('reading_time', false) ?? 0));
-        $featuredImgId   = (int) ($this->input->post('featured_image_id', false) ?? 0) ?: null;
+        $featuredImgId   = trim((string) ($this->input->post('featured_image_id', false) ?? '')) ?: null;
         $featuredImgUrl  = trim($this->input->post('featured_image_url', false) ?? '');
-        $categoryIds     = array_filter(array_map('intval', (array) ($this->input->post('category_ids', false) ?? [])));
+        $categoryIds     = array_filter((array) ($this->input->post('category_ids', false) ?? []));
         $tagNames        = trim($this->input->post('tag_names', false) ?? '');
 
         if (!$title) {
@@ -232,9 +232,9 @@ class PostsController extends BaseController
         $metaDesc        = trim($this->input->post('meta_description', false) ?? '');
         $scheduledAt     = trim($this->input->post('published_at', false) ?? '');
         $readingTime     = max(0, (int) ($this->input->post('reading_time', false) ?? 0));
-        $featuredImgId   = (int) ($this->input->post('featured_image_id', false) ?? 0) ?: null;
+        $featuredImgId   = trim((string) ($this->input->post('featured_image_id', false) ?? '')) ?: null;
         $featuredImgUrl  = trim($this->input->post('featured_image_url', false) ?? '');
-        $categoryIds     = array_filter(array_map('intval', (array) ($this->input->post('category_ids', false) ?? [])));
+        $categoryIds     = array_filter((array) ($this->input->post('category_ids', false) ?? []));
         $tagNames        = trim($this->input->post('tag_names', false) ?? '');
 
         if (!$title) {

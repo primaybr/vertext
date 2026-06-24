@@ -126,7 +126,7 @@ class CommentsController extends BaseController
             $mailer  = Mailer::make();
             $message = (new MailMessage())
                 ->to($comment['author_email'], $comment['author_name'] ?? '')
-                ->subject('Your comment was approved — ' . ($settings['site_name'] ?? 'Vertext CMS'))
+                ->subject('Your comment was approved - ' . ($settings['site_name'] ?? 'Vertext CMS'))
                 ->htmlBody($html);
 
             $mailer->send($message);

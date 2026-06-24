@@ -2,7 +2,7 @@
 
 <form method="POST"
       action="<?= $baseUrl ?>/admin/videos/<?= $video ? $video['id'].'/update' : 'store' ?>"
-      data-vtx-ajax>
+      data-crud-form>
     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken ?? '') ?>">
 
     <div class="mb-3">
@@ -73,7 +73,8 @@
     </details>
 
     <div class="d-flex justify-content-end gap-2 mt-3 pt-2 border-top">
-        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm"
+                onclick="window.vtxFormModalClose && window.vtxFormModalClose()">Cancel</button>
         <button type="submit" class="btn btn-primary">
             <?= $video ? 'Update Video' : 'Add Video' ?>
         </button>
@@ -81,9 +82,7 @@
 </form>
 
 <script>
-Vtx.load(['slug'], function () {
-    Vtx.slug.init(document.querySelector('[data-vtx-slug-source]'), document.querySelector('[data-vtx-slug-target]'));
-});
+Vtx.load(['slug'], function () { if (window.vtxSlug) window.vtxSlug.init(); });
 
 document.getElementById('vp-provider')?.addEventListener('change', function () {
     const hints = {

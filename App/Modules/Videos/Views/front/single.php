@@ -25,7 +25,7 @@
 
     <div class="video-embed-wrap" id="videoWrap">
         <?php if (!empty($video['embed_iframe']) && (!empty($video['thumbnail_url']))): ?>
-            <!-- Lazy load — show poster, load iframe on click -->
+            <!-- Lazy load - show poster, load iframe on click -->
             <div class="video-poster" id="videoPoster">
                 <img src="<?= htmlspecialchars($video['thumbnail_url']) ?>" alt="<?= htmlspecialchars($video['title']) ?>">
                 <div class="poster-play"><i class="pi pi-play-circle"></i></div>

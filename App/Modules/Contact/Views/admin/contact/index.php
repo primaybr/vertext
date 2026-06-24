@@ -1,6 +1,3 @@
-<?php $this->extend('admin/_layouts/base'); ?>
-
-<?php $this->section('content'); ?>
 <div class="page-header d-flex justify-content-between align-items-center mb-4">
     <div>
         <h1 class="page-title">Contact Inbox</h1>
@@ -57,7 +54,7 @@
                                 <td><?= htmlspecialchars($row['name']) ?></td>
                                 <td><?= htmlspecialchars($row['email']) ?></td>
                                 <td><?= htmlspecialchars($row['subject'] ?? '') ?></td>
-                                <td><?= $row['submitted_at'] ? date('M j, Y g:i A', strtotime($row['submitted_at'])) : '—' ?></td>
+                                <td><?= $row['submitted_at'] ? date('M j, Y g:i A', strtotime($row['submitted_at'])) : '-' ?></td>
                                 <td>
                                     <a href="<?= $baseUrl ?>/admin/contact/<?= $row['id'] ?>" class="btn btn-sm btn-outline-primary">View</a>
                                     <button type="button" class="btn btn-sm btn-outline-danger ms-1"
@@ -105,4 +102,3 @@ document.querySelectorAll('[data-action="delete"]').forEach(btn => {
     });
 });
 </script>
-<?php $this->endSection(); ?>

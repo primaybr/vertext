@@ -1,4 +1,4 @@
-/* Blog Module — Admin JS: bulk post actions */
+/* Blog Module - Admin JS: bulk post actions */
 (function () {
     var bulkBar   = document.getElementById('vtx-bulk-bar');
     var bulkCount = document.getElementById('vtx-bulk-count');

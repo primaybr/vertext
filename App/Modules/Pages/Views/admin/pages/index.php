@@ -30,7 +30,7 @@
 </div>
 
 <!-- Table -->
-<div class="vtx-panel">
+<div class="vtx-panel" id="pages-table-panel">
   <?php if (empty($pages)): ?>
   <div class="vtx-empty">
     <div class="vtx-empty-ico"><i class="pi pi-file"></i></div>
@@ -105,7 +105,7 @@
   </div>
 
   <!-- Pagination -->
-  <?php if (($pages ?? 1) > 1): ?>
+  <?php if (($totalPages ?? 1) > 1): ?>
   <div class="vtx-panel-body" style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--ps-border);padding-top:.75rem;">
     <span style="font-size:.8125rem;color:var(--ps-text-muted);"><?php echo (int)$total; ?> pages total</span>
     <div style="display:flex;gap:.25rem;">

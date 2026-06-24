@@ -16,5 +16,5 @@ ob_start();
 <p style="font-size:13px;color:#94a3b8;">This is an automated reply. Please do not respond to this email directly.</p>
 <?php
 $emailContent = ob_get_clean();
-$emailTitle   = 'We received your message — ' . ($siteName ?? 'Vertext CMS');
+$emailTitle   = 'We received your message - ' . ($siteName ?? 'Vertext CMS');
 include __DIR__ . '/base.php';

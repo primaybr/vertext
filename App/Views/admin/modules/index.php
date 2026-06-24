@@ -141,8 +141,8 @@
             </div>
             <?php endif; ?>
           </td>
-          <td class="cell-muted"><?php echo htmlspecialchars($avail['version'] ?? '—'); ?></td>
-          <td class="cell-muted"><?php echo htmlspecialchars($avail['author'] ?? '—'); ?></td>
+          <td class="cell-muted"><?php echo htmlspecialchars($avail['version'] ?? '-'); ?></td>
+          <td class="cell-muted"><?php echo htmlspecialchars($avail['author'] ?? '-'); ?></td>
           <td>
             <form id="install-<?php echo htmlspecialchars($avail['slug']); ?>" method="POST"
                   action="{{baseUrl}}/admin/modules/<?php echo htmlspecialchars($avail['slug']); ?>/install"

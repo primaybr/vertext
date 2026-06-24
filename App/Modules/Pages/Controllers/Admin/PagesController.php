@@ -52,11 +52,11 @@ class PagesController extends BaseController
         $pages = $q->get() ?: [];
 
         $this->adminRender('modules/pages/admin/pages/index', [
-            'pages'  => $pages,
-            'total'  => $total,
-            'page'   => $page,
-            'pages'  => max(1, (int) ceil($total / $perPage)),
-            'search' => $search,
+            'pages'      => $pages,
+            'total'      => $total,
+            'page'       => $page,
+            'totalPages' => max(1, (int) ceil($total / $perPage)),
+            'search'     => $search,
         ], 'Pages', 'pages.pages');
     }
 

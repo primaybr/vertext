@@ -59,7 +59,7 @@
               <?php echo ucfirst($c['status']); ?>
             </span>
             <span style="font-size:.75rem;color:var(--ps-text-muted);">
-              on <em><?php echo htmlspecialchars($c['post_title'] ?? '—'); ?></em>
+              on <em><?php echo htmlspecialchars($c['post_title'] ?? '-'); ?></em>
             </span>
           </div>
           <p style="font-size:.875rem;color:var(--ps-text-secondary);margin:0;line-height:1.5;">

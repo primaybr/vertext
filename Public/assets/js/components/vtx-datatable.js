@@ -1,4 +1,4 @@
-/* Vertext CMS — VtxDataTable Component v1.0.0
+/* Vertext CMS - VtxDataTable Component v1.0.0
  *
  * Declarative:  <table class="vtx-table" data-vtx-table data-sortable data-selectable>
  * Imperative:   new Vtx.DataTable({ el: tableEl, sortable: true, selectable: true })

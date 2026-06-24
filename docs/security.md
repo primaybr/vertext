@@ -62,7 +62,7 @@ if (Auth::hasRole('editor')) { ... }
 
 ### How Permissions Are Loaded
 
-On login, the user's effective permissions (union of all assigned roles) are loaded from the database into the session. `Auth::can()` reads from the session — no DB query per check.
+On login, the user's effective permissions (union of all assigned roles) are loaded from the database into the session. `Auth::can()` reads from the session - no DB query per check.
 
 ## Authentication
 
@@ -75,9 +75,9 @@ On login, the user's effective permissions (union of all assigned roles) are loa
 ### Session Security
 
 Sessions are configured with:
-- `HttpOnly` cookie — not accessible via JavaScript
-- `Secure` cookie — only sent over HTTPS (when `https => true` in config)
-- `SameSite=Strict` — prevents CSRF via cross-site requests
+- `HttpOnly` cookie - not accessible via JavaScript
+- `Secure` cookie - only sent over HTTPS (when `https => true` in config)
+- `SameSite=Strict` - prevents CSRF via cross-site requests
 - Session hijacking detection: stores user-agent and IP; mismatches are logged
 
 ### Auth Helper Methods
@@ -85,11 +85,11 @@ Sessions are configured with:
 ```php
 use App\CMS\Auth;
 
-Auth::check()        // bool — is any user logged in?
-Auth::user()         // stdObject|null — current user record
-Auth::id()           // int|null — current user ID
-Auth::can('slug')    // bool — has permission?
-Auth::hasRole('slug')// bool — has role?
+Auth::check()        // bool - is any user logged in?
+Auth::user()         // stdObject|null - current user record
+Auth::id()           // int|null - current user ID
+Auth::can('slug')    // bool - has permission?
+Auth::hasRole('slug')// bool - has role?
 Auth::logout()       // destroy session, redirect to login
 ```
 
@@ -98,10 +98,10 @@ Auth::logout()       // destroy session, redirect to login
 All user input is sanitized by default via `htmlspecialchars()` with `ENT_QUOTES | ENT_HTML5`:
 
 ```php
-// Sanitized (default — safe for HTML output)
+// Sanitized (default - safe for HTML output)
 $title = $this->input->post('title');
 
-// Raw — only when you need unescaped content (e.g. Quill rich text)
+// Raw - only when you need unescaped content (e.g. Quill rich text)
 $body = $this->input->post('body', false);
 ```
 
@@ -114,10 +114,10 @@ All database queries use PDO prepared statements with bound parameters. The ORM 
 **Always use the ORM or parameterized queries:**
 
 ```php
-// Safe — ORM parameterizes automatically
+// Safe - ORM parameterizes automatically
 $this->db->table('posts')->where('slug', $slug)->first();
 
-// Safe — manual prepared statement
+// Safe - manual prepared statement
 $this->db->query("SELECT * FROM posts WHERE id = :id", [':id' => $id]);
 
 // NEVER do this

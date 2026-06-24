@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\CMS;
 
 /**
- * ModuleManager — lifecycle manager for non-core installable modules.
+ * ModuleManager - lifecycle manager for non-core installable modules.
  *
  * Responsibilities:
  *  - discover()      Scan App/Modules/ for packages not yet in the DB
@@ -110,7 +110,7 @@ class ModuleManager
 
         // Borrow one pool connection for the entire transaction so that the module's
         // DDL/DML and the modules-table insert all share the same connection handle.
-        // $orm must stay in scope until the transaction is done — its destructor returns
+        // $orm must stay in scope until the transaction is done - its destructor returns
         // the connection to the pool.
         $orm  = new \Core\Model('modules');
         $conn = $orm->db;
@@ -158,7 +158,7 @@ class ModuleManager
             return ['success' => false, 'message' => $e->getMessage()];
         }
 
-        // Deploy views and assets (outside transaction — filesystem ops are not rolled back)
+        // Deploy views and assets (outside transaction - filesystem ops are not rolled back)
         self::deployViews($modDir, $slug);
         self::deployAssets($modDir, $slug);
 
@@ -422,7 +422,7 @@ class ModuleManager
     private static function deployViews(string $modDir, string $slug): void
     {
         if (!preg_match('/^[a-z0-9_\-]+$/i', $slug)) {
-            throw new \RuntimeException("Invalid module slug '{$slug}' — must be alphanumeric/hyphens/underscores only.");
+            throw new \RuntimeException("Invalid module slug '{$slug}' - must be alphanumeric/hyphens/underscores only.");
         }
 
         $src = $modDir . DS . 'Views' . DS;
@@ -449,7 +449,7 @@ class ModuleManager
     private static function deployAssets(string $modDir, string $slug): void
     {
         if (!preg_match('/^[a-z0-9_\-]+$/i', $slug)) {
-            throw new \RuntimeException("Invalid module slug '{$slug}' — must be alphanumeric/hyphens/underscores only.");
+            throw new \RuntimeException("Invalid module slug '{$slug}' - must be alphanumeric/hyphens/underscores only.");
         }
 
         $src = $modDir . DS . 'Assets' . DS;

@@ -7,7 +7,7 @@ namespace App\Modules\Media;
 use App\CMS\ModuleInterface;
 
 /**
- * Media Module — lifecycle class
+ * Media Module - lifecycle class
  *
  * Provides a general-purpose media library.
  * Other modules can open /admin/media/picker in the CRUD modal and receive
@@ -17,6 +17,17 @@ class Module implements ModuleInterface
 {
     public function install(\Core\Database\Connection $db): void
     {
+        // Detect users.id type so uploaded_by uses a compatible type for JOINs
+        $userIdType = 'UUID';
+        try {
+            $r = \Core\Model::on($db, 'information_schema.columns')
+                ->select('data_type')->where('table_name', 'users')
+                ->where('column_name', 'id')->where('table_schema', 'public')->get(1);
+            if ($r && stripos($r['data_type'] ?? '', 'int') !== false) {
+                $userIdType = 'BIGINT';
+            }
+        } catch (\Exception) {}
+
         $db->query("CREATE TABLE IF NOT EXISTS media_files (
             id             UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
             filename       VARCHAR(260) NOT NULL,
@@ -29,12 +40,39 @@ class Module implements ModuleInterface
             caption        TEXT,
             thumbnail_path VARCHAR(500),
             resized        BOOLEAN      DEFAULT FALSE,
-            uploaded_by    UUID,
+            uploaded_by    {$userIdType},
             created_at     TIMESTAMP    DEFAULT NOW(),
-            updated_at     TIMESTAMP    DEFAULT NOW(),
-            FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE SET NULL
+            updated_at     TIMESTAMP    DEFAULT NOW()
         )");
         $db->execute();
+
+        // Correct uploaded_by type if table was created before this detection was added
+        if ($userIdType === 'BIGINT') {
+            try {
+                $db->query("SAVEPOINT sp_fix_media_type"); $db->execute();
+                $cr = \Core\Model::on($db, 'information_schema.columns')
+                    ->select('data_type')->where('table_name', 'media_files')
+                    ->where('column_name', 'uploaded_by')->where('table_schema', 'public')->get(1);
+                if ($cr && strtolower($cr['data_type'] ?? '') === 'uuid') {
+                    $db->query("ALTER TABLE media_files DROP COLUMN IF EXISTS uploaded_by"); $db->execute();
+                    $db->query("ALTER TABLE media_files ADD COLUMN uploaded_by BIGINT"); $db->execute();
+                }
+                $db->query("RELEASE SAVEPOINT sp_fix_media_type"); $db->execute();
+            } catch (\Exception) {
+                try { $db->query("ROLLBACK TO SAVEPOINT sp_fix_media_type"); $db->execute(); } catch (\Exception) {}
+            }
+        }
+
+        // FK added separately - survives when users.id type doesn't match UUID yet.
+        // SAVEPOINT/ROLLBACK TO clears the aborted-transaction state on failure.
+        try {
+            $db->query("SAVEPOINT sp_media_users_fk"); $db->execute();
+            $db->query("ALTER TABLE media_files DROP CONSTRAINT IF EXISTS media_files_uploaded_by_fkey"); $db->execute();
+            $db->query("ALTER TABLE media_files ADD CONSTRAINT media_files_uploaded_by_fkey FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE SET NULL"); $db->execute();
+            $db->query("RELEASE SAVEPOINT sp_media_users_fk"); $db->execute();
+        } catch (\Exception) {
+            try { $db->query("ROLLBACK TO SAVEPOINT sp_media_users_fk"); $db->execute(); } catch (\Exception) {}
+        }
 
         // Upgrade columns for existing installations
         foreach ([
@@ -45,7 +83,7 @@ class Module implements ModuleInterface
                 $db->query($alterSql);
                 $db->execute();
             } catch (\Exception) {
-                // Column already exists — safe to ignore
+                // Column already exists - safe to ignore
             }
         }
 

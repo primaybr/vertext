@@ -1,6 +1,3 @@
-<?php $this->extend('admin/_layouts/base'); ?>
-
-<?php $this->section('content'); ?>
 <div class="page-header d-flex justify-content-between align-items-center mb-4">
     <div>
         <a href="<?= $baseUrl ?>/admin/contact" class="btn btn-sm btn-outline-secondary mb-2">
@@ -53,7 +50,7 @@
 
                     <dt class="col-sm-5">Submitted</dt>
                     <dd class="col-sm-7">
-                        <?= $item['submitted_at'] ? date('M j, Y \a\t g:i A', strtotime($item['submitted_at'])) : '—' ?>
+                        <?= $item['submitted_at'] ? date('M j, Y \a\t g:i A', strtotime($item['submitted_at'])) : '-' ?>
                     </dd>
 
                     <?php if ($item['ip_address']): ?>
@@ -105,4 +102,3 @@ document.getElementById('btnRead')?.addEventListener('click', function () {
     doAction('mark-read', () => { this.remove(); });
 });
 </script>
-<?php $this->endSection(); ?>

@@ -34,7 +34,7 @@ class RolesController extends BaseController
         $this->adminRender('admin/roles/index', ['roles' => $roles], 'Roles & Permissions', 'roles');
     }
 
-    /** GET /admin/roles/form — AJAX: returns create form partial for modal */
+    /** GET /admin/roles/form - AJAX: returns create form partial for modal */
     public function createForm(): void
     {
         $this->requirePermission('roles.manage');
@@ -48,7 +48,7 @@ class RolesController extends BaseController
         ]);
     }
 
-    /** GET /admin/roles/(\d+)/form — AJAX: returns edit form partial for modal */
+    /** GET /admin/roles/(\d+)/form - AJAX: returns edit form partial for modal */
     public function editForm(string $id): void
     {
         $this->requirePermission('roles.manage');

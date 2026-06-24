@@ -1,5 +1,5 @@
 <?php
-// Edit form partial — loads in CRUD modal to edit alt_text and caption
+// Edit form partial - loads in CRUD modal to edit alt_text and caption
 ?>
 <div style="display:flex;gap:1rem;margin-bottom:1.25rem;">
   <img src="<?php echo htmlspecialchars($file['url'] ?? ''); ?>"

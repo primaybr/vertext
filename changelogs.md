@@ -1,24 +1,60 @@
-# Vertext CMS — Changelog
+# Vertext CMS - Changelog
 
 All notable changes to Vertext CMS are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [0.0.2-alpha] — 2026-06-23
+## [0.0.2b-alpha] - 2026-06-24
 
-Built on **Phuse 1.2.4** — all ORM, routing, session, and utility primitives come from the Phuse framework layer.
+Patch release. Bug fixes only - no new features or schema changes.
 
-### App — Mailer (`App/Mail/`)
+### Bug Fixes
 
-- **`Mailer`** — `Mailer::make()->send(MailMessage)`: PHP `mail()` driver and SMTP driver (native `fsockopen`, no external deps); reads config from `site_settings` at runtime
-- **`MailMessage`** — fluent builder: `to()`, `subject()`, `htmlBody()`, `textBody()`, `from()`
-- **`MailerConfig`** — maps `mail_driver`, `mail_host`, `mail_port`, `mail_username`, `mail_password`, `mail_encryption`, `mail_from_address`, `mail_from_name` settings
-- **`MailTemplate`** — `render(string $name, array $vars)` renders HTML email templates from `App/Mail/Templates/`
-- **Email templates** — `base.php` (shared layout), `comment_approved.php`, `comment_pending.php`, `welcome.php`, `contact_notification.php`, `contact_autoreply.php`
-- **Admin Mail Settings** — new "Mail" tab in Admin → Site Settings to configure all mail options
+#### Admin UI
 
-### Core — Slug Component (`Public/assets/js/components/vtx-slug.js`)
+- **Modal close button invisible** - `btn-close` buttons in the form and confirm modals had no visible content; added `<i class="pi pi-x">` icon inside both buttons in `base.php`
+- **Missing nav icons** - Added `pi-video` (video camera SVG) and `pi-images` (stacked frames SVG) to `styles.css`; added `pi-inbox` (tray SVG) and `pi-cog` (gear SVG) to `styles.css`; fixed Contact module nav icon `pi-envelope` → `pi-mail` (the `pi-envelope` class does not exist)
+
+#### CRUD - First-Save Empty-State Bug
+
+- **`admin.js` fallback** - When saving the first item into an empty list, the tbody-swap fallback failed silently (`curBody` was null); now falls back to replacing all `.vtx-panel[id]` elements from the fresh response HTML
+- **Pages module** - Added `id="pages-table-panel"` to the main panel so the fallback can locate it (source + deployed)
+- **Gallery module** - Added `id="galleries-table-panel"` to the main panel (source + deployed)
+
+#### `vtx-slug` Component - Double "Reset to auto"
+
+- **Duplicate listeners** - `vtxSlug.init()` called on every modal open attached new listeners to the same elements without a guard, causing two "• Reset to auto" links to appear; added `targetEl._vtxSlugInit` marker so `initSlugPair()` is idempotent
+
+#### Contact Module
+
+- **Fatal error on admin pages** - Views called `$this->extend()`, `$this->section()`, `$this->endSection()` inside Phuse Parser templates where `$this` is the Parser instance (these methods do not exist); removed all three calls from `index.php`, `view.php`, and `settings.php` (source + deployed)
+
+#### Pages Module
+
+- **List always showed empty** - `PagesController::index()` passed `'pages'` as a duplicate key in the data array; PHP keeps the last value (the integer page count), so `$pages` in the view was an integer and `foreach` silently skipped it; renamed second key to `'totalPages'` and updated both views
+
+#### Videos Module
+
+- **`Uncaught ReferenceError: bootstrap is not defined`** - The Videos admin index used Bootstrap JS modal API (`bootstrap.Modal.getOrCreateInstance`) which is not loaded in this CMS; rewrote the view to use the CMS `vtx-form-modal` system (`data-form-url`, `data-crud-form`, `data-confirm-form`), removed the embedded `#videoModal` markup and 48-line custom JS; added `vtx:crud:success` reload listener
+- **`_form.php`** - Changed `data-vtx-ajax` → `data-crud-form`; fixed Cancel button from `data-bs-dismiss="modal"` → `vtxFormModalClose()`; fixed `Vtx.slug.init(el, el)` call to standard `window.vtxSlug.init()`
+
+---
+
+## [0.0.2-alpha] - 2026-06-23
+
+Built on **Phuse 1.2.4** - all ORM, routing, session, and utility primitives come from the Phuse framework layer.
+
+### App - Mailer (`App/Mail/`)
+
+- **`Mailer`** - `Mailer::make()->send(MailMessage)`: PHP `mail()` driver and SMTP driver (native `fsockopen`, no external deps); reads config from `site_settings` at runtime
+- **`MailMessage`** - fluent builder: `to()`, `subject()`, `htmlBody()`, `textBody()`, `from()`
+- **`MailerConfig`** - maps `mail_driver`, `mail_host`, `mail_port`, `mail_username`, `mail_password`, `mail_encryption`, `mail_from_address`, `mail_from_name` settings
+- **`MailTemplate`** - `render(string $name, array $vars)` renders HTML email templates from `App/Mail/Templates/`
+- **Email templates** - `base.php` (shared layout), `comment_approved.php`, `comment_pending.php`, `welcome.php`, `contact_notification.php`, `contact_autoreply.php`
+- **Admin Mail Settings** - new "Mail" tab in Admin → Site Settings to configure all mail options
+
+### Core - Slug Component (`Public/assets/js/components/vtx-slug.js`)
 
 - Watches `[data-vtx-slug-source]` → writes `[data-vtx-slug-target]` with debounced 300ms slug generation
 - Mirrors `Str::slug()` logic: lowercase, non-alphanumeric → hyphen, collapse, trim
@@ -27,19 +63,19 @@ Built on **Phuse 1.2.4** — all ORM, routing, session, and utility primitives c
 
 ### Media Module (v0.0.2)
 
-- **Image resizing on upload** — originals wider than 1920 px are downscaled in-place; `resized` flag stored in DB
-- **Thumbnail generation** — 400×400 cover-crop thumbnail (`thumb_` prefix) generated for every uploaded image via `Core\Utilities\Image\Image`; stored as `thumbnail_path`
-- **Regenerate Thumbnails** — bulk action in the media grid processes up to 50 files per request; shows remaining count badge
-- **Grid thumbnails** — media grid and picker modal now display the 400 px thumbnail instead of the full original (faster loads)
+- **Image resizing on upload** - originals wider than 1920 px are downscaled in-place; `resized` flag stored in DB
+- **Thumbnail generation** - 400×400 cover-crop thumbnail (`thumb_` prefix) generated for every uploaded image via `Core\Utilities\Image\Image`; stored as `thumbnail_path`
+- **Regenerate Thumbnails** - bulk action in the media grid processes up to 50 files per request; shows remaining count badge
+- **Grid thumbnails** - media grid and picker modal now display the 400 px thumbnail instead of the full original (faster loads)
 - Schema: `ALTER TABLE media_files ADD COLUMN IF NOT EXISTS thumbnail_path VARCHAR(500)` and `resized BOOLEAN DEFAULT FALSE` applied safely on existing installations
 
-### App — Public Theme System (`App/Theme/ThemeEngine`, `App/Themes/default/`)
+### App - Public Theme System (`App/Theme/ThemeEngine`, `App/Themes/default/`)
 
-- **`ThemeEngine::render()`** — wraps any module front-end view in the active theme layout; captures view output with `ob_start`, injects as `$content` into `App/Themes/{theme}/layout.php`
-- **`ThemeEngine::activeTheme()`** — reads `settings` key `active_theme` (default: `default`)
-- **`ThemeEngine::deploy()`** — copies `App/Themes/{theme}/css|js|fonts|images/` to `Public/themes/{theme}/` on first render (auto-deploy, no manual step)
-- **Default theme** — clean responsive layout: sticky header, mobile hamburger nav, dynamic nav links (blog, gallery, contact), footer; CSS custom properties for accent/text/muted/border/bg colors
-- **`theme.json`** — declarative theme manifest: name, slug, version, description, author, assets
+- **`ThemeEngine::render()`** - wraps any module front-end view in the active theme layout; captures view output with `ob_start`, injects as `$content` into `App/Themes/{theme}/layout.php`
+- **`ThemeEngine::activeTheme()`** - reads `settings` key `active_theme` (default: `default`)
+- **`ThemeEngine::deploy()`** - copies `App/Themes/{theme}/css|js|fonts|images/` to `Public/themes/{theme}/` on first render (auto-deploy, no manual step)
+- **Default theme** - clean responsive layout: sticky header, mobile hamburger nav, dynamic nav links (blog, gallery, contact), footer; CSS custom properties for accent/text/muted/border/bg colors
+- **`theme.json`** - declarative theme manifest: name, slug, version, description, author, assets
 - Blog front-end refactored to render through ThemeEngine (content-only views, no `<html>/<head>/<body>` wrapper)
 
 ### Pages Module (v0.0.1)
@@ -78,89 +114,89 @@ Built on **Phuse 1.2.4** — all ORM, routing, session, and utility primitives c
 
 ## [Unreleased]
 
-### Blog Module (v0.0.3) — 2026-06-21
+### Blog Module (v0.0.3) - 2026-06-21
 
-- **Setup Wizard** — Fires immediately after install; 3-step wizard (URL path, blog identity, defaults) with a live URL preview and a root-mount warning for blank path. Skip link available for users who want to configure later.
-- **Dynamic Front-End Routing** — Blog's public URL path is now stored as `blog_base_path` in the settings table (default: `blog`). Blank value mounts the blog at site root (`/`). Route registration reads this value at load time — no code changes needed to relocate the blog.
-- **Path-Change SEO Prompt** — When `blog_base_path` is changed in Blog Settings, a warning panel appears with two options: add a 301 redirect from the old path (recommended; stacks across multiple changes) or change without redirect (for paths that had no real traffic).
-- **301 Redirect Accumulation** — Old base paths are stored in `blog_redirect_paths` (JSON). `BlogRedirectController` registers redirect routes for each old path so index, post, and category URLs all redirect to their new equivalents automatically.
-- **Route Cache Auto-Clear** — Any path change (via wizard or settings) clears the route cache immediately so the new URLs take effect on the next request without a manual cache flush.
-- **Module Setup URL Convention** — `ModuleManager::install()` now checks the module manifest for a `"setup"` key and returns `setup_url` in the install response. The Module Manager JS redirects to the wizard URL instead of refreshing the panel. Any future module can declare its own post-install wizard with one manifest entry.
-- **Settings cleanup on uninstall** — `Module::uninstall()` now deletes all `settings WHERE grp = 'blog'` so no orphaned rows remain after removal.
+- **Setup Wizard** - Fires immediately after install; 3-step wizard (URL path, blog identity, defaults) with a live URL preview and a root-mount warning for blank path. Skip link available for users who want to configure later.
+- **Dynamic Front-End Routing** - Blog's public URL path is now stored as `blog_base_path` in the settings table (default: `blog`). Blank value mounts the blog at site root (`/`). Route registration reads this value at load time - no code changes needed to relocate the blog.
+- **Path-Change SEO Prompt** - When `blog_base_path` is changed in Blog Settings, a warning panel appears with two options: add a 301 redirect from the old path (recommended; stacks across multiple changes) or change without redirect (for paths that had no real traffic).
+- **301 Redirect Accumulation** - Old base paths are stored in `blog_redirect_paths` (JSON). `BlogRedirectController` registers redirect routes for each old path so index, post, and category URLs all redirect to their new equivalents automatically.
+- **Route Cache Auto-Clear** - Any path change (via wizard or settings) clears the route cache immediately so the new URLs take effect on the next request without a manual cache flush.
+- **Module Setup URL Convention** - `ModuleManager::install()` now checks the module manifest for a `"setup"` key and returns `setup_url` in the install response. The Module Manager JS redirects to the wizard URL instead of refreshing the panel. Any future module can declare its own post-install wizard with one manifest entry.
+- **Settings cleanup on uninstall** - `Module::uninstall()` now deletes all `settings WHERE grp = 'blog'` so no orphaned rows remain after removal.
 
 ---
 
-## [0.0.1-alpha] — 2026-06-21
+## [0.0.1-alpha] - 2026-06-21
 
 Initial alpha release. The system is functional but not production-hardened.
 APIs and database schema may change before the stable 1.0.0 release.
 
 ### Core System
 
-- **Setup Wizard** — 5-step guided installation (requirements check, database setup, admin user creation, site configuration, completion)
-- **Admin Panel** — Responsive sidebar layout with dark/light theme toggle (persisted via localStorage)
-- **Role-Based Access Control (RBAC)** — Users → Roles → Permissions (many-to-many); fine-grained permission slugs per resource/action
-- **Audit Logging** — All admin state-changing actions logged to `audit_logs` with user, action, resource, IP, and user agent
-- **Login Rate Limiting** — Brute-force protection via `LoginRateLimiter`; configurable lock threshold
-- **CSRF Protection** — Cryptographically secure tokens (32-byte random, hex-encoded); 1-hour expiry; timing-safe comparison
-- **Session Security** — `HttpOnly`, `Secure`, `SameSite=Strict` cookies; session ID regeneration on login; user-agent hijacking detection
-- **Security Headers** — `Content-Security-Policy`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff` on all admin responses
-- **IP Spoofing Fix** — `Client::getIpAddress()` defaults to `REMOTE_ADDR`; proxy headers only trusted when `setTrustedProxies()` is configured
+- **Setup Wizard** - 5-step guided installation (requirements check, database setup, admin user creation, site configuration, completion)
+- **Admin Panel** - Responsive sidebar layout with dark/light theme toggle (persisted via localStorage)
+- **Role-Based Access Control (RBAC)** - Users → Roles → Permissions (many-to-many); fine-grained permission slugs per resource/action
+- **Audit Logging** - All admin state-changing actions logged to `audit_logs` with user, action, resource, IP, and user agent
+- **Login Rate Limiting** - Brute-force protection via `LoginRateLimiter`; configurable lock threshold
+- **CSRF Protection** - Cryptographically secure tokens (32-byte random, hex-encoded); 1-hour expiry; timing-safe comparison
+- **Session Security** - `HttpOnly`, `Secure`, `SameSite=Strict` cookies; session ID regeneration on login; user-agent hijacking detection
+- **Security Headers** - `Content-Security-Policy`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff` on all admin responses
+- **IP Spoofing Fix** - `Client::getIpAddress()` defaults to `REMOTE_ADDR`; proxy headers only trusted when `setTrustedProxies()` is configured
 
 ### Admin Panel Sections
 
-- **Dashboard** — System overview: user count, role count, module status, recent audit log entries
-- **User Management** — Create, edit, soft-delete users; assign roles; bcrypt passwords (cost 12); searchable paginated list
-- **Role Management** — Create custom roles; assign permissions; system roles (Administrator) protected from deletion
-- **Site Settings** — Edit site name, URL, description, admin email, timezone, date/time format, maintenance mode; key whitelist enforced
-- **Module Manager** — Install, uninstall, enable/disable, sync views; auto-discovers modules from `App/Modules/`
+- **Dashboard** - System overview: user count, role count, module status, recent audit log entries
+- **User Management** - Create, edit, soft-delete users; assign roles; bcrypt passwords (cost 12); searchable paginated list
+- **Role Management** - Create custom roles; assign permissions; system roles (Administrator) protected from deletion
+- **Site Settings** - Edit site name, URL, description, admin email, timezone, date/time format, maintenance mode; key whitelist enforced
+- **Module Manager** - Install, uninstall, enable/disable, sync views; auto-discovers modules from `App/Modules/`
 
 ### Module System
 
-- **ModuleInterface** — `install()`, `uninstall()`, `registerRoutes()` contract for all modules
-- **module.json manifest** — Declarative module metadata: name, slug, version, nav links with permission gates, subnav support
-- **View deployment lifecycle** — Module views deployed to `App/Views/modules/{slug}/` on install; removed on uninstall
-- **Route cache invalidation** — Route cache cleared automatically on module install/uninstall/toggle
-- **ModuleLoader** — Per-request cache of enabled modules; `isEnabled()`, `getEnabled()`, `navItems()` helpers
+- **ModuleInterface** - `install()`, `uninstall()`, `registerRoutes()` contract for all modules
+- **module.json manifest** - Declarative module metadata: name, slug, version, nav links with permission gates, subnav support
+- **View deployment lifecycle** - Module views deployed to `App/Views/modules/{slug}/` on install; removed on uninstall
+- **Route cache invalidation** - Route cache cleared automatically on module install/uninstall/toggle
+- **ModuleLoader** - Per-request cache of enabled modules; `isEnabled()`, `getEnabled()`, `navItems()` helpers
 
 ### Blog Module (v0.0.2 → see [Unreleased] for v0.0.3)
 
-- **Posts** — Create, edit, publish, archive, delete; draft/published/archived status workflow
-- **Rich Text Editor** — Quill-based WYSIWYG editor (`vtx-editor` component)
-- **SEO Fields** — Meta title, meta description, estimated reading time
-- **Featured Images** — Optional featured image via Media picker
-- **Categories** — Full CRUD with post relationship (many-to-many)
-- **Tags** — Full CRUD with autocomplete tag input (`vtx-tags`); bulk operations
-- **Comment Moderation** — Approve, mark as spam, delete; bulk moderation; pending/approved/spam statuses
-- **Analytics Dashboard** — 30-day publication chart (`vtx-chart`); post/category/tag counts
-- **Public Frontend** — Blog home, single post with comment form, category listing; all paginated
-- **17 permissions** — Granular control over posts, categories, tags, comments, and blog settings
+- **Posts** - Create, edit, publish, archive, delete; draft/published/archived status workflow
+- **Rich Text Editor** - Quill-based WYSIWYG editor (`vtx-editor` component)
+- **SEO Fields** - Meta title, meta description, estimated reading time
+- **Featured Images** - Optional featured image via Media picker
+- **Categories** - Full CRUD with post relationship (many-to-many)
+- **Tags** - Full CRUD with autocomplete tag input (`vtx-tags`); bulk operations
+- **Comment Moderation** - Approve, mark as spam, delete; bulk moderation; pending/approved/spam statuses
+- **Analytics Dashboard** - 30-day publication chart (`vtx-chart`); post/category/tag counts
+- **Public Frontend** - Blog home, single post with comment form, category listing; all paginated
+- **17 permissions** - Granular control over posts, categories, tags, comments, and blog settings
 
 ### Media Module (v0.0.1)
 
-- **File Upload** — Drag-and-drop via `vtx-upload`; MIME type + extension validation; randomized filenames
-- **Media Grid** — Paginated grid browser (24 files per page)
-- **Metadata Editing** — Alt text and caption fields via AJAX modal
-- **Media Picker Modal** — Reusable `vtx-media-picker` component for any module form
-- **Upload Security** — Files stored in `Public/uploads/YYYY/MM/`; `.htaccess` blocks PHP execution in upload dir
-- **4 permissions** — `media.view`, `media.upload`, `media.edit`, `media.delete`
+- **File Upload** - Drag-and-drop via `vtx-upload`; MIME type + extension validation; randomized filenames
+- **Media Grid** - Paginated grid browser (24 files per page)
+- **Metadata Editing** - Alt text and caption fields via AJAX modal
+- **Media Picker Modal** - Reusable `vtx-media-picker` component for any module form
+- **Upload Security** - Files stored in `Public/uploads/YYYY/MM/`; `.htaccess` blocks PHP execution in upload dir
+- **4 permissions** - `media.view`, `media.upload`, `media.edit`, `media.delete`
 
 ### Database Layer Security Fixes
 
-- **SQL Injection** — Fixed identifier injection in `month()`, `year()`, `day()`, `dateFormat()`, `fullTextSearch()`, `jsonExtract()`, `jsonContains()`, `caseWhen()`, `regexp()`, `ilike()`, `arrayContains()`, `stringAgg()` across `BuildersTrait`, `MySQL`, and `PgSQL` builders
-- **`quoteIdentifier()`** — Added safe identifier quoting helper to both MySQL (backtick) and PgSQL (double-quote) builders
-- **`bindValue()`** — Added parameterized binding helper for value arguments; all advanced query methods now use bound parameters
+- **SQL Injection** - Fixed identifier injection in `month()`, `year()`, `day()`, `dateFormat()`, `fullTextSearch()`, `jsonExtract()`, `jsonContains()`, `caseWhen()`, `regexp()`, `ilike()`, `arrayContains()`, `stringAgg()` across `BuildersTrait`, `MySQL`, and `PgSQL` builders
+- **`quoteIdentifier()`** - Added safe identifier quoting helper to both MySQL (backtick) and PgSQL (double-quote) builders
+- **`bindValue()`** - Added parameterized binding helper for value arguments; all advanced query methods now use bound parameters
 
 ### JavaScript Component Library (vtx-*)
 
-- **vtx-chart** — Bar/line/doughnut chart (Chart.js wrapper)
-- **vtx-datatable** — Client-side sortable, filterable table with pagination
-- **vtx-editor** — Quill rich text editor with hidden textarea sync
-- **vtx-media-picker** — Media library picker modal with preview
-- **vtx-search** — Debounced live AJAX search
-- **vtx-select** — Enhanced select with keyboard navigation
-- **vtx-tags** — Tag chip input with AJAX autocomplete
-- **vtx-upload** — Drag-and-drop file uploader with progress
+- **vtx-chart** - Bar/line/doughnut chart (Chart.js wrapper)
+- **vtx-datatable** - Client-side sortable, filterable table with pagination
+- **vtx-editor** - Quill rich text editor with hidden textarea sync
+- **vtx-media-picker** - Media library picker modal with preview
+- **vtx-search** - Debounced live AJAX search
+- **vtx-select** - Enhanced select with keyboard navigation
+- **vtx-tags** - Tag chip input with AJAX autocomplete
+- **vtx-upload** - Drag-and-drop file uploader with progress
 
 ### CSS Framework
 
@@ -174,7 +210,7 @@ APIs and database schema may change before the stable 1.0.0 release.
 
 ## Upcoming
 
-### [0.0.3-alpha] — planned
+### [0.0.3-alpha] - planned
 
 - Comment email notifications (approval, new comment alert to post author)
 - New user welcome emails

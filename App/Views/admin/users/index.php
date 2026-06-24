@@ -86,7 +86,7 @@
             <span class="vtx-tag <?php echo $cls; ?>"><?php echo ucfirst($row['status'] ?? 'active'); ?></span>
           </td>
           <td class="cell-muted">
-            <?php echo !empty($row['last_login']) ? date('M d, Y', strtotime($row['last_login'])) : '—'; ?>
+            <?php echo !empty($row['last_login']) ? date('M d, Y', strtotime($row['last_login'])) : '-'; ?>
           </td>
           <td>
             <div style="display:flex;gap:.25rem;justify-content:flex-end;">

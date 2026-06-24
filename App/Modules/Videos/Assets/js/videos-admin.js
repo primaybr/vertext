@@ -1,1 +1,1 @@
-/* Videos module — admin JS */
+/* Videos module - admin JS */

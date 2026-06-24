@@ -14,7 +14,7 @@ use App\CMS\ModuleManager;
  * POST /admin/blog/setup/complete
  *
  * Fires immediately after install (via setup_url in install response).
- * Can be revisited at any time — it pre-fills current values.
+ * Can be revisited at any time - it pre-fills current values.
  */
 class BlogSetupController extends BaseController
 {

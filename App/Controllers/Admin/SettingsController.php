@@ -145,7 +145,7 @@ class SettingsController extends BaseController
         $deleted = $this->deleteCacheFiles(rtrim(Path::CACHE, DS));
 
         Auth::audit('settings.clear_cache', 'settings');
-        $this->flash('success', "Cache cleared — {$deleted} file(s) removed.");
+        $this->flash('success', "Cache cleared - {$deleted} file(s) removed.");
         $this->redirect($this->baseUrl . '/admin/settings');
     }
 

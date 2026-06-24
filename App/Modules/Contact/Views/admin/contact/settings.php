@@ -1,6 +1,3 @@
-<?php $this->extend('admin/_layouts/base'); ?>
-
-<?php $this->section('content'); ?>
 <div class="page-header mb-4">
     <a href="<?= $baseUrl ?>/admin/contact" class="btn btn-sm btn-outline-secondary mb-2">
         <i class="pi pi-arrow-left me-1"></i> Back to Inbox
@@ -59,4 +56,3 @@ document.getElementById('autoReply').addEventListener('change', function () {
     document.getElementById('autoReplyMsg').style.display = this.checked ? '' : 'none';
 });
 </script>
-<?php $this->endSection(); ?>

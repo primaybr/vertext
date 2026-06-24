@@ -1,6 +1,6 @@
 # Theme System
 
-Vertext's public-facing pages are rendered through a **ThemeEngine** (`App\Theme\ThemeEngine`) that wraps module front-end views in a shared theme layout. Admin views are unaffected — they always use the admin layout.
+Vertext's public-facing pages are rendered through a **ThemeEngine** (`App\Theme\ThemeEngine`) that wraps module front-end views in a shared theme layout. Admin views are unaffected - they always use the admin layout.
 
 ## How It Works
 
@@ -87,7 +87,7 @@ class MyController extends Controller
 }
 ```
 
-The view file lives at `App/Modules/MyModule/Views/front/index.php` (source) and is deployed to `App/Views/modules/mymodule/front/index.php` at install time. It should be **content-only** — no `<html>`, `<head>`, or `<body>` tags; the layout handles those.
+The view file lives at `App/Modules/MyModule/Views/front/index.php` (source) and is deployed to `App/Views/modules/mymodule/front/index.php` at install time. It should be **content-only** - no `<html>`, `<head>`, or `<body>` tags; the layout handles those.
 
 ## Creating a Custom Theme
 
@@ -103,7 +103,7 @@ The view file lives at `App/Modules/MyModule/Views/front/index.php` (source) and
 }
 ```
 
-2. Create `App/Themes/my-theme/layout.php` — a standard HTML document that outputs `<?php echo $content; ?>` in the body.
+2. Create `App/Themes/my-theme/layout.php` - a standard HTML document that outputs `<?php echo $content; ?>` in the body.
 
 3. Add your CSS to `App/Themes/my-theme/css/` and JS to `App/Themes/my-theme/js/`.
 

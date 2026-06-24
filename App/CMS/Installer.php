@@ -127,10 +127,10 @@ class Installer
                 $dsn = "pgsql:host={$host};port={$port};dbname={$db}";
                 $pdo = new \PDO($dsn, $user, $pass, [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]);
                 $pdo->query('SELECT 1');
-                return ['success' => true, 'exists' => true,  'message' => "Connection successful — database \"{$db}\" exists"];
+                return ['success' => true, 'exists' => true,  'message' => "Connection successful - database \"{$db}\" exists"];
             }
 
-            return ['success' => true, 'exists' => false, 'message' => "Connection successful — database \"{$db}\" will be created automatically"];
+            return ['success' => true, 'exists' => false, 'message' => "Connection successful - database \"{$db}\" will be created automatically"];
         } catch (\PDOException $e) {
             return ['success' => false, 'exists' => false, 'message' => $e->getMessage()];
         }

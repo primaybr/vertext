@@ -5,15 +5,15 @@ declare(strict_types=1);
 namespace App\Theme;
 
 /**
- * ThemeEngine — wraps public-facing module views in the active site theme.
+ * ThemeEngine - wraps public-facing module views in the active site theme.
  *
  * Usage from a front-end controller:
  *   ThemeEngine::render('modules/blog/front/index', $data);
  *
  * $data may include special keys consumed by the layout:
- *   page_title       — text for <title> and og:title
- *   page_description — meta description
- *   page_image       — og:image URL
+ *   page_title       - text for <title> and og:title
+ *   page_description - meta description
+ *   page_image       - og:image URL
  *
  * Theme assets live in App/Themes/{name}/ (source, git-tracked).
  * On first request they are deployed to Public/themes/{name}/ automatically.

@@ -1,4 +1,4 @@
-/* vtx-editor.js — Quill v2 adapter for Vertext CMS */
+/* vtx-editor.js - Quill v2 adapter for Vertext CMS */
 (function (root) {
     'use strict';
 
@@ -47,10 +47,10 @@
      * VtxEditor
      *
      * @param {object} opts
-     *   container    {Element}   — div to render Quill into
-     *   textarea     {Element}   — hidden textarea synced on change
-     *   mediaPicker  {boolean}   — use VtxMediaPicker for image insertion
-     *   onWordCount  {function}  — called with word count on each change
+     *   container    {Element}   - div to render Quill into
+     *   textarea     {Element}   - hidden textarea synced on change
+     *   mediaPicker  {boolean}   - use VtxMediaPicker for image insertion
+     *   onWordCount  {function}  - called with word count on each change
      */
     function VtxEditor(opts) {
         this.container    = opts.container;

@@ -1,4 +1,4 @@
-/* Vertext CMS — Admin JS */
+/* Vertext CMS - Admin JS */
 (function () {
     'use strict';
 
@@ -233,7 +233,7 @@
             if (e.key === 'Escape') { window.vtxModalClose(); window.vtxFormModalClose(); }
         });
 
-        // [data-confirm-form] buttons — show confirm modal, then submit or AJAX-delete
+        // [data-confirm-form] buttons - show confirm modal, then submit or AJAX-delete
         document.addEventListener('click', function (e) {
             var btn = e.target.closest('[data-confirm-form]');
             if (!btn) return;
@@ -369,7 +369,15 @@
                             var doc     = new DOMParser().parseFromString(html, 'text/html');
                             var newBody = doc.querySelector('table.vtx-table tbody');
                             var curBody = document.querySelector('table.vtx-table tbody');
-                            if (newBody && curBody) { curBody.innerHTML = newBody.innerHTML; }
+                            if (newBody && curBody) {
+                                curBody.innerHTML = newBody.innerHTML;
+                            } else {
+                                // Empty state → first item: no table in DOM yet; swap identified panels
+                                document.querySelectorAll('[id].vtx-panel').forEach(function (panel) {
+                                    var fresh = doc.getElementById(panel.id);
+                                    if (fresh) panel.innerHTML = fresh.innerHTML;
+                                });
+                            }
                         });
                     }
                 } else {

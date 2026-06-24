@@ -10,7 +10,7 @@ The Pages module (`slug: pages`, version 0.0.1) adds static page management to V
 - Excerpt and SEO meta fields (title, description)
 - `sort_order` to control page listing order
 - Front-end rendering via ThemeEngine (uses the active public theme)
-- Wildcard front-end route — any single-segment URL that isn't claimed by another module resolves to a page
+- Wildcard front-end route - any single-segment URL that isn't claimed by another module resolves to a page
 
 ## Installation
 

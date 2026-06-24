@@ -20,7 +20,7 @@ class WizardController extends Controller
         parent::__construct();
     }
 
-    /** GET /setup  — show current wizard step */
+    /** GET /setup  - show current wizard step */
     public function index(): void
     {
         // Already installed
@@ -32,7 +32,7 @@ class WizardController extends Controller
         $this->renderStep($step);
     }
 
-    /** POST /setup/next  — process step and advance */
+    /** POST /setup/next  - process step and advance */
     public function next(): void
     {
         if (Installer::isInstalled()) {
@@ -72,7 +72,7 @@ class WizardController extends Controller
         }
     }
 
-    /** POST /setup/back  — go to previous step */
+    /** POST /setup/back  - go to previous step */
     public function back(): void
     {
         if (Installer::isInstalled()) {
@@ -85,7 +85,7 @@ class WizardController extends Controller
         $this->redirect($this->baseUrl . '/setup');
     }
 
-    /** POST /setup/test-db  — AJAX: test DB connection */
+    /** POST /setup/test-db  - AJAX: test DB connection */
     public function testDb(): void
     {
         $raw  = file_get_contents('php://input');
@@ -237,7 +237,7 @@ class WizardController extends Controller
             return $result;
         }
 
-        // Write installed.lock — installation is complete!
+        // Write installed.lock - installation is complete!
         Installer::markInstalled();
 
         $this->session->set('setup_complete', true);
@@ -272,7 +272,7 @@ class WizardController extends Controller
             'content'   => $content,
             'step'      => $step,
             'totalSteps'=> self::TOTAL_STEPS,
-            'pageTitle' => 'Setup Wizard — Step ' . $step,
+            'pageTitle' => 'Setup Wizard - Step ' . $step,
         ]);
     }
 

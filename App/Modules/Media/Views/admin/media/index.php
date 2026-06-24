@@ -34,7 +34,7 @@
          style="border:2px dashed var(--ps-border);border-radius:8px;padding:2.5rem;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;">
       <i class="pi pi-image" style="font-size:2rem;color:var(--ps-text-muted);display:block;margin-bottom:.75rem;"></i>
       <div style="font-size:.9375rem;font-weight:500;color:var(--ps-text-secondary);">Drag &amp; drop images here</div>
-      <div style="font-size:.8125rem;color:var(--ps-text-muted);margin-top:.25rem;">or click to browse — JPG, PNG, GIF, WebP · max 5 MB</div>
+      <div style="font-size:.8125rem;color:var(--ps-text-muted);margin-top:.25rem;">or click to browse - JPG, PNG, GIF, WebP · max 5 MB</div>
     </div>
   </div>
 </div>

@@ -83,7 +83,7 @@ class Module implements ModuleInterface
         $cs = 'App\Modules\Contact\Controllers\Admin\ContactSettingsController';
         $cf = 'App\Modules\Contact\Controllers\Front\ContactFormController';
 
-        // Admin — inbox
+        // Admin - inbox
         $router->get('/admin/contact',                                     $ci, 'index');
         $router->get('/admin/contact/settings',                            $cs, 'index');
         $router->post('/admin/contact/settings/save',                      $cs, 'save');
@@ -92,7 +92,7 @@ class Module implements ModuleInterface
         $router->post('/admin/contact/([a-zA-Z0-9\-]+)/mark-spam',        $ci, 'markSpam');
         $router->post('/admin/contact/([a-zA-Z0-9\-]+)/delete',           $ci, 'delete');
 
-        // Front-end — the actual contact path is read from settings at runtime
+        // Front-end - the actual contact path is read from settings at runtime
         // We register a fixed route; ContactFormController reads the setting to validate
         $router->get('/contact',           $cf, 'show');
         $router->post('/contact',          $cf, 'submit');

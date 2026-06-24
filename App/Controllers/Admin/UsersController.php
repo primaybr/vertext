@@ -10,7 +10,7 @@ use App\Mail\MailMessage;
 use App\Mail\MailTemplate;
 
 /**
- * Admin Users Controller — CRUD for CMS users
+ * Admin Users Controller - CRUD for CMS users
  */
 class UsersController extends BaseController
 {
@@ -55,7 +55,7 @@ class UsersController extends BaseController
         ], 'Users', 'users');
     }
 
-    /** GET /admin/users/form — AJAX: returns create form partial for modal */
+    /** GET /admin/users/form - AJAX: returns create form partial for modal */
     public function createForm(): void
     {
         $this->requirePermission('users.create');
@@ -68,7 +68,7 @@ class UsersController extends BaseController
         ]);
     }
 
-    /** GET /admin/users/(\d+)/form — AJAX: returns edit form partial for modal */
+    /** GET /admin/users/(\d+)/form - AJAX: returns edit form partial for modal */
     public function editForm(string $id): void
     {
         $this->requirePermission('users.update');

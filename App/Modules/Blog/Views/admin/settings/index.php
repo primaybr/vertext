@@ -82,7 +82,7 @@
         <div class="vtx-help">Leave blank to serve the blog from <code>/</code> (site root).</div>
       </div>
 
-      <!-- SEO warning — hidden until path value changes -->
+      <!-- SEO warning - hidden until path value changes -->
       <div id="blog-path-seo-warning" class="alert alert-warning mt-3" style="display:none;font-size:.875rem;">
         <strong><i class="pi pi-exclamation-triangle me-1"></i>SEO notice:</strong>
         Changing the blog path will break existing search engine links and any external URLs pointing to your blog.
@@ -93,7 +93,7 @@
             <input class="form-check-input" type="radio" name="path_change_mode"
                    id="pcm_redirect" value="redirect" checked>
             <label class="form-check-label" for="pcm_redirect">
-              <strong>Add 301 redirect</strong> — keep old path working, visitors and search engines are sent to the new path
+              <strong>Add 301 redirect</strong> - keep old path working, visitors and search engines are sent to the new path
               <span class="vtx-tag success ms-1" style="font-size:.75rem;">Recommended</span>
             </label>
           </div>
@@ -101,7 +101,7 @@
             <input class="form-check-input" type="radio" name="path_change_mode"
                    id="pcm_permanent" value="permanent">
             <label class="form-check-label" for="pcm_permanent">
-              <strong>Change only, no redirect</strong> — old path simply stops working (use when the old path had no real traffic)
+              <strong>Change only, no redirect</strong> - old path simply stops working (use when the old path had no real traffic)
             </label>
           </div>
         </div>
