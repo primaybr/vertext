@@ -30,7 +30,7 @@ The Vertext admin panel lives at `/admin`. All sections require authentication a
 ### User Fields
 
 | Field | Notes |
-|-------|-------|
+| --- | --- |
 | Name | Display name |
 | Email | Must be unique; used for login |
 | Password | bcrypt with cost 12; never stored plain-text |
@@ -40,7 +40,7 @@ The Vertext admin panel lives at `/admin`. All sections require authentication a
 ### User Operations
 
 | Action | Permission required |
-|--------|---------------------|
+| --- | --- |
 | View list | `users.view` |
 | Create | `users.create` |
 | Edit | `users.update` |
@@ -57,7 +57,7 @@ Roles group permissions together. Users can have multiple roles; their effective
 ### Default Roles
 
 | Role | Description |
-|------|-------------|
+| --- | --- |
 | Administrator | Full system access (system role - cannot be deleted) |
 | Editor | Can manage content in installed modules |
 | Author | Can create content but not publish or delete |
@@ -76,6 +76,7 @@ Roles group permissions together. Users can have multiple roles; their effective
 Permissions follow the pattern `resource.action`:
 
 **Core**:
+
 - `users.view`, `users.create`, `users.update`, `users.delete`
 - `roles.view`, `roles.manage`
 - `modules.view`, `modules.install`, `modules.uninstall`, `modules.toggle`
@@ -83,6 +84,7 @@ Permissions follow the pattern `resource.action`:
 - `dashboard.view`
 
 **Blog module**:
+
 - `posts.view`, `posts.create`, `posts.edit`, `posts.publish`, `posts.delete`
 - `categories.view`, `categories.create`, `categories.edit`, `categories.delete`
 - `tags.view`, `tags.create`, `tags.edit`, `tags.delete`
@@ -90,6 +92,7 @@ Permissions follow the pattern `resource.action`:
 - `blog.settings`
 
 **Media module**:
+
 - `media.view`, `media.upload`, `media.edit`, `media.delete`
 
 **Pages module**:
@@ -108,46 +111,88 @@ Permissions follow the pattern `resource.action`:
 
 - `videos.view`, `videos.create`, `videos.edit`, `videos.delete`, `videos.publish`
 
+**Navigation module**:
+
+- `navigation.view`, `navigation.manage`
+
+**Analytics module**:
+
+- `analytics.view`, `analytics.manage`
+
 ## Settings
 
 `/admin/settings` - Requires `settings.view`.
 
-Edit core site settings via a form. Click **Save Settings** to persist. Only whitelisted keys are accepted; arbitrary key injection is blocked.
+### General tab
 
-**Clear Cache** button deletes all files from the `Cache/` directory. Use this after any template or CSS/JS change.
+Edit core site settings: site name, URL, description, admin email, timezone, date/time format, maintenance mode. Only whitelisted keys are accepted.
+
+### Mail tab
+
+Configure the mail transport (PHP `mail()` or SMTP). SMTP fields: host, port, encryption, username, password, from address, from name. **Send Test Email** button verifies the config by sending a test to your account address.
+
+### Cache
+
+**Clear Cache** button deletes all files from the `Cache/` directory. Use this after any template, CSS, or JS change when caching is enabled.
+
+## Themes
+
+`/admin/themes` - Requires `settings.view`.
+
+Displays all themes found in `App/Themes/`. Each theme is shown as a card with its name, description, version, and author. The active theme is highlighted with an "Active" badge.
+
+Click **Activate** on any inactive theme to switch immediately. `ThemeEngine::deploy()` runs automatically to sync theme assets to `Public/themes/`. The change takes effect on the next front-end page load.
+
+Theme Manager is a core system module and cannot be disabled or uninstalled.
 
 ## Module Manager
 
 `/admin/modules` - Requires `modules.view`.
 
-Lists all discovered modules (from `App/Modules/`) and their current status.
+### Layout
+
+**System section** (collapsible) - lists core built-in modules (Auth, Dashboard, Users, Roles, Module Manager, Theme Manager, CMS Settings) as compact read-only rows. Core modules are always enabled and cannot be uninstalled.
+
+**Category sections** - add-on modules grouped by their `category` field from `module.json`. Each module appears as a card showing:
+
+- Module icon and name
+- Version badge
+- Description
+- Status badge (Enabled / Disabled / Not Installed)
+- Action buttons
 
 ### Operations
 
 | Operation | What it does | Permission |
-|-----------|--------------|------------|
+| --- | --- | --- |
 | Install | Creates DB tables, seeds permissions, deploys views | `modules.install` |
 | Enable/Disable | Toggles module routes and nav visibility | `modules.toggle` |
 | Uninstall | Drops DB tables, removes permissions, deletes views | `modules.uninstall` |
 | Sync Views | Re-deploys view files from module source to `App/Views/modules/` | `modules.install` |
 
+### Module Dependencies
+
+If a module's `module.json` lists other modules in `requires.modules`, the Install button is disabled with a tooltip listing the missing modules until they are installed first. Uninstalling a module that others depend on is also blocked with an error listing the dependents.
+
 ### When to Sync Views
 
-After updating a module's view files during development, click **Sync Views** to redeploy them. Never edit files in `App/Views/modules/` directly - they are owned by the install lifecycle and will be overwritten.
+After updating a module's view files during development, click **Sync Views** to redeploy them. Never edit files in `App/Views/modules/` directly - they are owned by the install lifecycle and will be overwritten on the next sync.
 
 ## Admin Navigation
 
-The sidebar is built dynamically from:
-1. Core links (Dashboard, Users, Roles, Settings, Modules)
-2. Module-contributed links from each enabled module's `module.json` → `nav` key
+The sidebar is built from:
+
+1. **Core links** (always visible to all admins): Dashboard, Users, Roles, Module Manager, Themes, Settings
+2. **Module-contributed links** from each enabled module's `module.json` → `nav` key, grouped under a "Modules" section
 
 Nav items are only shown if the user has the required permission defined in `nav.permission`.
 
 ## Audit Logs
 
 Every state-changing admin action is logged automatically. Log entries include:
+
 - User who performed the action
-- Action type (e.g. `user.created`, `post.deleted`)
+- Action type (e.g. `user.created`, `post.deleted`, `settings.set_theme`)
 - Resource type and ID
 - IP address and User-Agent
 - Timestamp
@@ -157,6 +202,7 @@ Logs are stored in the `audit_logs` table. The Dashboard shows the most recent e
 ## Security Headers
 
 All admin responses include the following HTTP headers:
+
 - `Content-Security-Policy` - restricts asset sources
 - `X-Frame-Options: DENY` - prevents clickjacking
 - `X-Content-Type-Options: nosniff` - prevents MIME sniffing

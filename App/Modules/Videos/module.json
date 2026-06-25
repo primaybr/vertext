@@ -4,6 +4,7 @@
     "version":     "0.0.1",
     "description": "YouTube and Vimeo embed management with public video grid",
     "author":      "Vertext",
+    "category":    "Media",
     "requires":    { "vertext": ">=0.0.2" },
     "nav": {
         "label":      "Videos",

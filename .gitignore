@@ -21,4 +21,5 @@ Storage/installed.lock
 App/Views/modules/
 Public/assets/modules/
 Public/uploads/media/
+Public/themes/
 

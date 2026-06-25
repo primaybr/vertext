@@ -9,27 +9,92 @@ Vertext's public-facing pages are rendered through a **ThemeEngine** (`App\Theme
 3. It then loads the active theme's `layout.php`, injects `$content` into it, and outputs the full page.
 4. On first request, theme assets (css/, js/) are automatically deployed from `App/Themes/{name}/` to `Public/themes/{name}/`.
 
+## Bundled Themes
+
+| Theme | Slug | Description |
+| --- | --- | --- |
+| Default | `default` | Clean, modern layout with indigo accent; responsive header with mobile hamburger nav |
+| Clean | `clean` | Typographic/editorial: Georgia serif body, black borders, uppercase navigation |
+
+Both themes ship with full dark/light mode support.
+
 ## Directory Structure
 
-```
+```text
 App/Themes/
-└── default/
-    ├── theme.json        Theme manifest
-    ├── layout.php        Base HTML page (injects $content)
-    ├── css/
-    │   └── theme.css     Public stylesheet
-    └── js/
-        └── theme.js      Public JavaScript
-```
-
-Deployed assets (auto-generated, gitignored):
-
-```
-Public/themes/
-└── default/
+├── default/
+│   ├── theme.json        Theme manifest
+│   ├── layout.php        Base HTML page (injects $content)
+│   ├── css/
+│   │   └── theme.css     Theme stylesheet (layered on top of styles.css)
+│   └── js/
+│       └── theme.js      Theme JavaScript (toggle + mobile nav + smooth scroll)
+└── clean/
+    ├── theme.json
+    ├── layout.php
     ├── css/theme.css
     └── js/theme.js
 ```
+
+Deployed assets (auto-generated, do not edit directly):
+
+```text
+Public/themes/
+├── default/
+│   ├── css/theme.css
+│   └── js/theme.js
+└── clean/
+    ├── css/theme.css
+    └── js/theme.js
+```
+
+## CSS Loading Order
+
+Every theme layout loads two stylesheets in this order:
+
+```html
+<link rel="stylesheet" href="<?= $baseUrl ?>/assets/css/styles.css">
+<link rel="stylesheet" href="<?= $themeUrl ?>/css/theme.css">
+```
+
+`styles.css` is the Phuse CSS framework (grid, utilities, form styles, custom properties). `theme.css` extends and overrides it with theme-specific colors and layout. This mirrors the admin pattern (`styles.css` + `admin.css`), so front-end views can use the same utility classes.
+
+## Dark/Light Mode
+
+Both bundled themes implement three CSS layers:
+
+```css
+/* Layer 1: light mode defaults */
+:root {
+  --color-bg: #ffffff;
+  --color-accent: #4f46e5;
+}
+
+/* Layer 2: OS preference (dark), unless user has explicitly chosen light */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-bg: #0f172a;
+    --color-accent: #818cf8;
+  }
+}
+
+/* Layer 3: explicit user override */
+[data-theme="dark"] {
+  --color-bg: #0f172a;
+  --color-accent: #818cf8;
+}
+```
+
+**FOUC prevention** - an inline `<script>` in `<head>` applies the saved preference before CSS renders:
+
+```html
+<script>(function(){
+  var t = localStorage.getItem('vtx-theme');
+  if (t) document.documentElement.setAttribute('data-theme', t);
+}());</script>
+```
+
+**Toggle** - `theme.js` reads the current effective theme, flips it, saves to `localStorage` under key `vtx-theme`, and sets `data-theme` on `<html>`.
 
 ## ThemeEngine API
 
@@ -47,6 +112,9 @@ ThemeEngine::assetUrl('css/theme.css', $baseUrl): string
 
 // Manually re-deploy theme assets (e.g. after editing source files)
 ThemeEngine::deploy(string $theme = ''): bool
+
+// Discover all available themes (reads App/Themes/*/theme.json)
+ThemeEngine::discover(): array
 ```
 
 ## Variables Available in layout.php
@@ -91,7 +159,7 @@ The view file lives at `App/Modules/MyModule/Views/front/index.php` (source) and
 
 ## Creating a Custom Theme
 
-1. Create `App/Themes/my-theme/theme.json`:
+**1.** Create `App/Themes/my-theme/theme.json`:
 
 ```json
 {
@@ -103,35 +171,43 @@ The view file lives at `App/Modules/MyModule/Views/front/index.php` (source) and
 }
 ```
 
-2. Create `App/Themes/my-theme/layout.php` - a standard HTML document that outputs `<?php echo $content; ?>` in the body.
+**2.** Create `App/Themes/my-theme/layout.php`. Include the FOUC script, load `styles.css` first, then your theme CSS:
 
-3. Add your CSS to `App/Themes/my-theme/css/` and JS to `App/Themes/my-theme/js/`.
-
-4. In **Admin → Settings**, set `active_theme` to `my-theme`. ThemeEngine will deploy and use it on the next request.
-
-## Active Theme Setting
-
-The active theme is stored in the `settings` table:
-
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title><?= htmlspecialchars($pageTitle ?: $siteName) ?></title>
+  <script>(function(){var t=localStorage.getItem('vtx-theme');if(t)document.documentElement.setAttribute('data-theme',t);}());</script>
+  <link rel="stylesheet" href="<?= htmlspecialchars($baseUrl . '/assets/css/styles.css') ?>">
+  <link rel="stylesheet" href="<?= htmlspecialchars($themeUrl . '/css/theme.css') ?>">
+</head>
+<body>
+  <?= $content ?>
+  <script src="<?= htmlspecialchars($themeUrl . '/js/theme.js') ?>"></script>
+</body>
+</html>
 ```
-key: active_theme
-grp: general
-value: default
-```
 
-Change it through Admin → Settings or directly via the DB. ThemeEngine caches the resolved theme per request (static property).
+**3.** Add your CSS to `App/Themes/my-theme/css/theme.css` and JS to `App/Themes/my-theme/js/theme.js`.
+
+**4.** Go to **Admin → Themes** and click **Activate** next to your theme.
+
+## Switching Themes
+
+Go to **Admin → Themes**. Each discovered theme appears as a card. Click **Activate** to switch the active theme immediately; `ThemeEngine::deploy()` runs automatically to copy assets to `Public/themes/`.
+
+The active theme is stored in the `settings` table under key `active_theme`.
 
 ## Asset URLs in layout.php
 
-```php
+```html
 <!-- Link to a deployed theme asset -->
 <link rel="stylesheet" href="<?= $themeUrl ?>/css/theme.css">
 <script src="<?= $themeUrl ?>/js/theme.js" defer></script>
-
-<!-- Or use the helper -->
-<link rel="stylesheet" href="<?= App\Theme\ThemeEngine::assetUrl('css/theme.css', $baseUrl) ?>">
 ```
 
 ## Graceful Degradation
 
-If the active theme's `layout.php` does not exist, ThemeEngine outputs `$content` directly with no wrapper. This means front-end views always render something, even if the theme is misconfigured.
+If the active theme's `layout.php` does not exist, ThemeEngine outputs `$content` directly with no wrapper. Front-end views always render something, even if the theme is misconfigured.

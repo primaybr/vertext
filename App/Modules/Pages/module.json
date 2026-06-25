@@ -4,6 +4,7 @@
     "version":     "0.0.1",
     "description": "Static page management - create and publish standalone pages on your site",
     "author":      "Vertext",
+    "category":    "Content",
     "requires":    { "vertext": ">=0.0.2" },
     "nav": {
         "label":      "Pages",

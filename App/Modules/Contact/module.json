@@ -4,6 +4,7 @@
     "version":     "0.0.1",
     "description": "Public contact form with admin inbox and email notifications",
     "author":      "Vertext",
+    "category":    "Communication",
     "requires":    { "vertext": ">=0.0.2" },
     "nav": {
         "label":      "Contact",

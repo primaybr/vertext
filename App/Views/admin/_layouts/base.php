@@ -26,7 +26,7 @@
       <div class="vtx-sidebar-logo">V</div>
       <div>
         <div class="vtx-sidebar-name">Vertext</div>
-        <div class="vtx-sidebar-ver">CMS v1.0</div>
+        <div class="vtx-sidebar-ver">CMS v0.0.3</div>
       </div>
     </a>
 
@@ -55,6 +55,11 @@
       <a href="{{baseUrl}}/admin/modules"
          class="vtx-nav-link {% if activeMenu == 'modules' %}active{% endif %}">
         <i class="pi pi-layers"></i> Module Manager
+      </a>
+
+      <a href="{{baseUrl}}/admin/themes"
+         class="vtx-nav-link {% if activeMenu == 'themes' %}active{% endif %}">
+        <i class="pi pi-sliders"></i> Themes
       </a>
 
       <a href="{{baseUrl}}/admin/settings"

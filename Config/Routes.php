@@ -53,6 +53,10 @@ $router->post('/admin/modules/([a-z0-9\-\_]+)/install',           'Admin\Modules
 $router->post('/admin/modules/([a-z0-9\-\_]+)/uninstall',         'Admin\ModulesController', 'uninstall');
 $router->post('/admin/modules/([a-z0-9\-\_]+)/sync-views',        'Admin\ModulesController', 'syncViews');
 
+// ── Themes ────────────────────────────────────────────────────────────────────
+$router->get('/admin/themes',                'Admin\ThemesController', 'index');
+$router->post('/admin/themes/set-theme',     'Admin\ThemesController', 'setTheme');
+
 // ── Settings ──────────────────────────────────────────────────────────────────
 $router->get('/admin/settings',              'Admin\SettingsController', 'index');
 $router->post('/admin/settings/save',        'Admin\SettingsController', 'save');

@@ -1,0 +1,16 @@
+{
+    "name":        "Navigation",
+    "slug":        "navigation",
+    "version":     "0.0.1",
+    "description": "Manage front-end navigation menus",
+    "author":      "Vertext",
+    "category":    "Navigation",
+    "requires":    { "vertext": ">=0.0.1" },
+    "nav": {
+        "label":      "Navigation",
+        "icon":       "pi-bars",
+        "path":       "/admin/navigation",
+        "active":     "navigation",
+        "permission": "navigation.view"
+    }
+}

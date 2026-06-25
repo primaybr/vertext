@@ -33,9 +33,52 @@ class ModulesController extends BaseController
         $modules   = $this->db('modules')->orderBy('is_core DESC, name', 'ASC')->get() ?: [];
         $available = ModuleManager::discover();
 
+        // Annotate each available module with dependency status for the UI
+        foreach ($available as &$avail) {
+            $avail['deps'] = ModuleManager::getDependencyInfo($avail);
+            $avail['deps_ok'] = empty($avail['deps']) ||
+                count(array_filter($avail['deps'], fn($d) => !$d['installed'])) === 0;
+        }
+        unset($avail);
+
+        // Read category + icon from manifest for installed non-core modules
+        $modulesDir = defined('ROOT') ? ROOT . 'App' . DS . 'Modules' . DS : '';
+        foreach ($modules as &$mod) {
+            if (!empty($mod['is_core'])) {
+                continue;
+            }
+            $dir = $mod['directory'] ?? '';
+            $manifest = [];
+            if ($dir && $modulesDir && file_exists($modulesDir . $dir . DS . 'module.json')) {
+                $manifest = json_decode(file_get_contents($modulesDir . $dir . DS . 'module.json'), true) ?? [];
+            }
+            $mod['category'] = $manifest['category'] ?? 'Other';
+            $mod['nav_icon'] = $manifest['nav']['icon'] ?? 'pi-layers';
+        }
+        unset($mod);
+
+        // Build core and category groups
+        $coreModules = array_values(array_filter($modules, fn($m) => !empty($m['is_core'])));
+
+        $categories = [];
+        foreach ($modules as $mod) {
+            if (!empty($mod['is_core'])) {
+                continue;
+            }
+            $cat = $mod['category'] ?? 'Other';
+            $categories[$cat]['installed'][] = $mod;
+        }
+        foreach ($available as $avail) {
+            $cat = $avail['category'] ?? 'Other';
+            $categories[$cat]['available'][] = $avail;
+        }
+        ksort($categories);
+
         $this->adminRender('admin/modules/index', [
-            'modules'   => $modules,
-            'available' => $available,
+            'modules'     => $modules,
+            'available'   => $available,
+            'coreModules' => $coreModules,
+            'categories'  => $categories,
         ], 'Module Manager', 'modules');
     }
 

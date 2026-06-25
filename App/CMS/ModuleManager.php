@@ -99,6 +99,13 @@ class ModuleManager
 
         [$manifest, $modDir, $dirName] = $info;
 
+        // Check module dependencies before attempting install
+        $depCheck = self::checkModuleDeps($manifest);
+        if (!$depCheck['ok']) {
+            $missing = implode('", "', $depCheck['missing']);
+            return ['success' => false, 'message' => "Cannot install: required module(s) are not installed: \"{$missing}\"."];
+        }
+
         if (!self::validDirName($dirName)) {
             return ['success' => false, 'message' => 'Module directory name contains invalid characters.'];
         }
@@ -199,6 +206,13 @@ class ModuleManager
 
         if ((bool) $row['is_core']) {
             return ['success' => false, 'message' => 'Core modules cannot be uninstalled.'];
+        }
+
+        // Block uninstall if other installed modules depend on this one
+        $dependents = self::checkDependents($slug);
+        if (!empty($dependents)) {
+            $names = implode('", "', $dependents);
+            return ['success' => false, 'message' => "Cannot uninstall: \"{$names}\" depends on this module. Uninstall it first."];
         }
 
         $dirName = $row['directory'] ?? null;
@@ -319,6 +333,90 @@ class ModuleManager
         if (file_exists(self::ROUTE_CACHE)) {
             @unlink(self::ROUTE_CACHE);
         }
+    }
+
+    // ── Dependency helpers ─────────────────────────────────────────────────────
+
+    /**
+     * Return per-slug install status for a module manifest's requires.modules list.
+     * Used by the modules admin UI to show green/red dependency badges.
+     *
+     * @return array<int, array{slug: string, installed: bool}>
+     */
+    public static function getDependencyInfo(array $manifest): array
+    {
+        $required = $manifest['requires']['modules'] ?? [];
+        if (empty($required)) {
+            return [];
+        }
+
+        $installed = array_column(
+            (new \Core\Model('modules'))->select('slug')->where('status', 'enabled')->get() ?: [],
+            'slug'
+        );
+
+        $deps = [];
+        foreach ($required as $slug) {
+            $deps[] = ['slug' => $slug, 'installed' => in_array($slug, $installed, true)];
+        }
+        return $deps;
+    }
+
+    /**
+     * Verify all module slugs listed in requires.modules are installed and enabled.
+     * Returns ['ok' => bool, 'missing' => [slugs...]].
+     */
+    private static function checkModuleDeps(array $manifest): array
+    {
+        $required = $manifest['requires']['modules'] ?? [];
+        if (empty($required)) {
+            return ['ok' => true, 'missing' => []];
+        }
+
+        $installed = array_column(
+            (new \Core\Model('modules'))->select('slug')->where('status', 'enabled')->get() ?: [],
+            'slug'
+        );
+
+        $missing = array_filter($required, fn($dep) => !in_array($dep, $installed, true));
+        return ['ok' => empty($missing), 'missing' => array_values($missing)];
+    }
+
+    /**
+     * Return the names of installed modules whose requires.modules list includes $slug.
+     * Used to block uninstalling a module that others depend on.
+     */
+    private static function checkDependents(string $slug): array
+    {
+        $rows = (new \Core\Model('modules'))
+            ->select('name, directory')
+            ->where('status', 'enabled')
+            ->whereQuery('is_core = FALSE')
+            ->get() ?: [];
+
+        $dependents = [];
+        foreach ($rows as $row) {
+            $dirName = $row['directory'] ?? null;
+            if (!$dirName || !self::validDirName($dirName)) {
+                continue;
+            }
+
+            $file = self::MODULES_DIR . $dirName . DS . 'module.json';
+            if (!file_exists($file)) {
+                continue;
+            }
+
+            $manifest = json_decode((string) file_get_contents($file), true);
+            if (!is_array($manifest)) {
+                continue;
+            }
+
+            if (in_array($slug, $manifest['requires']['modules'] ?? [], true)) {
+                $dependents[] = $row['name'];
+            }
+        }
+
+        return $dependents;
     }
 
     // ── Private helpers ────────────────────────────────────────────────────────

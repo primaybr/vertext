@@ -6,7 +6,7 @@ Vertext's module system lets you ship self-contained features (blog, media, e-co
 
 Every module lives in `App/Modules/{ModuleName}/`:
 
-```
+```text
 App/Modules/Blog/
 ├── Module.php          # ModuleInterface implementation
 ├── module.json         # Manifest (name, nav, permissions)
@@ -100,6 +100,7 @@ public function registerRoutes(Router $router): void
     "version": "1.0.0",
     "description": "Does something useful.",
     "author": "Your Name",
+    "category": "Content",
     "requires": { "vertext": ">=0.0.1" },
     "nav": {
         "label": "My Module",
@@ -108,7 +109,7 @@ public function registerRoutes(Router $router): void
         "active": "my-module",
         "permission": "items.view",
         "subnav": [
-            { "label": "Items",    "path": "/admin/my-module",         "active": "my-module/items",    "permission": "items.view" },
+            { "label": "Items",    "path": "/admin/my-module",          "active": "my-module/items",    "permission": "items.view" },
             { "label": "Settings", "path": "/admin/my-module/settings", "active": "my-module/settings", "permission": "items.settings" }
         ]
     }
@@ -116,9 +117,10 @@ public function registerRoutes(Router $router): void
 ```
 
 | Field | Description |
-|-------|-------------|
+| --- | --- |
 | `slug` | Unique identifier used in routes, DB, and filesystem. Lowercase, hyphenated. |
-| `nav.icon` | CSS class from the `pi-*` icon system (e.g. `pi-file-edit`, `pi-grid`) |
+| `category` | Groups the module in the Module Manager UI (e.g. Content, Media, Communication, Analytics, Navigation). Defaults to "Other" if omitted. |
+| `nav.icon` | CSS class from the `pi-*` icon system. Always check existing icons in `styles.css` before choosing; add missing ones to grow the icon library. |
 | `nav.active` | String matched against the current URL to highlight the nav item |
 | `nav.permission` | If the user lacks this permission, the nav item is hidden |
 | `nav.subnav` | Array of sub-navigation items with the same structure |
@@ -132,6 +134,7 @@ public function registerRoutes(Router $router): void
 ### Installation
 
 When admin clicks **Install**:
+
 1. `Module.php` is loaded and `install($db)` is called inside a DB transaction.
 2. A record is inserted into the `modules` table.
 3. Views are deployed from `App/Modules/MyModule/Views/` to `App/Views/modules/my-module/`.
@@ -140,6 +143,7 @@ When admin clicks **Install**:
 ### Route Loading
 
 On every request (after install), `ModuleManager::loadRoutes($router)`:
+
 1. Queries `modules` table for enabled modules.
 2. Instantiates each module's `Module.php`.
 3. Calls `registerRoutes($router)`.
@@ -157,6 +161,7 @@ Module views are copied to `App/Views/modules/{slug}/` during install. This is w
 ### Uninstallation
 
 When admin clicks **Uninstall**:
+
 1. `Module::uninstall($db)` is called (drop tables, remove permissions).
 2. Module record is deleted from the `modules` table.
 3. Deployed views in `App/Views/modules/{slug}/` are deleted.

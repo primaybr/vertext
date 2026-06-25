@@ -65,6 +65,13 @@ class ThemeEngine
         ));
         include $layoutFile;
         echo ob_get_clean();
+
+        // Track page view (silent - analytics must never break a page)
+        if (\App\CMS\ModuleLoader::isEnabled('analytics')) {
+            $urlPath  = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+            $refHost  = \App\Modules\Analytics\Tracker::referrerHost();
+            \App\Modules\Analytics\Tracker::record($urlPath, $pageTitle, $refHost);
+        }
     }
 
     /** Return the active theme slug (cached in static property). */
@@ -83,6 +90,38 @@ class ThemeEngine
             self::$resolvedTheme = 'default';
         }
         return self::$resolvedTheme;
+    }
+
+    /**
+     * Scan App/Themes/ for directories containing a valid theme.json.
+     * Returns array of theme manifests with an extra 'active' boolean.
+     */
+    public static function discover(): array
+    {
+        $themesDir   = ROOT . 'App' . DS . 'Themes' . DS;
+        $activeTheme = self::activeTheme();
+        $themes      = [];
+
+        if (!is_dir($themesDir)) {
+            return $themes;
+        }
+
+        foreach (glob($themesDir . '*', GLOB_ONLYDIR) ?: [] as $dir) {
+            $jsonFile = $dir . DS . 'theme.json';
+            if (!file_exists($jsonFile)) {
+                continue;
+            }
+
+            $manifest = json_decode((string) file_get_contents($jsonFile), true);
+            if (!is_array($manifest) || empty($manifest['slug'])) {
+                continue;
+            }
+
+            $manifest['active'] = ($manifest['slug'] === $activeTheme);
+            $themes[] = $manifest;
+        }
+
+        return $themes;
     }
 
     /** Return the public URL for a theme asset (e.g. 'css/theme.css'). */

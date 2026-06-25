@@ -5,6 +5,7 @@
     "description": "Full-featured blog with posts, categories, tags, comments, analytics, and public frontend",
     "setup":       "/admin/blog/setup",
     "author":      "Vertext",
+    "category":    "Content",
     "requires":    { "vertext": ">=0.0.1" },
     "assets": {
         "admin": {

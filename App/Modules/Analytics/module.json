@@ -1,0 +1,16 @@
+{
+    "name":        "Analytics",
+    "slug":        "analytics",
+    "version":     "0.0.1",
+    "description": "Privacy-friendly page view analytics for your front-end",
+    "author":      "Vertext",
+    "category":    "Analytics",
+    "requires":    { "vertext": ">=0.0.1" },
+    "nav": {
+        "label":      "Analytics",
+        "icon":       "pi-chart-bar",
+        "path":       "/admin/analytics",
+        "active":     "analytics",
+        "permission": "analytics.view"
+    }
+}

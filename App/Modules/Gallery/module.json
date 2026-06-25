@@ -4,6 +4,7 @@
     "version":     "0.0.1",
     "description": "Public-facing photo albums using the Media library as the image source",
     "author":      "Vertext",
+    "category":    "Media",
     "requires":    { "vertext": ">=0.0.2" },
     "assets": {
         "admin": {

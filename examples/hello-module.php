@@ -6,13 +6,18 @@
  * Copy this pattern into App/Modules/Hello/ and adapt as needed.
  *
  * Files needed:
- *   App/Modules/Hello/Module.php       ← this file's contents
- *   App/Modules/Hello/module.json      ← manifest shown below
+ *   App/Modules/Hello/Module.php       <- this file's contents
+ *   App/Modules/Hello/module.json      <- manifest shown below
  *   App/Modules/Hello/Controllers/Admin/HelloController.php
  *   App/Modules/Hello/Views/admin/index.php
  */
 
 // ── module.json ──────────────────────────────────────────────────────────────
+//
+// "category" groups the module in the Module Manager card layout.
+// "nav.icon" must exist in Public/assets/css/styles.css (.pi-* classes).
+// Check existing icons before picking one; add missing ones to styles.css.
+//
 $moduleJson = <<<'JSON'
 {
     "name": "Hello",
@@ -20,7 +25,7 @@ $moduleJson = <<<'JSON'
     "version": "1.0.0",
     "description": "A minimal hello-world module.",
     "author": "Your Name",
-    "requires": { "vertext": ">=0.0.2" },
+    "category": "Content",
     "nav": {
         "label": "Hello",
         "icon": "pi-star",
@@ -90,14 +95,14 @@ class HelloController extends BaseController
 }
 */
 
-// ── Views/admin/index.php ─────────────────────────────────────────────────────
+// ── Views/admin/index.php (content-only, no <html>/<body>) ───────────────────
 /*
-<div class="page-header">
-    <h1>Hello Module</h1>
+<div class="vtx-page-head">
+  <h1 class="vtx-page-title">Hello Module</h1>
 </div>
-<div class="card">
-    <div class="card-body">
-        <p>{{ $message }}</p>
-    </div>
+<div class="vtx-panel">
+  <div class="vtx-panel-body">
+    <p>{{message}}</p>
+  </div>
 </div>
 */

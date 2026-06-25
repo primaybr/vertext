@@ -5,6 +5,91 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.0.3-alpha] - 2026-06-24
+
+### New Modules
+
+#### Navigation (v0.0.1)
+
+- Admin menu builder: create named menus (e.g. "Primary Navigation"), add items (custom URL, page slug, or module link), single-level parent/child nesting, drag-to-reorder
+- Tables: `nav_menus` (UUID, name, slug) and `nav_items` (UUID, menu_id, parent_id, type, label, url, page_slug, sort_order, open_in_new)
+- Seeds "Primary Navigation" (slug: `primary`) on install
+- `NavHelper::getMenu(string $slug)` - static helper called from theme layouts; returns nested items array with per-request caching; returns empty array gracefully when module is not installed
+- Both default and clean themes automatically render the primary menu via NavHelper, with dropdown support for nested items
+- Permissions: `navigation.view`, `navigation.manage`
+
+#### Analytics (v0.0.1)
+
+- Privacy-friendly page-view tracking: `url_path`, `page_title`, `referrer_host` (hostname only), `ip_hash` (SHA-256 with daily salt - not reversible), `viewed_at`
+- Bot filter: 18 user-agent patterns (Googlebot, Bingbot, Slurp, DuckDuckBot, Baidu, Yandex, Sogou, facebot, ia_archiver, SemRush, Ahrefs, Screaming Frog, Chrome Lighthouse, headless patterns)
+- `Tracker::record()` called automatically from `ThemeEngine::render()` when module is enabled; wrapped in try-catch so analytics never breaks a page
+- Admin dashboard: today/week/month view counts, top 10 pages, top 10 referrers, 30-day daily chart (pure Canvas, no external library)
+- JSON data endpoint (`GET /admin/analytics/data`) for chart refresh
+- Permissions: `analytics.view`, `analytics.manage`
+
+### New Theme
+
+#### Clean (v0.0.1)
+
+- Typographic, editorial theme: Georgia/serif body font, black borders, uppercase nav, 2-px thick accents
+- Full dark/light mode support (same CSS layer pattern as default theme)
+- NavHelper integration - renders Primary Navigation menu same as default theme
+
+### Front-End Theme Improvements
+
+- **Dark/light mode** on both `default` and `clean` themes
+  - Three CSS layers: `:root` (light defaults), `@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) }` (OS preference), `[data-theme="dark"]` (explicit override)
+  - FOUC prevention: inline `<script>` in `<head>` reads `localStorage.getItem('vtx-theme')` and sets `data-theme` before CSS renders
+  - Theme toggle button (sun/moon SVG) in every layout header
+  - Theme preference persisted to `localStorage` under key `vtx-theme`
+- **styles.css as base layer** - both theme layouts now load `Public/assets/css/styles.css` before `theme.css`; gives front-end views access to the full Phuse CSS framework (grid, utilities, custom properties)
+- **Default theme colors** - light: `#ffffff` bg, `#4f46e5` accent; dark: `#0f172a` bg, `#818cf8` accent
+- **Clean theme colors** - light: `#ffffff` bg, `#111111` accent; dark: `#0c0c0c` bg, `#f0f0f0` border-inverted
+
+### Admin - Theme Manager
+
+- **Promoted to a system module** - Theme Manager is now a core admin section at `GET /admin/themes` with its own sidebar nav entry (`pi-sliders` icon), between Module Manager and Settings
+- **`ThemesController`** - new controller with `index()` (theme card grid) and `setTheme()` (POST handler)
+- **Removed from Settings** - the Themes tab is gone from Admin → Settings; the route `/admin/settings/set-theme` is removed
+- **Migration + DB seed** - `theme-manager` added to the core modules seed in `Migrations/001_core_tables.php`; existing installations get the row on next DB sync
+
+### Admin - Module Manager Overhaul
+
+- **Categorized card layout** replaces the previous two-table layout
+- **System section** (collapsible) - core modules shown as compact read-only rows with an "Always On" indicator; collapsed by default
+- **Category sections** - add-on modules grouped by category (Content, Media, Communication, Analytics, Navigation) with card grids; each card shows the module icon, name, version badge, description, status badge, and action buttons
+- **`category` field** added to all `module.json` files
+- Installed card: Disable/Enable toggle, Sync Views, Uninstall buttons
+- Available card (dashed border, slightly dimmed): Install button; disabled with tooltip when module dependencies are missing
+
+### Admin - Navigation Module Bug Fixes
+
+- `navigation/index.php` admin view: replaced `new bootstrap.Modal()` with `Phuse.modal()` lazy getter; replaced `data-bs-dismiss` with `data-dismiss`
+- `navigation/builder.php` admin view: modal init moved inside `DOMContentLoaded` to fix `Phuse is not defined` timing error
+- `NavigationController::storeItem()` and `updateItem()`: `open_in_new` cast changed from `(bool)` to `? 1 : 0` to avoid boolean empty-string binding error in PostgreSQL
+- `NavigationController`: `->where('parent_id IS NULL', '')` changed to `->whereRaw('parent_id IS NULL', [])` to avoid `SQLSTATE[22P02]` (Phuse ORM `where()` always appends `= :bind`; IS NULL conditions require `whereRaw()`)
+
+### Icons
+
+- `pi-bars` - three-line hamburger/menu icon
+- `pi-chart-bar` - vertical bar chart icon
+- Both added to `Public/assets/css/styles.css` following the existing `mask-image` + URL-encoded SVG data URI pattern
+
+### Mail
+
+- **Comment notification to post author** - when a visitor submits a comment and `comments_require_approval` is enabled, the post author receives an email notification via `comment_pending` template
+- **New user welcome email** - welcome email sent automatically on user creation via `welcome` template
+
+### Module Dependency System
+
+- `module.json` `requires.modules` array: declare which other modules must be installed first
+- `ModuleManager::checkModuleDeps()` - blocks install if required modules are missing; returns list of missing slugs
+- `ModuleManager::checkDependents()` - blocks uninstall if other installed modules depend on this one
+- `ModuleManager::getDependencyInfo()` - public method returning per-slug install status for Module Manager UI
+- Install button disabled with tooltip in Module Manager when dependencies are not met
+
+---
+
 ## [0.0.2b-alpha] - 2026-06-24
 
 Patch release. Bug fixes only - no new features or schema changes.
@@ -45,6 +130,16 @@ Patch release. Bug fixes only - no new features or schema changes.
 
 Built on **Phuse 1.2.4** - all ORM, routing, session, and utility primitives come from the Phuse framework layer.
 
+### Blog Module (v0.0.3)
+
+- **Setup Wizard** - Fires immediately after install; 3-step wizard (URL path, blog identity, defaults) with a live URL preview and a root-mount warning for blank path. Skip link available for users who want to configure later.
+- **Dynamic Front-End Routing** - Blog's public URL path is now stored as `blog_base_path` in the settings table (default: `blog`). Blank value mounts the blog at site root (`/`). Route registration reads this value at load time - no code changes needed to relocate the blog.
+- **Path-Change SEO Prompt** - When `blog_base_path` is changed in Blog Settings, a warning panel appears with two options: add a 301 redirect from the old path (recommended; stacks across multiple changes) or change without redirect (for paths that had no real traffic).
+- **301 Redirect Accumulation** - Old base paths are stored in `blog_redirect_paths` (JSON). `BlogRedirectController` registers redirect routes for each old path so index, post, and category URLs all redirect to their new equivalents automatically.
+- **Route Cache Auto-Clear** - Any path change (via wizard or settings) clears the route cache immediately so the new URLs take effect on the next request without a manual cache flush.
+- **Module Setup URL Convention** - `ModuleManager::install()` now checks the module manifest for a `"setup"` key and returns `setup_url` in the install response. The Module Manager JS redirects to the wizard URL instead of refreshing the panel. Any future module can declare its own post-install wizard with one manifest entry.
+- **Settings cleanup on uninstall** - `Module::uninstall()` now deletes all `settings WHERE grp = 'blog'` so no orphaned rows remain after removal.
+
 ### App - Mailer (`App/Mail/`)
 
 - **`Mailer`** - `Mailer::make()->send(MailMessage)`: PHP `mail()` driver and SMTP driver (native `fsockopen`, no external deps); reads config from `site_settings` at runtime
@@ -64,7 +159,7 @@ Built on **Phuse 1.2.4** - all ORM, routing, session, and utility primitives com
 ### Media Module (v0.0.2)
 
 - **Image resizing on upload** - originals wider than 1920 px are downscaled in-place; `resized` flag stored in DB
-- **Thumbnail generation** - 400×400 cover-crop thumbnail (`thumb_` prefix) generated for every uploaded image via `Core\Utilities\Image\Image`; stored as `thumbnail_path`
+- **Thumbnail generation** - 400x400 cover-crop thumbnail (`thumb_` prefix) generated for every uploaded image via `Core\Utilities\Image\Image`; stored as `thumbnail_path`
 - **Regenerate Thumbnails** - bulk action in the media grid processes up to 50 files per request; shows remaining count badge
 - **Grid thumbnails** - media grid and picker modal now display the 400 px thumbnail instead of the full original (faster loads)
 - Schema: `ALTER TABLE media_files ADD COLUMN IF NOT EXISTS thumbnail_path VARCHAR(500)` and `resized BOOLEAN DEFAULT FALSE` applied safely on existing installations
@@ -87,7 +182,7 @@ Built on **Phuse 1.2.4** - all ORM, routing, session, and utility primitives com
 
 ### Gallery Module (v0.0.1)
 
-- `galleries` table: UUID PK, title, slug, description, cover_image_id (FK → media_files), status, meta fields
+- `galleries` table: UUID PK, title, slug, description, cover_image_id (FK to media_files), status, meta fields
 - `gallery_items` table: gallery_id, media_file_id, caption, sort_order; cascade delete
 - 5 permissions: `gallery.view/create/edit/delete/publish`
 - Admin: album CRUD; manage items page with iframe media picker, AJAX add/remove, HTML5 drag-to-reorder (saves via `POST /reorder` with `X-CSRF-Token` header)
@@ -109,20 +204,6 @@ Built on **Phuse 1.2.4** - all ORM, routing, session, and utility primitives com
 - Admin grid with poster thumbnail previews; AJAX CRUD modal with `vtx-slug` support
 - Poster thumbnail auto-fetch: YouTube `maxresdefault.jpg` cached locally; Vimeo poster via public API
 - Front-end: responsive video grid listing; single video page with lazy iframe (poster click loads player)
-
----
-
-## [Unreleased]
-
-### Blog Module (v0.0.3) - 2026-06-21
-
-- **Setup Wizard** - Fires immediately after install; 3-step wizard (URL path, blog identity, defaults) with a live URL preview and a root-mount warning for blank path. Skip link available for users who want to configure later.
-- **Dynamic Front-End Routing** - Blog's public URL path is now stored as `blog_base_path` in the settings table (default: `blog`). Blank value mounts the blog at site root (`/`). Route registration reads this value at load time - no code changes needed to relocate the blog.
-- **Path-Change SEO Prompt** - When `blog_base_path` is changed in Blog Settings, a warning panel appears with two options: add a 301 redirect from the old path (recommended; stacks across multiple changes) or change without redirect (for paths that had no real traffic).
-- **301 Redirect Accumulation** - Old base paths are stored in `blog_redirect_paths` (JSON). `BlogRedirectController` registers redirect routes for each old path so index, post, and category URLs all redirect to their new equivalents automatically.
-- **Route Cache Auto-Clear** - Any path change (via wizard or settings) clears the route cache immediately so the new URLs take effect on the next request without a manual cache flush.
-- **Module Setup URL Convention** - `ModuleManager::install()` now checks the module manifest for a `"setup"` key and returns `setup_url` in the install response. The Module Manager JS redirects to the wizard URL instead of refreshing the panel. Any future module can declare its own post-install wizard with one manifest entry.
-- **Settings cleanup on uninstall** - `Module::uninstall()` now deletes all `settings WHERE grp = 'blog'` so no orphaned rows remain after removal.
 
 ---
 
@@ -159,7 +240,7 @@ APIs and database schema may change before the stable 1.0.0 release.
 - **Route cache invalidation** - Route cache cleared automatically on module install/uninstall/toggle
 - **ModuleLoader** - Per-request cache of enabled modules; `isEnabled()`, `getEnabled()`, `navItems()` helpers
 
-### Blog Module (v0.0.2 → see [Unreleased] for v0.0.3)
+### Blog Module (v0.0.2 - see [0.0.2-alpha] for v0.0.3)
 
 - **Posts** - Create, edit, publish, archive, delete; draft/published/archived status workflow
 - **Rich Text Editor** - Quill-based WYSIWYG editor (`vtx-editor` component)
@@ -210,9 +291,27 @@ APIs and database schema may change before the stable 1.0.0 release.
 
 ## Upcoming
 
-### [0.0.3-alpha] - planned
+### [0.0.4-alpha]
 
-- Comment email notifications (approval, new comment alert to post author)
-- New user welcome emails
-- Admin theme selector (switch active front-end theme from Site Settings)
-- Additional front-end theme options
+#### Core
+
+- **Admin profile page** - `/admin/profile`: any logged-in user can update their own name, email, and password without needing the Users management permission
+
+#### Blog (v0.0.3 → v0.0.4)
+
+- **RSS feed** - `GET /{blog_base}/feed.rss`: standard RSS 2.0 feed of published posts; auto-linked via `<link rel="alternate">` in theme `<head>` when the Blog module is enabled
+
+#### Media (v0.0.2 → v0.0.3)
+
+- **Bulk actions** - multi-select in the media grid (shift-click, select-all toggle); bulk delete and bulk alt-text update; server-side batch endpoint
+
+#### Analytics (v0.0.1 → v0.0.2)
+
+- **Date range filter** - date picker on the Analytics dashboard to filter all stats and charts by a custom range
+- **Period comparison** - show delta vs the previous equivalent period (today vs yesterday, this week vs last week)
+- **CSV export** - download pageviews as CSV for external analysis
+
+#### New in 0.0.4
+
+- **Sitemap (v0.0.1)** - installable module; generates `/sitemap.xml` from published pages + blog posts; each installed module can register a `SitemapProvider` to include its URLs; configurable priority and change frequency
+- **Webhooks (v0.0.1)** - outgoing webhooks triggered by CMS events (`post.published`, `comment.approved`, `contact.received`, etc.); admin UI to manage endpoint URLs and event subscriptions; payloads signed with HMAC-SHA256

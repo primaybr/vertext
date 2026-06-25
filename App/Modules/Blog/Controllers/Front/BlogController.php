@@ -229,7 +229,53 @@ class BlogController extends Controller
             : 'Comment posted successfully.';
 
         $this->session->set('blog_comment_flash', ['type' => 'success', 'message' => $msg]);
+
+        // Notify post author about the new pending comment
+        if ($requireApproval) {
+            $rawBase  = trim($this->settings['blog_base_path'] ?? 'blog', '/');
+            $this->sendNewCommentNotification($post, $authorName, $authorEmail, $body, $rawBase);
+        }
+
         $this->redirect($this->baseUrl . $blogBase . '/' . $slug);
+    }
+
+    private function sendNewCommentNotification(array $post, string $authorName, string $authorEmail, string $body, string $blogBase): void
+    {
+        try {
+            $author = (new \Core\Model('users'))
+                ->select('email, name')
+                ->where('id', $post['author_id'])
+                ->get(1);
+
+            if (!$author || empty($author['email'])) {
+                return;
+            }
+
+            $settings    = array_column((new \Core\Model('settings'))->get() ?: [], 'value', 'key');
+            $baseUrl     = $settings['site_url'] ?? $this->baseUrl;
+            $postUrl     = rtrim($baseUrl, '/') . '/' . ltrim($blogBase, '/') . '/' . $post['slug'];
+            $moderateUrl = rtrim($baseUrl, '/') . '/admin/blog/comments';
+
+            $html = \App\Mail\MailTemplate::render('comment_pending', [
+                'authorName'  => $authorName,
+                'authorEmail' => $authorEmail,
+                'postTitle'   => $post['title'],
+                'postUrl'     => $postUrl,
+                'moderateUrl' => $moderateUrl,
+                'commentBody' => $body,
+                'siteName'    => $settings['site_name'] ?? 'Vertext CMS',
+                'siteUrl'     => $baseUrl,
+            ]);
+
+            $message = (new \App\Mail\MailMessage())
+                ->to($author['email'], $author['name'] ?? '')
+                ->subject('New comment pending review - ' . ($post['title'] ?? ''))
+                ->htmlBody($html);
+
+            \App\Mail\Mailer::make()->send($message);
+        } catch (\Throwable) {
+            // Email failure must not break comment submission
+        }
     }
 
     private function postCategories(int $postId): array

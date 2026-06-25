@@ -206,6 +206,7 @@ class Migration_001_CoreTables
             ['Roles',            'roles',          '1.0.0', 'Role and permission management',        'Vertext', 1],
             ['Module Manager',   'module-manager', '1.0.0', 'Install and manage modules',            'Vertext', 1],
             ['CMS Settings',     'cms-settings',   '1.0.0', 'Global CMS configuration',             'Vertext', 1],
+            ['Theme Manager',    'theme-manager',  '1.0.0', 'Front-end theme selection',             'Vertext', 1],
         ];
 
         $modStmt = $this->pdo->prepare(

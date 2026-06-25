@@ -5,7 +5,9 @@
  * ThemeEngine (App\Theme\ThemeEngine) wraps module front-end views in
  * the active site theme. Admin views use a separate layout and are unaffected.
  *
- * The active theme is set in Admin → Settings (key: active_theme, default: 'default').
+ * Change the active theme: Admin -> Themes -> Activate.
+ * Bundled themes: "default" (modern), "clean" (typographic serif).
+ * Both support dark/light mode with OS preference detection and a toggle button.
  */
 
 // ── 1. Render a front-end view inside the active theme ────────────────────────
@@ -65,33 +67,42 @@ class MyController extends Controller
 /*
 // App/Modules/MyModule/Views/front/index.php
 // No <html>/<head>/<body> - ThemeEngine's layout.php provides those.
-// $baseUrl, $items, and any other $data keys are available via extract().
+// styles.css (Phuse framework) is loaded by layout.php before theme.css,
+// so grid, utility classes, and custom properties are available here too.
 
 ?>
-<style>
-.my-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.5rem; }
-</style>
-
 <div class="container" style="padding: 2rem 0">
     <h1>Items</h1>
-    <div class="my-grid">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1.5rem;">
         <?php foreach ($items as $item): ?>
-            <a href="<?= $baseUrl ?>/my-items/<?= htmlspecialchars($item['slug']) ?>">
-                <?= htmlspecialchars($item['title']) ?>
-            </a>
+        <a href="<?= $baseUrl ?>/my-items/<?= htmlspecialchars($item['slug']) ?>">
+            <?= htmlspecialchars($item['title']) ?>
+        </a>
         <?php endforeach; ?>
     </div>
 </div>
 <?php
 */
 
-// ── 3. Using ThemeEngine::assetUrl() for theme assets in views ────────────────
+// ── 3. Dark/light mode in a custom theme layout ───────────────────────────────
 /*
-// Inside a front-end view or a theme layout:
-use App\Theme\ThemeEngine;
-
-$iconUrl = ThemeEngine::assetUrl('images/logo.svg', $baseUrl);
-// → "https://mysite.test/themes/default/images/logo.svg"
+// Three things are required in layout.php for dark/light mode to work:
+//
+// a) FOUC prevention script in <head> (before any CSS):
+<script>(function(){var t=localStorage.getItem('vtx-theme');if(t)document.documentElement.setAttribute('data-theme',t);}());</script>
+//
+// b) Load styles.css (Phuse base) THEN theme.css:
+<link rel="stylesheet" href="<?= htmlspecialchars($baseUrl . '/assets/css/styles.css') ?>">
+<link rel="stylesheet" href="<?= htmlspecialchars($themeUrl . '/css/theme.css') ?>">
+//
+// c) Theme toggle button (theme.js reads 'vtx-theme' from localStorage):
+<button id="theme-toggle">Toggle</button>
+<script src="<?= htmlspecialchars($themeUrl . '/js/theme.js') ?>"></script>
+//
+// In theme.css use three layers:
+//   :root { --color-bg: #fff; }
+//   @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --color-bg: #0f172a; } }
+//   [data-theme="dark"] { --color-bg: #0f172a; }
 */
 
 // ── 4. Manually deploying theme assets after editing source files ──────────────
@@ -100,12 +111,12 @@ $iconUrl = ThemeEngine::assetUrl('images/logo.svg', $baseUrl);
 // Deployed (generated):  Public/themes/default/css/theme.css
 //
 // ThemeEngine deploys automatically on the first request after a fresh install.
-// After editing source files, redeploy manually:
+// After editing source files, redeploy manually or use Admin -> Settings -> Clear Cache:
 
 use App\Theme\ThemeEngine;
 
-ThemeEngine::deploy();            // deploy active theme
-ThemeEngine::deploy('my-theme'); // deploy a specific theme
+ThemeEngine::deploy();             // deploy active theme
+ThemeEngine::deploy('my-theme');   // deploy a specific theme
 */
 
 // ── 5. Creating a custom theme ────────────────────────────────────────────────
@@ -113,22 +124,35 @@ ThemeEngine::deploy('my-theme'); // deploy a specific theme
 // Required files:
 //   App/Themes/my-theme/theme.json
 //   App/Themes/my-theme/layout.php
-//   App/Themes/my-theme/css/theme.css   (optional)
-//   App/Themes/my-theme/js/theme.js     (optional)
+//   App/Themes/my-theme/css/theme.css   (optional but recommended)
+//   App/Themes/my-theme/js/theme.js     (optional; copy from default theme for toggle support)
 
-// Minimal layout.php:
+// Minimal layout.php with dark/light mode support:
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title><?= htmlspecialchars($pageTitle ?: $siteName) ?></title>
-    <link rel="stylesheet" href="<?= $themeUrl ?>/css/theme.css">
+    <title><?= htmlspecialchars(($pageTitle ?: $siteName)) ?></title>
+    <script>(function(){var t=localStorage.getItem('vtx-theme');if(t)document.documentElement.setAttribute('data-theme',t);}());</script>
+    <link rel="stylesheet" href="<?= htmlspecialchars($baseUrl . '/assets/css/styles.css') ?>">
+    <link rel="stylesheet" href="<?= htmlspecialchars($themeUrl . '/css/theme.css') ?>">
 </head>
 <body>
     <?= $content ?>
-    <script src="<?= $themeUrl ?>/js/theme.js" defer></script>
+    <script src="<?= htmlspecialchars($themeUrl . '/js/theme.js') ?>"></script>
 </body>
 </html>
 
-// Then set active_theme = 'my-theme' in Admin → Settings.
+// Activate: Admin -> Themes -> Activate next to your theme name.
+*/
+
+// ── 6. Checking the active theme programmatically ─────────────────────────────
+/*
+use App\Theme\ThemeEngine;
+
+$activeSlug = ThemeEngine::activeTheme();   // 'default', 'clean', etc.
+
+// Discover all available themes (reads App/Themes/{name}/theme.json):
+$themes = ThemeEngine::discover();
+// Returns: [['slug' => 'default', 'name' => 'Default', 'active' => true, ...], ...]
 */

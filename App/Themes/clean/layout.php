@@ -78,10 +78,8 @@
 
 <footer class="site-footer">
   <div class="container">
-    <div class="site-footer-inner">
-      <p>&copy; <?php echo date('Y'); ?> <?php echo htmlspecialchars($siteName); ?></p>
-      <p>Powered by <a href="https://github.com/primaybr/vertext" target="_blank" rel="noopener">Vertext</a></p>
-    </div>
+    <p>&copy; <?php echo date('Y'); ?> <?php echo htmlspecialchars($siteName); ?></p>
+    <p>Powered by <a href="https://github.com/primaybr/vertext" target="_blank" rel="noopener">Vertext</a></p>
   </div>
 </footer>
 

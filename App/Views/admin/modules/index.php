@@ -6,188 +6,237 @@
   </div>
 </div>
 
-<!-- ── Installed Modules ─────────────────────────────────────────────────── -->
-<div class="vtx-panel mb-4" id="installed-panel">
-  <div class="vtx-panel-head">
-    <h2 class="vtx-panel-title">Installed Modules</h2>
+<!-- ── System Modules ─────────────────────────────────────────────────────── -->
+<div class="vtx-panel mb-4" id="system-section">
+  <div class="vtx-panel-head" style="cursor:pointer;user-select:none;" id="system-section-toggle">
+    <h2 class="vtx-panel-title" style="display:flex;align-items:center;gap:.5rem;">
+      <i class="pi pi-cpu text-primary"></i> System
+      <span class="vtx-tag info" style="font-size:.6875rem;font-weight:500;">Always On</span>
+    </h2>
+    <i class="pi pi-chevron-down" id="system-chevron" style="transition:transform .2s;opacity:.5;"></i>
   </div>
-
-  <?php if (empty($modules)): ?>
-  <div class="vtx-empty">
-    <div class="vtx-empty-ico"><i class="pi pi-layers"></i></div>
-    <div class="vtx-empty-title">No modules registered</div>
-    <div class="vtx-empty-desc">Install a module from the section below to get started.</div>
-  </div>
-  <?php else: ?>
-  <div class="vtx-table-wrap">
-    <table class="vtx-table">
-      <thead>
-        <tr>
-          <th>Module</th>
-          <th>Version</th>
-          <th>Type</th>
-          <th>Status</th>
-          <th style="width:180px;">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <?php foreach ($modules as $mod): ?>
-        <tr id="module-row-<?php echo htmlspecialchars($mod['slug']); ?>">
-          <td>
-            <div class="cell-primary"><?php echo htmlspecialchars($mod['name']); ?></div>
-            <?php if (!empty($mod['description'])): ?>
-            <div class="cell-muted" style="font-size:.8125rem;">
-              <?php echo htmlspecialchars($mod['description']); ?>
-            </div>
-            <?php endif; ?>
-          </td>
-          <td class="cell-muted"><?php echo htmlspecialchars($mod['version'] ?? '1.0.0'); ?></td>
-          <td>
-            <?php if (!empty($mod['is_core'])): ?>
-            <span class="vtx-tag info">Core</span>
-            <?php else: ?>
-            <span class="vtx-tag">Add-on</span>
-            <?php endif; ?>
-          </td>
-          <td>
-            <span class="vtx-tag <?php echo $mod['status'] === 'enabled' ? 'success' : 'error'; ?> module-status-badge"
-                  id="badge-<?php echo htmlspecialchars($mod['slug']); ?>">
-              <?php echo ucfirst($mod['status']); ?>
-            </span>
-          </td>
-          <td>
-            <?php if (!empty($mod['is_core'])): ?>
-              <button type="button" class="btn btn-outline-secondary btn-sm" disabled title="Core modules cannot be disabled">
-                Always On
-              </button>
-            <?php else: ?>
-              <form id="sync-<?php echo htmlspecialchars($mod['slug']); ?>" method="POST"
-                    action="{{baseUrl}}/admin/modules/<?php echo htmlspecialchars($mod['slug']); ?>/sync-views"
-                    style="display:none;">
-                <input type="hidden" name="csrf_token" value="{{csrf_token}}">
-              </form>
-              <form id="uninstall-<?php echo htmlspecialchars($mod['slug']); ?>" method="POST"
-                    action="{{baseUrl}}/admin/modules/<?php echo htmlspecialchars($mod['slug']); ?>/uninstall"
-                    style="display:none;">
-                <input type="hidden" name="csrf_token" value="{{csrf_token}}">
-              </form>
-              <div class="btn-group btn-group-sm" role="group">
-                <button type="button"
-                        class="btn module-toggle-btn <?php echo $mod['status'] === 'enabled' ? 'btn-outline-warning' : 'btn-outline-success'; ?>"
-                        data-slug="<?php echo htmlspecialchars($mod['slug']); ?>"
-                        data-url="{{baseUrl}}/admin/modules/<?php echo htmlspecialchars($mod['slug']); ?>/toggle"
-                        data-csrf="{{csrf_token}}">
-                  <?php echo $mod['status'] === 'enabled' ? 'Disable' : 'Enable'; ?>
-                </button>
-                <button type="button" class="btn btn-outline-secondary module-sync-btn"
-                        data-slug="<?php echo htmlspecialchars($mod['slug']); ?>"
-                        data-form="sync-<?php echo htmlspecialchars($mod['slug']); ?>"
-                        title="Redeploy module views from source">
-                  <i class="pi pi-refresh"></i>
-                </button>
-                <button type="button" class="btn btn-outline-danger module-uninstall-btn"
-                        data-slug="<?php echo htmlspecialchars($mod['slug']); ?>"
-                        data-form="uninstall-<?php echo htmlspecialchars($mod['slug']); ?>"
-                        data-name="<?php echo htmlspecialchars($mod['name']); ?>">
-                  Uninstall
-                </button>
-              </div>
-            <?php endif; ?>
-          </td>
-        </tr>
-        <?php endforeach; ?>
-      </tbody>
-    </table>
-  </div>
-  <?php endif; ?>
-</div>
-
-<!-- ── Available Modules (not yet installed) ────────────────────────────── -->
-<div class="vtx-panel" id="available-panel">
-  <div class="vtx-panel-head">
-    <h2 class="vtx-panel-title">Available to Install</h2>
-    <span class="cell-muted" style="font-size:.875rem;">
-      Modules found in <code>App/Modules/</code> but not yet installed.
-    </span>
-  </div>
-
-  <?php if (empty($available)): ?>
-  <div class="vtx-empty">
-    <div class="vtx-empty-ico"><i class="pi pi-inbox"></i></div>
-    <div class="vtx-empty-title">No additional modules found</div>
-    <div class="vtx-empty-desc">
-      Place a module package folder inside <code>App/Modules/</code> and it will appear here.
+  <div id="system-section-body" style="display:none;">
+    <div style="padding:.75rem 1.25rem;display:flex;flex-direction:column;gap:0;">
+      <?php foreach ($coreModules as $mod): ?>
+      <div style="display:flex;align-items:center;gap:.75rem;padding:.625rem 0;border-bottom:1px solid var(--ps-border);">
+        <div style="width:32px;height:32px;border-radius:8px;background:var(--ps-bg-secondary);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i class="pi pi-cpu" style="font-size:.875rem;color:var(--ps-text-muted);"></i>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:.875rem;font-weight:600;"><?php echo htmlspecialchars($mod['name']); ?></div>
+          <?php if (!empty($mod['description'])): ?>
+          <div style="font-size:.75rem;color:var(--ps-text-muted);"><?php echo htmlspecialchars($mod['description']); ?></div>
+          <?php endif; ?>
+        </div>
+        <div style="display:flex;align-items:center;gap:.5rem;flex-shrink:0;">
+          <span class="vtx-tag info" style="font-size:.6875rem;">v<?php echo htmlspecialchars($mod['version'] ?? '1.0.0'); ?></span>
+          <button type="button" class="btn btn-outline-secondary btn-sm" disabled style="font-size:.75rem;">Always On</button>
+        </div>
+      </div>
+      <?php endforeach; ?>
     </div>
   </div>
-  <?php else: ?>
-  <div class="vtx-table-wrap">
-    <table class="vtx-table">
-      <thead>
-        <tr>
-          <th>Module</th>
-          <th>Version</th>
-          <th>Author</th>
-          <th style="width:120px;">Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        <?php foreach ($available as $avail): ?>
-        <tr>
-          <td>
-            <div class="cell-primary"><?php echo htmlspecialchars($avail['name'] ?? $avail['slug']); ?></div>
-            <?php if (!empty($avail['description'])): ?>
-            <div class="cell-muted" style="font-size:.8125rem;">
-              <?php echo htmlspecialchars($avail['description']); ?>
-            </div>
-            <?php endif; ?>
-          </td>
-          <td class="cell-muted"><?php echo htmlspecialchars($avail['version'] ?? '-'); ?></td>
-          <td class="cell-muted"><?php echo htmlspecialchars($avail['author'] ?? '-'); ?></td>
-          <td>
-            <form id="install-<?php echo htmlspecialchars($avail['slug']); ?>" method="POST"
-                  action="{{baseUrl}}/admin/modules/<?php echo htmlspecialchars($avail['slug']); ?>/install"
-                  style="display:none;">
-              <input type="hidden" name="csrf_token" value="{{csrf_token}}">
-            </form>
-            <button type="button" class="btn btn-sm btn-primary module-install-btn"
-                    data-slug="<?php echo htmlspecialchars($avail['slug']); ?>"
-                    data-form="install-<?php echo htmlspecialchars($avail['slug']); ?>"
-                    data-name="<?php echo htmlspecialchars($avail['name'] ?? $avail['slug']); ?>">
-              <i class="pi pi-download me-1"></i>Install
-            </button>
-          </td>
-        </tr>
-        <?php endforeach; ?>
-      </tbody>
-    </table>
-  </div>
-  <?php endif; ?>
 </div>
+
+<!-- ── Add-on Modules by Category ───────────────────────────────────────── -->
+<div id="addons-section">
+<?php if (empty($categories)): ?>
+<div class="vtx-panel">
+  <div class="vtx-empty">
+    <div class="vtx-empty-ico"><i class="pi pi-inbox"></i></div>
+    <div class="vtx-empty-title">No add-on modules found</div>
+    <div class="vtx-empty-desc">Place a module package folder inside <code>App/Modules/</code> to get started.</div>
+  </div>
+</div>
+<?php else: ?>
+<?php foreach ($categories as $catName => $catGroup): ?>
+<div class="vtx-panel mb-4" id="category-<?php echo htmlspecialchars(strtolower($catName)); ?>">
+  <div class="vtx-panel-head">
+    <h2 class="vtx-panel-title"><?php echo htmlspecialchars($catName); ?></h2>
+  </div>
+  <div class="vtx-panel-body">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem;">
+
+      <?php foreach ($catGroup['installed'] ?? [] as $mod): ?>
+      <?php
+        $slug    = htmlspecialchars($mod['slug']);
+        $name    = htmlspecialchars($mod['name']);
+        $icon    = htmlspecialchars($mod['nav_icon'] ?? 'pi-layers');
+        $enabled = $mod['status'] === 'enabled';
+      ?>
+      <div class="vtx-module-card" id="module-card-<?php echo $slug; ?>">
+        <div class="vtx-module-card-head">
+          <div class="vtx-module-icon">
+            <i class="pi <?php echo $icon; ?>"></i>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div class="vtx-module-name"><?php echo $name; ?></div>
+            <span class="vtx-tag <?php echo $enabled ? 'success' : 'error'; ?> module-status-badge" id="badge-<?php echo $slug; ?>" style="font-size:.6875rem;">
+              <?php echo $enabled ? 'Enabled' : 'Disabled'; ?>
+            </span>
+          </div>
+          <span class="vtx-tag" style="font-size:.6875rem;align-self:flex-start;">v<?php echo htmlspecialchars($mod['version'] ?? '1.0.0'); ?></span>
+        </div>
+        <?php if (!empty($mod['description'])): ?>
+        <div class="vtx-module-desc"><?php echo htmlspecialchars($mod['description']); ?></div>
+        <?php endif; ?>
+        <div class="vtx-module-actions">
+          <form id="sync-<?php echo $slug; ?>" method="POST"
+                action="{{baseUrl}}/admin/modules/<?php echo $slug; ?>/sync-views" style="display:none;">
+            <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+          </form>
+          <form id="uninstall-<?php echo $slug; ?>" method="POST"
+                action="{{baseUrl}}/admin/modules/<?php echo $slug; ?>/uninstall" style="display:none;">
+            <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+          </form>
+          <button type="button"
+                  class="btn btn-sm module-toggle-btn <?php echo $enabled ? 'btn-outline-warning' : 'btn-outline-success'; ?>"
+                  data-slug="<?php echo $slug; ?>"
+                  data-url="{{baseUrl}}/admin/modules/<?php echo $slug; ?>/toggle"
+                  data-csrf="{{csrf_token}}">
+            <?php echo $enabled ? 'Disable' : 'Enable'; ?>
+          </button>
+          <button type="button" class="btn btn-sm btn-outline-secondary module-sync-btn"
+                  data-slug="<?php echo $slug; ?>"
+                  data-form="sync-<?php echo $slug; ?>"
+                  title="Sync Views">
+            <i class="pi pi-refresh"></i>
+          </button>
+          <button type="button" class="btn btn-sm btn-outline-danger module-uninstall-btn"
+                  data-slug="<?php echo $slug; ?>"
+                  data-form="uninstall-<?php echo $slug; ?>"
+                  data-name="<?php echo $name; ?>">
+            Uninstall
+          </button>
+        </div>
+      </div>
+      <?php endforeach; ?>
+
+      <?php foreach ($catGroup['available'] ?? [] as $avail): ?>
+      <?php
+        $slug  = htmlspecialchars($avail['slug']);
+        $name  = htmlspecialchars($avail['name'] ?? $avail['slug']);
+        $icon  = htmlspecialchars($avail['nav']['icon'] ?? 'pi-layers');
+        $depsOk = !empty($avail['deps_ok']) || empty($avail['deps']);
+      ?>
+      <div class="vtx-module-card vtx-module-card--available">
+        <div class="vtx-module-card-head">
+          <div class="vtx-module-icon vtx-module-icon--muted">
+            <i class="pi <?php echo $icon; ?>"></i>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div class="vtx-module-name"><?php echo $name; ?></div>
+            <span class="vtx-tag" style="font-size:.6875rem;color:var(--ps-text-muted);">Not Installed</span>
+          </div>
+          <span class="vtx-tag" style="font-size:.6875rem;align-self:flex-start;">v<?php echo htmlspecialchars($avail['version'] ?? '1.0'); ?></span>
+        </div>
+        <?php if (!empty($avail['description'])): ?>
+        <div class="vtx-module-desc"><?php echo htmlspecialchars($avail['description']); ?></div>
+        <?php endif; ?>
+        <?php if (!empty($avail['deps'])): ?>
+        <div style="display:flex;flex-wrap:wrap;gap:.25rem;margin-bottom:.5rem;">
+          <?php foreach ($avail['deps'] as $dep): ?>
+          <span class="vtx-tag <?php echo $dep['installed'] ? 'success' : 'error'; ?>"
+                style="font-size:.6875rem;"
+                title="<?php echo $dep['installed'] ? 'Installed' : 'Not installed'; ?>">
+            <?php echo htmlspecialchars($dep['slug']); ?>
+          </span>
+          <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
+        <div class="vtx-module-actions">
+          <form id="install-<?php echo $slug; ?>" method="POST"
+                action="{{baseUrl}}/admin/modules/<?php echo $slug; ?>/install" style="display:none;">
+            <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+          </form>
+          <?php if ($depsOk): ?>
+          <button type="button" class="btn btn-sm btn-primary module-install-btn"
+                  data-slug="<?php echo $slug; ?>"
+                  data-form="install-<?php echo $slug; ?>"
+                  data-name="<?php echo $name; ?>">
+            <i class="pi pi-download me-1"></i>Install
+          </button>
+          <?php else: ?>
+          <?php $missingDeps = implode(', ', array_column(array_filter($avail['deps'], fn($d) => !$d['installed']), 'slug')); ?>
+          <button type="button" class="btn btn-sm btn-outline-secondary" disabled
+                  title="Install required module(s) first: <?php echo htmlspecialchars($missingDeps); ?>">
+            <i class="pi pi-lock me-1"></i>Install
+          </button>
+          <?php endif; ?>
+        </div>
+      </div>
+      <?php endforeach; ?>
+
+    </div>
+  </div>
+</div>
+<?php endforeach; ?>
+<?php endif; ?>
+</div><!-- /addons-section -->
+
+<style>
+.vtx-module-card {
+  border: 1px solid var(--ps-border);
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: .625rem;
+  background: var(--ps-bg);
+}
+.vtx-module-card--available {
+  opacity: .85;
+  border-style: dashed;
+}
+.vtx-module-card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: .625rem;
+}
+.vtx-module-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--ps-primary-light, rgba(79,70,229,.12));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.vtx-module-icon .pi {
+  font-size: 1rem;
+  color: var(--ps-primary);
+}
+.vtx-module-icon--muted {
+  background: var(--ps-bg-secondary);
+}
+.vtx-module-icon--muted .pi {
+  color: var(--ps-text-muted);
+}
+.vtx-module-name {
+  font-size: .875rem;
+  font-weight: 600;
+  line-height: 1.2;
+  margin-bottom: .2rem;
+}
+.vtx-module-desc {
+  font-size: .8125rem;
+  color: var(--ps-text-secondary);
+  line-height: 1.4;
+}
+.vtx-module-actions {
+  display: flex;
+  gap: .375rem;
+  margin-top: auto;
+  padding-top: .375rem;
+  flex-wrap: wrap;
+}
+</style>
 
 <script>
 function refreshPanels(onDone) {
-  var sep = window.location.search ? '&' : '?';
-  window.VtxAjax.get(window.location.href + sep + '_=' + new Date().getTime(), function(ok, html) {
-    if (!ok) { location.reload(); return; }
-    var doc = new DOMParser().parseFromString(html, 'text/html');
-    ['installed-panel', 'available-panel'].forEach(function(id) {
-      var fresh   = doc.getElementById(id);
-      var current = document.getElementById(id);
-      if (fresh && current) current.innerHTML = fresh.innerHTML;
-    });
-    // Refresh sidebar nav so module links appear/disappear immediately
-    var freshNav   = doc.querySelector('.vtx-sidebar-nav');
-    var currentNav = document.querySelector('.vtx-sidebar-nav');
-    if (freshNav && currentNav) {
-      currentNav.innerHTML = freshNav.innerHTML;
-      if (typeof window.vtxInitNavGroups === 'function') window.vtxInitNavGroups();
-    }
-    attachToggleListeners();
-    attachInstallListeners();
-    attachUninstallListeners();
-    attachSyncListeners();
-    if (onDone) onDone();
-  });
+  location.reload();
+  if (onDone) onDone();
 }
 
 function attachInstallListeners() {
@@ -294,16 +343,10 @@ function attachUninstallListeners() {
   });
 }
 
-attachInstallListeners();
-attachUninstallListeners();
-attachToggleListeners();
-attachSyncListeners();
-
 function attachSyncListeners() {
   document.querySelectorAll('.module-sync-btn:not([data-wired])').forEach(function(btn) {
     btn.dataset.wired = '1';
     btn.addEventListener('click', function() {
-      var slug = this.dataset.slug;
       var form = document.getElementById(this.dataset.form);
       var me   = this;
 
@@ -319,4 +362,22 @@ function attachSyncListeners() {
     });
   });
 }
+
+attachInstallListeners();
+attachUninstallListeners();
+attachToggleListeners();
+attachSyncListeners();
+
+// System section collapse
+(function() {
+  var toggle  = document.getElementById('system-section-toggle');
+  var body    = document.getElementById('system-section-body');
+  var chevron = document.getElementById('system-chevron');
+  if (!toggle || !body) return;
+  toggle.addEventListener('click', function() {
+    var open = body.style.display === 'none';
+    body.style.display = open ? '' : 'none';
+    chevron.style.transform = open ? 'rotate(180deg)' : '';
+  });
+}());
 </script>

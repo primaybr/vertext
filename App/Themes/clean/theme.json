@@ -1,0 +1,11 @@
+{
+    "name":        "Clean",
+    "slug":        "clean",
+    "version":     "0.0.1",
+    "description": "High-contrast, typographic theme with generous whitespace",
+    "author":      "Vertext",
+    "assets": {
+        "css": ["css/theme.css"],
+        "js":  ["js/theme.js"]
+    }
+}

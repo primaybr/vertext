@@ -4,6 +4,7 @@
     "version":     "0.0.2",
     "description": "General-purpose media library: image upload, management, and picker for use by other modules",
     "author":      "Vertext",
+    "category":    "Media",
     "requires":    { "vertext": ">=0.0.1" },
     "assets": {
         "admin": {

@@ -1,0 +1,347 @@
+<div class="vtx-page-head">
+  <div>
+    <h1 class="vtx-page-title">
+      <a href="{{baseUrl}}/admin/navigation" class="text-muted" style="font-weight:400;font-size:1rem;">Navigation</a>
+      <span class="text-muted mx-1">/</span>
+      <i class="pi pi-bars me-2 text-primary"></i><?php echo htmlspecialchars($menu['name']); ?>
+    </h1>
+    <p class="vtx-page-desc">
+      Theme slug: <code><?php echo htmlspecialchars($menu['slug']); ?></code>
+      - use <code>NavHelper::getMenu('<?php echo htmlspecialchars($menu['slug']); ?>')</code> in your theme.
+    </p>
+  </div>
+  <?php if (\App\CMS\Auth::can('navigation.manage')): ?>
+  <button type="button" class="btn btn-primary" id="add-item-btn">
+    <i class="pi pi-plus me-1"></i> Add Item
+  </button>
+  <?php endif; ?>
+</div>
+
+<div class="vtx-panel" id="items-panel">
+  <?php if (empty($parents)): ?>
+  <div class="vtx-empty">
+    <div class="vtx-empty-ico"><i class="pi pi-list"></i></div>
+    <div class="vtx-empty-title">No items yet</div>
+    <div class="vtx-empty-desc">Add links to build your navigation menu.</div>
+  </div>
+  <?php else: ?>
+  <div class="vtx-table-wrap">
+    <table class="vtx-table" id="items-table">
+      <thead>
+        <tr>
+          <th style="width:32px;"></th>
+          <th>Label</th>
+          <th>Type</th>
+          <th>URL / Page</th>
+          <th style="width:90px;"></th>
+        </tr>
+      </thead>
+      <tbody id="items-tbody">
+        <?php foreach ($parents as $idx => $item): ?>
+        <tr data-id="<?php echo $item['id']; ?>" data-sort="<?php echo (int)$item['sort_order']; ?>">
+          <td style="color:var(--ps-text-muted);cursor:grab;text-align:center;">
+            <i class="pi pi-equals" style="font-size:.875rem;"></i>
+          </td>
+          <td>
+            <span style="font-weight:500;"><?php echo htmlspecialchars($item['label']); ?></span>
+            <?php if (!empty($item['open_in_new'])): ?>
+            <span class="vtx-tag" style="margin-left:4px;font-size:.7rem;">new tab</span>
+            <?php endif; ?>
+          </td>
+          <td>
+            <span class="vtx-tag <?php echo $item['type'] === 'page' ? 'info' : ''; ?>">
+              <?php echo ucfirst(htmlspecialchars($item['type'])); ?>
+            </span>
+          </td>
+          <td style="font-size:.8125rem;color:var(--ps-text-muted);max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+            <?php if ($item['type'] === 'page'): ?>
+            /<?php echo htmlspecialchars($item['page_slug'] ?? ''); ?>
+            <?php else: ?>
+            <?php echo htmlspecialchars($item['url'] ?? ''); ?>
+            <?php endif; ?>
+          </td>
+          <td>
+            <?php if (\App\CMS\Auth::can('navigation.manage')): ?>
+            <div style="display:flex;gap:.25rem;justify-content:flex-end;">
+              <button type="button" class="vtx-icon-btn edit-item-btn" title="Edit"
+                      data-id="<?php echo $item['id']; ?>"
+                      data-menu-id="<?php echo $menu['id']; ?>"
+                      data-type="<?php echo htmlspecialchars($item['type']); ?>"
+                      data-label="<?php echo htmlspecialchars($item['label']); ?>"
+                      data-url="<?php echo htmlspecialchars($item['url'] ?? ''); ?>"
+                      data-page-slug="<?php echo htmlspecialchars($item['page_slug'] ?? ''); ?>"
+                      data-open-in-new="<?php echo $item['open_in_new'] ? '1' : '0'; ?>">
+                <i class="pi pi-edit"></i>
+              </button>
+              <form id="del-item-<?php echo $item['id']; ?>" method="POST"
+                    action="{{baseUrl}}/admin/navigation/<?php echo $menu['id']; ?>/items/<?php echo $item['id']; ?>/delete"
+                    style="display:none;">
+                <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+              </form>
+              <button type="button" class="vtx-icon-btn danger" title="Remove"
+                      data-confirm-form="del-item-<?php echo $item['id']; ?>"
+                      data-confirm-title="Remove Item"
+                      data-confirm-message="Remove &quot;<?php echo htmlspecialchars($item['label']); ?>&quot; from this menu?"
+                      data-confirm-label="Remove"
+                      data-confirm-class="btn-danger"
+                      data-confirm-ajax="true">
+                <i class="pi pi-trash"></i>
+              </button>
+            </div>
+            <?php endif; ?>
+          </td>
+        </tr>
+        <?php if (!empty($children[$item['id']])): ?>
+        <?php foreach ($children[$item['id']] as $child): ?>
+        <tr data-id="<?php echo $child['id']; ?>" data-parent-id="<?php echo $item['id']; ?>" data-sort="<?php echo (int)$child['sort_order']; ?>" style="background:var(--ps-surface-alt,#f8f9fa);">
+          <td style="color:var(--ps-text-muted);text-align:center;padding-left:2rem;">
+            <i class="pi pi-arrow-right" style="font-size:.75rem;"></i>
+          </td>
+          <td>
+            <span style="color:var(--ps-text-muted);font-size:.875rem;"><?php echo htmlspecialchars($child['label']); ?></span>
+            <?php if (!empty($child['open_in_new'])): ?>
+            <span class="vtx-tag" style="margin-left:4px;font-size:.7rem;">new tab</span>
+            <?php endif; ?>
+          </td>
+          <td>
+            <span class="vtx-tag <?php echo $child['type'] === 'page' ? 'info' : ''; ?>" style="font-size:.75rem;">
+              <?php echo ucfirst(htmlspecialchars($child['type'])); ?>
+            </span>
+          </td>
+          <td style="font-size:.8125rem;color:var(--ps-text-muted);">
+            <?php if ($child['type'] === 'page'): ?>
+            /<?php echo htmlspecialchars($child['page_slug'] ?? ''); ?>
+            <?php else: ?>
+            <?php echo htmlspecialchars($child['url'] ?? ''); ?>
+            <?php endif; ?>
+          </td>
+          <td>
+            <?php if (\App\CMS\Auth::can('navigation.manage')): ?>
+            <div style="display:flex;gap:.25rem;justify-content:flex-end;">
+              <button type="button" class="vtx-icon-btn edit-item-btn" title="Edit"
+                      data-id="<?php echo $child['id']; ?>"
+                      data-menu-id="<?php echo $menu['id']; ?>"
+                      data-type="<?php echo htmlspecialchars($child['type']); ?>"
+                      data-label="<?php echo htmlspecialchars($child['label']); ?>"
+                      data-url="<?php echo htmlspecialchars($child['url'] ?? ''); ?>"
+                      data-page-slug="<?php echo htmlspecialchars($child['page_slug'] ?? ''); ?>"
+                      data-open-in-new="<?php echo $child['open_in_new'] ? '1' : '0'; ?>">
+                <i class="pi pi-edit"></i>
+              </button>
+              <form id="del-item-<?php echo $child['id']; ?>" method="POST"
+                    action="{{baseUrl}}/admin/navigation/<?php echo $menu['id']; ?>/items/<?php echo $child['id']; ?>/delete"
+                    style="display:none;">
+                <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+              </form>
+              <button type="button" class="vtx-icon-btn danger" title="Remove"
+                      data-confirm-form="del-item-<?php echo $child['id']; ?>"
+                      data-confirm-title="Remove Item"
+                      data-confirm-message="Remove &quot;<?php echo htmlspecialchars($child['label']); ?>&quot;?"
+                      data-confirm-label="Remove"
+                      data-confirm-class="btn-danger"
+                      data-confirm-ajax="true">
+                <i class="pi pi-trash"></i>
+              </button>
+            </div>
+            <?php endif; ?>
+          </td>
+        </tr>
+        <?php endforeach; ?>
+        <?php endif; ?>
+        <?php endforeach; ?>
+      </tbody>
+    </table>
+  </div>
+  <div class="vtx-panel-body" style="border-top:1px solid var(--ps-border);padding:.75rem 1rem;">
+    <p style="margin:0;font-size:.8125rem;color:var(--ps-text-muted);">
+      <i class="pi pi-info-circle me-1"></i>
+      Drag rows to reorder, or use the order controls. Changes are saved automatically.
+    </p>
+  </div>
+  <?php endif; ?>
+</div>
+
+<?php if (\App\CMS\Auth::can('navigation.manage')): ?>
+<!-- Add / Edit Item Modal -->
+<div class="modal fade" id="item-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="item-modal-title">Add Item</h5>
+        <button type="button" class="btn-close" data-dismiss="modal"></button>
+      </div>
+      <form id="item-form" method="POST" action="">
+        <div class="modal-body">
+          <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+          <input type="hidden" name="_item_id" id="item-id-field" value="">
+
+          <div class="mb-3">
+            <label class="form-label">Type</label>
+            <select class="form-select" name="type" id="item-type-select">
+              <option value="custom">Custom URL</option>
+              <?php if ($pagesEnabled && !empty($availablePages)): ?>
+              <option value="page">Page</option>
+              <?php endif; ?>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Label <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" name="label" id="item-label" required placeholder="e.g. About Us">
+          </div>
+
+          <div id="custom-url-field" class="mb-3">
+            <label class="form-label">URL <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" name="url" id="item-url" placeholder="https://example.com or /about">
+          </div>
+
+          <?php if ($pagesEnabled && !empty($availablePages)): ?>
+          <div id="page-select-field" class="mb-3" style="display:none;">
+            <label class="form-label">Page <span class="text-danger">*</span></label>
+            <select class="form-select" name="page_slug" id="item-page-slug">
+              <option value="">- Select page -</option>
+              <?php foreach ($availablePages as $pg): ?>
+              <option value="<?php echo htmlspecialchars($pg['slug']); ?>"><?php echo htmlspecialchars($pg['title']); ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <?php endif; ?>
+
+          <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" name="open_in_new" id="item-open-in-new" value="1">
+            <label class="form-check-label" for="item-open-in-new">Open in new tab</label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="item-submit-btn">
+            <i class="pi pi-check me-1"></i><span id="item-submit-label">Add Item</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+var MENU_ID   = '<?php echo $menu['id']; ?>';
+var BASE_URL  = window.VTX_BASE_URL || '';
+var itemModal = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+  itemModal = Phuse.modal(document.getElementById('item-modal'));
+
+  // Type toggle
+  document.getElementById('item-type-select').addEventListener('change', function() {
+    toggleTypeFields(this.value);
+  });
+
+  // Add Item button
+  document.getElementById('add-item-btn').addEventListener('click', function() {
+    openItemModal();
+  });
+
+  // Edit buttons (also re-bound after reload)
+  bindEditButtons();
+
+  // Form submit
+  document.getElementById('item-form').addEventListener('submit', handleItemSubmit);
+
+  // Confirm-ajax for delete
+  initConfirmAjax();
+});
+
+function toggleTypeFields(type) {
+  document.getElementById('custom-url-field').style.display = type === 'custom' ? '' : 'none';
+  var pf = document.getElementById('page-select-field');
+  if (pf) pf.style.display = type === 'page' ? '' : 'none';
+}
+
+function openItemModal(data) {
+  document.getElementById('item-modal-title').textContent = data ? 'Edit Item' : 'Add Item';
+  document.getElementById('item-submit-label').textContent = data ? 'Save Changes' : 'Add Item';
+  document.getElementById('item-id-field').value      = data ? data.id : '';
+  document.getElementById('item-type-select').value   = data ? data.type : 'custom';
+  document.getElementById('item-label').value         = data ? data.label : '';
+  document.getElementById('item-url').value           = data ? data.url : '';
+  var pslug = document.getElementById('item-page-slug');
+  if (pslug) pslug.value = data ? (data.pageSlug || '') : '';
+  document.getElementById('item-open-in-new').checked = data ? (data.openInNew === '1') : false;
+  toggleTypeFields(data ? data.type : 'custom');
+  if (data) {
+    document.getElementById('item-type-select').disabled = true;
+  } else {
+    document.getElementById('item-type-select').disabled = false;
+  }
+  itemModal.show();
+}
+
+function bindEditButtons() {
+  document.querySelectorAll('.edit-item-btn:not([data-wired])').forEach(function(btn) {
+    btn.dataset.wired = '1';
+    btn.addEventListener('click', function() {
+      openItemModal({
+        id:        this.dataset.id,
+        type:      this.dataset.type,
+        label:     this.dataset.label,
+        url:       this.dataset.url,
+        pageSlug:  this.dataset.pageSlug,
+        openInNew: this.dataset.openInNew,
+      });
+    });
+  });
+}
+
+function handleItemSubmit(e) {
+  e.preventDefault();
+  var btn      = document.getElementById('item-submit-btn');
+  var itemId   = document.getElementById('item-id-field').value;
+  var isEdit   = !!itemId;
+  var action   = isEdit
+    ? BASE_URL + '/admin/navigation/' + MENU_ID + '/items/' + itemId + '/update'
+    : BASE_URL + '/admin/navigation/' + MENU_ID + '/items/store';
+
+  btn.disabled = true;
+
+  window.VtxAjax.postForm(action, this, function(ok, res) {
+    if (ok && res && res.success) {
+      window.Phuse.toast(res.message || 'Saved.', 'success');
+      itemModal.hide();
+      setTimeout(function() { location.reload(); }, 400);
+    } else {
+      btn.disabled = false;
+      window.Phuse.toast((res && res.message) || 'Failed to save item.', 'error');
+    }
+  });
+}
+
+function initConfirmAjax() {
+  document.querySelectorAll('[data-confirm-form][data-confirm-ajax="true"]:not([data-wired])').forEach(function(btn) {
+    btn.dataset.wired = '1';
+    btn.addEventListener('click', function() {
+      var formId = this.dataset.confirmForm;
+      var form   = document.getElementById(formId);
+      var me     = this;
+      window.vtxConfirmModal({
+        title:        this.dataset.confirmTitle || 'Confirm',
+        message:      this.dataset.confirmMessage || 'Are you sure?',
+        confirmLabel: this.dataset.confirmLabel || 'Confirm',
+        confirmClass: this.dataset.confirmClass || 'btn-danger',
+        onConfirm: function() {
+          me.disabled = true;
+          window.VtxAjax.postForm(form.action, form, function(ok, res) {
+            var msg = (res && res.message) ? res.message : (ok ? 'Done.' : 'Failed.');
+            window.Phuse.toast(msg, (ok && res && res.success) ? 'success' : 'error');
+            if (ok && res && res.success) {
+              setTimeout(function() { location.reload(); }, 400);
+            } else {
+              me.disabled = false;
+            }
+          });
+        }
+      });
+    });
+  });
+}
+</script>
+<?php endif; ?>
