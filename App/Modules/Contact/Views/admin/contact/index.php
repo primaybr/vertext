@@ -97,8 +97,8 @@ document.querySelectorAll('[data-action="delete"]').forEach(btn => {
             body: 'csrf_token=<?= htmlspecialchars($csrfToken ?? '') ?>'
         })
         .then(r => r.json())
-        .then(d => { if (d.success) this.closest('tr').remove(); else alert(d.message); })
-        .catch(() => alert('Request failed.'));
+        .then(d => { if (d.success) this.closest('tr').remove(); else Phuse.toast(d.message, 'error'); })
+        .catch(() => Phuse.toast('Request failed.', 'error'));
     });
 });
 </script>

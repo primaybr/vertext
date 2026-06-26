@@ -304,6 +304,7 @@ class Module implements ModuleInterface
         $rawBase = trim($pathRow['value'] ?? 'blog', '/');
         $base    = $rawBase === '' ? '' : '/' . $rawBase;
 
+        $router->get($base . '/feed.rss',                                 $front, 'feed');
         $router->get($base === '' ? '/' : $base,                          $front, 'index');
         $router->get($base . '/category/([a-z0-9\-]+)',                   $front, 'category');
         $router->post($base . '/([a-z0-9\-]+)/comment',                   $front, 'submitComment');

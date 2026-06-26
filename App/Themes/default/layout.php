@@ -15,6 +15,9 @@
   <meta property="og:description" content="<?php echo htmlspecialchars($pageDesc); ?>">
   <?php endif; ?>
   <script>(function(){var t=localStorage.getItem('vtx-theme');if(t)document.documentElement.setAttribute('data-theme',t);}());</script>
+  <?php if (!empty($feedUrl)): ?>
+  <link rel="alternate" type="application/rss+xml" title="<?php echo htmlspecialchars($siteName . ' RSS Feed'); ?>" href="<?php echo htmlspecialchars($feedUrl); ?>">
+  <?php endif; ?>
   <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl . '/assets/css/styles.css'); ?>">
   <link rel="stylesheet" href="<?php echo htmlspecialchars($themeUrl . '/css/theme.css'); ?>">
 </head>

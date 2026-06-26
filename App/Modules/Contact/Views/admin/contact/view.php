@@ -85,8 +85,8 @@ function doAction(action, cb) {
         body: 'csrf_token=' + encodeURIComponent(token)
     })
     .then(r => r.json())
-    .then(d => { if (d.success) cb(); else alert(d.message); })
-    .catch(() => alert('Request failed.'));
+    .then(d => { if (d.success) cb(); else Phuse.toast(d.message, 'error'); })
+    .catch(() => Phuse.toast('Request failed.', 'error'));
 }
 
 document.getElementById('btnDelete')?.addEventListener('click', function () {

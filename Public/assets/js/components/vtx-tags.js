@@ -30,23 +30,16 @@
 
         this.wrap = document.createElement('div');
         this.wrap.className = 'vtx-tags-wrap';
-        this.wrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:.375rem;align-items:center;' +
-            'padding:.375rem .5rem;border:1px solid var(--ps-border);border-radius:var(--ps-radius);' +
-            'background:var(--ps-bg-input);min-height:38px;cursor:text;';
 
         this.inputEl = document.createElement('input');
         this.inputEl.className      = 'vtx-tags-input';
         this.inputEl.type           = 'text';
         this.inputEl.placeholder    = 'Add tags…';
         this.inputEl.autocomplete   = 'off';
-        this.inputEl.style.cssText  = 'border:none;outline:none;background:transparent;flex:1;min-width:80px;' +
-            'font-size:.875rem;color:var(--ps-text-primary);padding:0;';
 
         this.dropdown = document.createElement('div');
         this.dropdown.className     = 'vtx-tags-dropdown';
-        this.dropdown.style.cssText = 'position:absolute;z-index:9999;background:var(--ps-bg-surface);' +
-            'border:1px solid var(--ps-border);border-radius:var(--ps-radius);box-shadow:0 4px 16px rgba(0,0,0,.12);' +
-            'min-width:200px;max-height:180px;overflow-y:auto;display:none;';
+        this.dropdown.style.display = 'none';
 
         this.wrap.appendChild(this.inputEl);
         this.el.style.position = 'relative';
@@ -95,9 +88,6 @@
 
         var chip = document.createElement('span');
         chip.className  = 'vtx-tag-chip';
-        chip.style.cssText = 'display:inline-flex;align-items:center;gap:.25rem;padding:.125rem .5rem;' +
-            'background:var(--ps-primary-light, rgba(var(--ps-primary-rgb,79,70,229),.12));' +
-            'color:var(--ps-primary);border-radius:999px;font-size:.8125rem;white-space:nowrap;';
         chip.dataset.tag = name;
 
         var label = document.createElement('span');
@@ -105,9 +95,8 @@
 
         var close = document.createElement('button');
         close.type      = 'button';
+        close.className = 'vtx-tag-chip-remove';
         close.innerHTML = '&times;';
-        close.style.cssText = 'background:none;border:none;cursor:pointer;padding:0 .125rem;' +
-            'color:inherit;font-size:.9375rem;line-height:1;opacity:.7;';
 
         var self = this;
         close.addEventListener('click', function (e) { e.stopPropagation(); self._remove(name); });
@@ -154,11 +143,7 @@
                 var name    = item.name || item;
                 var isAdded = self._tags.indexOf(name) !== -1;
                 var row = document.createElement('div');
-                row.style.cssText = 'padding:.375rem .75rem;font-size:.875rem;display:flex;' +
-                    'justify-content:space-between;align-items:center;gap:.5rem;' +
-                    (isAdded
-                        ? 'color:var(--ps-text-muted);cursor:default;'
-                        : 'color:var(--ps-text-primary);cursor:pointer;');
+                row.className = isAdded ? 'vtx-tags-option vtx-tags-option--added' : 'vtx-tags-option';
 
                 var label = document.createElement('span');
                 label.textContent = name;
@@ -167,7 +152,7 @@
                 if (isAdded) {
                     var badge = document.createElement('span');
                     badge.textContent = 'added';
-                    badge.style.cssText = 'font-size:.6875rem;opacity:.6;flex-shrink:0;';
+                    badge.className = 'vtx-tags-option-badge';
                     row.appendChild(badge);
                 }
 
@@ -177,11 +162,6 @@
                     self.inputEl.value = '';
                     self._closeDropdown();
                 });
-
-                if (!isAdded) {
-                    row.addEventListener('mouseover', function () { row.style.background = 'var(--ps-hover)'; });
-                    row.addEventListener('mouseout',  function () { row.style.background = ''; });
-                }
 
                 self.dropdown.appendChild(row);
             });

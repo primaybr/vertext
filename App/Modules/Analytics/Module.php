@@ -74,7 +74,8 @@ class Module implements ModuleInterface
     {
         $c = 'App\Modules\Analytics\Controllers\Admin\AnalyticsDashboardController';
 
-        $router->get('/admin/analytics',      $c, 'index');
-        $router->get('/admin/analytics/data', $c, 'data');
+        $router->get('/admin/analytics',        $c, 'index');
+        $router->get('/admin/analytics/data',   $c, 'data');
+        $router->get('/admin/analytics/export', $c, 'export');
     }
 }

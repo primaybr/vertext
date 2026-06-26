@@ -1425,3 +1425,49 @@
     border-color: var(--ps-primary) !important;
     background: rgba(var(--ps-primary-rgb, 79 70 229) / .06) !important;
 }
+
+/* =============================================================
+   vtx-slug component
+   ============================================================= */
+.vtx-slug-hint { font-size: .75rem; color: var(--ps-text-muted); }
+
+.vtx-slug-reset {
+    font-size: .75rem;
+    color: var(--ps-primary);
+    text-decoration: none;
+    transition: opacity .12s;
+}
+
+.vtx-slug-reset:hover { opacity: .75; text-decoration: underline; }
+
+/* =============================================================
+   vtx-upload overlay & progress bar
+   ============================================================= */
+.vtx-upload-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,.88);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    border-radius: inherit;
+}
+
+.vtx-upload-overlay-text {
+    font-size: .875rem;
+    color: var(--ps-text-muted);
+}
+
+.vtx-upload-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: var(--ps-primary);
+    width: 0;
+    transition: width .2s;
+    border-radius: 0 0 inherit inherit;
+}
+
+[data-theme=dark] .vtx-upload-overlay { background: rgba(15,23,42,.88); }

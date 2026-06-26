@@ -85,11 +85,11 @@
 .vtx-tag-chip-remove {
     background: none;
     border: none;
-    padding: 0;
+    padding: 0 .125rem;
     cursor: pointer;
     color: inherit;
-    opacity: .6;
-    font-size: .625rem;
+    opacity: .65;
+    font-size: .9375rem;
     line-height: 1;
     display: flex;
     align-items: center;
@@ -110,6 +110,7 @@
 
 .vtx-tags-dropdown {
     position: absolute;
+    display: none;
     background: var(--ps-bg-base);
     border: 1px solid var(--ps-border);
     border-radius: var(--ps-radius);
@@ -121,7 +122,11 @@
 }
 
 .vtx-tags-option {
-    padding: .4375rem .75rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+    padding: .375rem .75rem;
     font-size: .8125rem;
     color: var(--ps-text-primary);
     cursor: pointer;
@@ -129,6 +134,19 @@
 
 .vtx-tags-option:hover,
 .vtx-tags-option.focused { background: var(--ps-bg-surface); }
+
+.vtx-tags-option--added {
+    color: var(--ps-text-muted);
+    cursor: default;
+}
+
+.vtx-tags-option--added:hover { background: transparent; }
+
+.vtx-tags-option-badge {
+    font-size: .6875rem;
+    opacity: .6;
+    flex-shrink: 0;
+}
 
 /* ── Quill editor blended with CMS ──────────────────────────── */
 .vtx-editor-wrap {

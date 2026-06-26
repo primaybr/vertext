@@ -116,11 +116,8 @@
         if (!overlay && on) {
             overlay = document.createElement('div');
             overlay.className = 'vtx-upload-overlay';
-            overlay.style.cssText = 'position:absolute;inset:0;background:rgba(var(--ps-bg-surface-rgb,255,255,255),.8);' +
-                'display:flex;align-items:center;justify-content:center;z-index:10;border-radius:inherit;';
-            overlay.innerHTML = '<span style="font-size:.875rem;color:var(--ps-text-muted);">Uploading…</span>' +
-                '<div class="vtx-upload-bar" style="position:absolute;bottom:0;left:0;height:3px;' +
-                'background:var(--ps-primary);width:0;transition:width .2s;border-radius:0 0 inherit inherit;"></div>';
+            overlay.innerHTML = '<span class="vtx-upload-overlay-text">Uploading…</span>' +
+                '<div class="vtx-upload-bar"></div>';
             var pos = getComputedStyle(this.el).position;
             if (pos === 'static') this.el.style.position = 'relative';
             this.el.appendChild(overlay);

@@ -48,7 +48,7 @@ class RolesController extends BaseController
         ]);
     }
 
-    /** GET /admin/roles/(\d+)/form - AJAX: returns edit form partial for modal */
+    /** GET /admin/roles/([a-zA-Z0-9\-]+)/form - AJAX: returns edit form partial for modal */
     public function editForm(string $id): void
     {
         $this->requirePermission('roles.manage');
@@ -105,7 +105,7 @@ class RolesController extends BaseController
         $this->redirect($this->baseUrl . '/admin/roles');
     }
 
-    /** POST /admin/roles/(\d+)/update */
+    /** POST /admin/roles/([a-zA-Z0-9\-]+)/update */
     public function update(string $id): void
     {
         $this->requirePermission('roles.manage');
@@ -145,7 +145,7 @@ class RolesController extends BaseController
         $this->redirect($this->baseUrl . '/admin/roles');
     }
 
-    /** POST /admin/roles/(\d+)/delete */
+    /** POST /admin/roles/([a-zA-Z0-9\-]+)/delete */
     public function delete(string $id): void
     {
         $this->requirePermission('roles.manage');
@@ -192,3 +192,4 @@ class RolesController extends BaseController
         }
     }
 }
+

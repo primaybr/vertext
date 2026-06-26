@@ -14,6 +14,8 @@ All components use a consistent data-attribute API:
 
 Components are auto-initialized when the DOM is ready, and also after AJAX modal injections.
 
+> **CSS architecture:** All component styles live in CSS files - no component injects inline `style` attributes or `cssText`. Core components (vtx-slug, vtx-upload) use `admin.css`; module-scoped components (vtx-tags, vtx-media-picker) use their module's CSS file so they can be tree-shaken when the module is disabled.
+
 ---
 
 ## vtx-chart
@@ -109,6 +111,17 @@ Media library picker modal. See [Media Module docs](media-module.md) for full in
 | `data-preview` | Container to show the selected image preview |
 | `data-url` | URL of the media picker endpoint |
 
+**CSS classes** (in `media.css`):
+
+| Class | Purpose |
+|-------|---------|
+| `.vtx-media-picker-panel` | Floating picker panel (fixed overlay) |
+| `.vtx-media-picker-header` | Panel header bar |
+| `.vtx-media-picker-title` | Title text inside header |
+| `.vtx-media-picker-close` | Close button |
+| `.vtx-picker-loading` | Loading spinner state |
+| `.vtx-picker-error` | Error message state |
+
 ---
 
 ## vtx-search
@@ -175,6 +188,17 @@ Tag input field with autocomplete.
 | `data-search-url` | AJAX endpoint for autocomplete suggestions |
 | `data-initial` | JSON array of pre-selected tags `[{id, name}]` |
 
+**CSS classes** (in `blog.css`):
+
+| Class | Purpose |
+|-------|---------|
+| `.vtx-tags-wrap` | Outer wrapper (flex row, border, focus ring) |
+| `.vtx-tags-dropdown` | Autocomplete suggestion dropdown |
+| `.vtx-tags-option` | Individual suggestion item |
+| `.vtx-tags-option--added` | Already-selected option (dimmed) |
+| `.vtx-tags-option-badge` | "Added" badge on option |
+| `.vtx-tag-chip-remove` | Remove button inside a tag chip |
+
 ---
 
 ## vtx-slug
@@ -207,6 +231,13 @@ Vtx.load(['slug'], function () {
 | `data-vtx-slug-source` | `<input>` | The field whose value is slugified |
 | `data-vtx-slug-target` | `<input>` | The slug field that receives the generated value |
 
+**CSS classes** (in `admin.css`):
+
+| Class | Purpose |
+|-------|---------|
+| `.vtx-slug-hint` | The hint text shown below the slug field |
+| `.vtx-slug-reset` | The "Reset to auto" link (styled as a muted inline link) |
+
 ---
 
 ## vtx-upload
@@ -234,6 +265,14 @@ Drag-and-drop file uploader with progress bar.
 | `data-max-size` | Max file size in bytes |
 
 The component POSTs files via AJAX with `multipart/form-data` and fires a `vtx:upload:complete` custom event on success.
+
+**CSS classes** (in `admin.css`):
+
+| Class | Purpose |
+|-------|---------|
+| `.vtx-upload-overlay` | Full-area drag-over overlay (absolute, semi-transparent) |
+| `.vtx-upload-overlay-text` | Text shown inside the drag-over overlay |
+| `.vtx-upload-bar` | Progress bar fill (width set via JS `style.width`) |
 
 ---
 

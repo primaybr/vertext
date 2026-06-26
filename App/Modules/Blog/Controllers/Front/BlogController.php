@@ -239,6 +239,83 @@ class BlogController extends Controller
         $this->redirect($this->baseUrl . $blogBase . '/' . $slug);
     }
 
+    public function feed(): void
+    {
+        $rawBase  = trim($this->settings['blog_base_path'] ?? 'blog', '/');
+        $blogBase = $rawBase === '' ? '' : '/' . $rawBase;
+
+        $siteSettings = array_column((new \Core\Model('settings'))->get() ?: [], 'value', 'key');
+        $siteUrl   = rtrim($siteSettings['site_url'] ?? $this->baseUrl, '/');
+        $siteName  = $siteSettings['site_name'] ?? 'Vertext CMS';
+        $blogTitle = $this->settings['blog_title'] ?? $siteName;
+        $blogDesc  = $this->settings['blog_description'] ?? '';
+        $feedUrl   = $siteUrl . $blogBase . '/feed.rss';
+        $blogUrl   = $siteUrl . ($blogBase ?: '/');
+
+        $posts = (new \Core\Model('posts'))
+            ->select('posts.id, posts.title, posts.slug, posts.excerpt, posts.body,
+                      posts.published_at, posts.featured_image_url,
+                      users.name AS author_name')
+            ->join('users', 'users.id = posts.author_id', 'LEFT')
+            ->where('posts.status', 'published')
+            ->whereNull('posts.deleted_at')
+            ->orderBy('posts.published_at', 'DESC')
+            ->limitOffset(20, 0)
+            ->get() ?: [];
+
+        header('Content-Type: application/rss+xml; charset=utf-8');
+        header('X-Robots-Tag: noindex');
+
+        $lastBuild = !empty($posts)
+            ? date(DATE_RSS, strtotime($posts[0]['published_at']))
+            : date(DATE_RSS);
+
+        echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+        echo '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">' . "\n";
+        echo '<channel>' . "\n";
+        echo '  <title>' . htmlspecialchars($blogTitle) . '</title>' . "\n";
+        echo '  <link>' . htmlspecialchars($blogUrl) . '</link>' . "\n";
+        echo '  <description>' . htmlspecialchars($blogDesc ?: $blogTitle) . '</description>' . "\n";
+        echo '  <language>en</language>' . "\n";
+        echo '  <lastBuildDate>' . $lastBuild . '</lastBuildDate>' . "\n";
+        echo '  <atom:link href="' . htmlspecialchars($feedUrl) . '" rel="self" type="application/rss+xml"/>' . "\n";
+
+        foreach ($posts as $post) {
+            $postUrl = $siteUrl . $blogBase . '/' . $post['slug'];
+            $pubDate = !empty($post['published_at'])
+                ? date(DATE_RSS, strtotime($post['published_at']))
+                : date(DATE_RSS);
+            $excerpt = strip_tags($post['excerpt'] ?? '');
+            $body    = $post['body'] ?? '';
+
+            echo '  <item>' . "\n";
+            echo '    <title>' . htmlspecialchars($post['title'] ?? '') . '</title>' . "\n";
+            echo '    <link>' . htmlspecialchars($postUrl) . '</link>' . "\n";
+            echo '    <guid isPermaLink="true">' . htmlspecialchars($postUrl) . '</guid>' . "\n";
+            echo '    <pubDate>' . $pubDate . '</pubDate>' . "\n";
+            if (!empty($post['author_name'])) {
+                echo '    <author>' . htmlspecialchars($post['author_name']) . '</author>' . "\n";
+            }
+            if ($excerpt) {
+                echo '    <description>' . htmlspecialchars($excerpt) . '</description>' . "\n";
+            }
+            if ($body) {
+                echo '    <content:encoded><![CDATA[' . $body . ']]></content:encoded>' . "\n";
+            }
+            if (!empty($post['featured_image_url'])) {
+                $imgUrl = str_starts_with($post['featured_image_url'], 'http')
+                    ? $post['featured_image_url']
+                    : $siteUrl . $post['featured_image_url'];
+                echo '    <enclosure url="' . htmlspecialchars($imgUrl) . '" type="image/jpeg" length="0"/>' . "\n";
+            }
+            echo '  </item>' . "\n";
+        }
+
+        echo '</channel>' . "\n";
+        echo '</rss>' . "\n";
+        exit;
+    }
+
     private function sendNewCommentNotification(array $post, string $authorName, string $authorEmail, string $body, string $blogBase): void
     {
         try {

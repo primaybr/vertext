@@ -68,7 +68,7 @@ class UsersController extends BaseController
         ]);
     }
 
-    /** GET /admin/users/(\d+)/form - AJAX: returns edit form partial for modal */
+    /** GET /admin/users/([a-zA-Z0-9\-]+)/form - AJAX: returns edit form partial for modal */
     public function editForm(string $id): void
     {
         $this->requirePermission('users.update');
@@ -154,7 +154,7 @@ class UsersController extends BaseController
         }
     }
 
-    /** POST /admin/users/(\d+)/update */
+    /** POST /admin/users/([a-zA-Z0-9\-]+)/update */
     public function update(string $id): void
     {
         $this->requirePermission('users.update');
@@ -207,7 +207,7 @@ class UsersController extends BaseController
         $this->redirect($this->baseUrl . '/admin/users');
     }
 
-    /** POST /admin/users/(\d+)/delete */
+    /** POST /admin/users/([a-zA-Z0-9\-]+)/delete */
     public function delete(string $id): void
     {
         $this->requirePermission('users.delete');
@@ -248,3 +248,4 @@ class UsersController extends BaseController
         }
     }
 }
+

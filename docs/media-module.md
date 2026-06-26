@@ -1,6 +1,6 @@
 # Media Module
 
-The Media module (`slug: media`, version 0.0.2) provides a file upload library with automatic image resizing and thumbnail generation, a browsable grid interface, and a reusable media picker modal for use in other modules.
+The Media module (`slug: media`, version 0.0.3) provides a file upload library with automatic image resizing and thumbnail generation, a browsable grid interface, bulk delete, and a reusable media picker modal for use in other modules.
 
 ## Features
 
@@ -8,6 +8,7 @@ The Media module (`slug: media`, version 0.0.2) provides a file upload library w
 - **Image resizing on upload** - originals wider than 1920 px are downscaled in-place; `resized` flag stored in DB
 - **400×400 thumbnail generation** - cover-crop thumbnail (`thumb_` prefix) created for every uploaded image; used in grid and picker for fast loading
 - **Bulk thumbnail regeneration** - "Regenerate Thumbnails" button processes up to 50 existing files per click; a badge shows how many are missing
+- **Bulk delete** - select multiple files in the grid and delete them in a single confirmed action
 - Grid browser with pagination (24 files per page)
 - Image dimension storage (width, height)
 - Alt text and caption metadata editing
@@ -53,6 +54,7 @@ Go to **Admin → Modules** and click **Install** next to Media. Creates the `me
 | POST | `/admin/media/{id}/delete` | Delete file + record |
 | GET | `/admin/media/picker` | Media picker modal (used by vtx-media-picker) |
 | POST | `/admin/media/regen-thumbnails` | Bulk-generate missing thumbnails (up to 50 per call) |
+| POST | `/admin/media/bulk` | Bulk delete selected files |
 
 ## Permissions
 
@@ -61,7 +63,17 @@ Go to **Admin → Modules** and click **Install** next to Media. Creates the `me
 | `media.view` | Browse the media library |
 | `media.upload` | Upload new files |
 | `media.edit` | Edit alt text and caption |
-| `media.delete` | Delete files |
+| `media.delete` | Delete files (includes bulk delete) |
+
+## Bulk Delete
+
+Select one or more media cards by clicking their checkboxes (shown when you have `media.delete`). A bulk action bar slides in at the bottom of the grid:
+
+- **Select All** - toggles all visible cards
+- **Selection count** - shows how many files are selected
+- **Delete Selected** - opens a confirm dialog, then POSTs to `/admin/media/bulk`
+
+The server deletes the physical file and its thumbnail from disk before removing the database row. Deletion is logged to the audit trail.
 
 ## Upload Security
 
@@ -111,7 +123,7 @@ Admin views are deployed to `App/Views/modules/media/admin/media/`:
 
 ```
 admin/media/
-├── index.php         - Grid browser with upload zone
+├── index.php         - Grid browser with upload zone and bulk action bar
 ├── picker.php        - Modal picker interface (loaded in iframe/ajax)
 └── _edit_form.php    - Metadata edit form (alt text, caption)
 ```

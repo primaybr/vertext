@@ -56,6 +56,29 @@
   </div>
 </div>
 
+<?php if (\App\CMS\Auth::can('media.delete')): ?>
+<!-- Hidden bulk form -->
+<form id="vtx-media-bulk-form" method="POST" action="{{baseUrl}}/admin/media/bulk" style="display:none;">
+  <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+  <input type="hidden" name="bulk_action" id="vtx-media-bulk-action" value="">
+</form>
+
+<!-- Bulk action bar -->
+<div id="vtx-media-bulk-bar" class="vtx-panel mb-3" style="display:none;">
+  <div class="vtx-panel-body" style="padding:.5rem 1rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+    <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;font-size:.875rem;font-weight:500;">
+      <input type="checkbox" id="vtx-media-select-all">
+      <span id="vtx-media-bulk-count">0 selected</span>
+    </label>
+    <div style="margin-left:auto;display:flex;gap:.5rem;">
+      <button type="button" class="btn btn-danger btn-sm" id="vtx-media-bulk-delete">
+        <i class="pi pi-trash me-1"></i> Delete Selected
+      </button>
+    </div>
+  </div>
+</div>
+<?php endif; ?>
+
 <!-- Grid -->
 <div class="vtx-panel">
   <?php if (empty($files)): ?>
@@ -69,6 +92,9 @@
     <div class="vtx-media-grid" id="vtx-media-grid">
       <?php foreach ($files as $f): ?>
       <div class="vtx-media-card" data-id="<?php echo $f['id']; ?>">
+        <?php if (\App\CMS\Auth::can('media.delete')): ?>
+        <input type="checkbox" class="vtx-media-card-check" value="<?php echo $f['id']; ?>" title="Select">
+        <?php endif; ?>
         <div class="vtx-media-thumb">
           <img src="<?php echo htmlspecialchars($f['thumbnail_url'] ?? $f['url']); ?>"
                alt="<?php echo htmlspecialchars($f['alt_text'] ?? $f['original_name']); ?>"
@@ -142,6 +168,78 @@
   <?php endif; ?>
 </div>
 
+<?php if (\App\CMS\Auth::can('media.delete')): ?>
+<script>
+(function () {
+    var bar      = document.getElementById('vtx-media-bulk-bar');
+    var allChk   = document.getElementById('vtx-media-select-all');
+    var countLbl = document.getElementById('vtx-media-bulk-count');
+    var delBtn   = document.getElementById('vtx-media-bulk-delete');
+    var grid     = document.getElementById('vtx-media-grid');
+    if (!bar || !grid) return;
+
+    function getChecked() {
+        return Array.from(grid.querySelectorAll('.vtx-media-card-check:checked'));
+    }
+    function sync() {
+        var checked = getChecked();
+        var n = checked.length;
+        bar.style.display = n > 0 ? '' : 'none';
+        if (countLbl) countLbl.textContent = n + ' selected';
+        var all = grid.querySelectorAll('.vtx-media-card-check');
+        if (allChk) allChk.checked = all.length > 0 && n === all.length;
+        grid.querySelectorAll('.vtx-media-card').forEach(function (card) {
+            var chk = card.querySelector('.vtx-media-card-check');
+            if (chk) card.classList.toggle('vtx-media-selected', chk.checked);
+        });
+    }
+
+    grid.addEventListener('change', function (e) {
+        if (e.target.classList.contains('vtx-media-card-check')) sync();
+    });
+    if (allChk) {
+        allChk.addEventListener('change', function () {
+            grid.querySelectorAll('.vtx-media-card-check').forEach(function (c) {
+                c.checked = allChk.checked;
+            });
+            sync();
+        });
+    }
+    if (delBtn) {
+        delBtn.addEventListener('click', function () {
+            var ids = getChecked().map(function (c) { return c.value; });
+            if (!ids.length) return;
+            vtxConfirmModal({
+                title: 'Delete ' + ids.length + ' file' + (ids.length > 1 ? 's' : ''),
+                message: 'This will permanently delete the selected file' + (ids.length > 1 ? 's' : '') + '. This cannot be undone.',
+                confirmLabel: 'Delete',
+                confirmClass: 'btn-danger',
+                onConfirm: function () {
+                    var form = document.getElementById('vtx-media-bulk-form');
+                    document.getElementById('vtx-media-bulk-action').value = 'delete';
+                    ids.forEach(function (id) {
+                        var inp = document.createElement('input');
+                        inp.type = 'hidden';
+                        inp.name = 'ids[]';
+                        inp.value = id;
+                        form.appendChild(inp);
+                    });
+                    VtxAjax.postForm('{{baseUrl}}/admin/media/bulk', form, function (res) {
+                        if (res.success) {
+                            Phuse.toast(res.message, 'success');
+                            setTimeout(function () { window.location.reload(); }, 800);
+                        } else {
+                            Phuse.toast(res.message || 'Failed.', 'error');
+                        }
+                    });
+                }
+            });
+        });
+    }
+}());
+</script>
+<?php endif; ?>
+
 <?php if (\App\CMS\Auth::can('media.edit')): ?>
 <script>
 (function () {
@@ -162,14 +260,13 @@
                     } else {
                         btn.style.display = 'none';
                     }
-                    if (window.vtxToast) window.vtxToast(d.message, 'success');
-                    else alert(d.message);
+                    Phuse.toast(d.message, 'success');
                     // Reload grid to show new thumbnails
                     if (d.processed > 0) setTimeout(function () { window.location.reload(); }, 1200);
                 } else {
                     btn.disabled = false;
                     btn.innerHTML = '<i class="pi pi-refresh me-1"></i> Regenerate Thumbnails';
-                    if (window.vtxToast) window.vtxToast(d.message || 'Failed.', 'error');
+                    Phuse.toast(d.message || 'Failed.', 'error');
                 }
             })
             .catch(function () {

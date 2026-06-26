@@ -8,8 +8,6 @@ use App\Controllers\Admin\BaseController;
 use App\CMS\Auth;
 use Core\Utilities\Upload\Upload;
 use Core\Utilities\Upload\UploadConfig;
-use Core\Utilities\Image\Image;
-use Core\Utilities\Image\ImageConfig;
 
 /**
  * Media library: grid list, upload, edit metadata, delete.
@@ -69,10 +67,11 @@ class MediaController extends BaseController
         }
         unset($f);
 
-        // Count files missing thumbnails for the regen button badge
+        // Count files missing thumbnails for the regen button badge.
+        // Includes files where thumbnail_path = filename (failure sentinel from a previous run).
         $missingThumbCount = (int) ($this->db('media_files')
             ->whereRaw("mime_type LIKE 'image/%'")
-            ->whereRaw("(thumbnail_path IS NULL OR thumbnail_path = :empty)", [':empty' => ''])
+            ->whereRaw("(thumbnail_path IS NULL OR thumbnail_path = :emp OR thumbnail_path = filename)", [':emp' => ''])
             ->totalRows() ?: 0);
 
         $this->adminRender('modules/media/admin/media/index', [
@@ -203,16 +202,21 @@ class MediaController extends BaseController
         $rows = $this->db('media_files')
             ->select('id, filename, width, height')
             ->whereRaw("mime_type LIKE 'image/%'")
-            ->whereRaw("(thumbnail_path IS NULL OR thumbnail_path = :empty)", [':empty' => ''])
+            ->whereRaw("(thumbnail_path IS NULL OR thumbnail_path = :emp OR thumbnail_path = filename)", [':emp' => ''])
             ->limitOffset(50, 0)
             ->get() ?: [];
 
-        $done = 0;
+        // Index by id for fast lookup when marking failures
+        $filenameById = array_column($rows, 'filename', 'id');
+
+        $done       = 0;
+        $failedIds  = [];
 
         foreach ($rows as $row) {
             $filename = $row['filename']; // YYYY/MM/stored.ext
             $parts    = explode('/', $filename);
             if (count($parts) < 3) {
+                $failedIds[] = $row['id'];
                 continue;
             }
             $year   = $parts[0];
@@ -221,6 +225,7 @@ class MediaController extends BaseController
             $ext    = strtolower(pathinfo($stored, PATHINFO_EXTENSION));
 
             if (!in_array($ext, self::IMAGE_EXTS)) {
+                $failedIds[] = $row['id'];
                 continue;
             }
 
@@ -228,6 +233,7 @@ class MediaController extends BaseController
             $fullPath = $dir . $stored;
 
             if (!file_exists($fullPath)) {
+                $failedIds[] = $row['id'];
                 continue;
             }
 
@@ -244,12 +250,24 @@ class MediaController extends BaseController
                     'resized'        => $result['resized'],
                 ]);
                 $done++;
+            } else {
+                $failedIds[] = $row['id'];
+            }
+        }
+
+        // Files that can't be thumbnailed: set thumbnail_path = filename so they
+        // exit the pending queue and fall back to displaying the original image.
+        foreach ($failedIds as $failedId) {
+            if (isset($filenameById[$failedId])) {
+                $this->db('media_files')->where('id', $failedId)->update([
+                    'thumbnail_path' => $filenameById[$failedId],
+                ]);
             }
         }
 
         $remaining = (int) ($this->db('media_files')
             ->whereRaw("mime_type LIKE 'image/%'")
-            ->whereRaw("(thumbnail_path IS NULL OR thumbnail_path = :empty)", [':empty' => ''])
+            ->whereRaw("(thumbnail_path IS NULL OR thumbnail_path = :emp OR thumbnail_path = filename)", [':emp' => ''])
             ->totalRows() ?: 0);
 
         $this->json([
@@ -297,6 +315,52 @@ class MediaController extends BaseController
         $this->json(['success' => true, 'message' => 'Media updated.']);
     }
 
+    // ── Bulk ───────────────────────────────────────────────────────────────────
+
+    public function bulk(): void
+    {
+        $this->requirePermission('media.delete');
+        $this->validateCsrf();
+
+        $action = $this->input->post('bulk_action') ?? '';
+        $ids    = array_filter(array_map('trim', (array) ($this->input->post('ids', false) ?? [])));
+
+        if (empty($ids)) {
+            $this->json(['success' => false, 'message' => 'No files selected.']);
+        }
+
+        $count        = count($ids);
+        $placeholders = implode(',', array_fill(0, $count, '?'));
+
+        if ($action === 'delete') {
+            $files = $this->db('media_files')
+                ->select('id, filename, thumbnail_path')
+                ->whereRaw("id IN ({$placeholders})", array_values($ids))
+                ->get() ?: [];
+
+            $base = ROOT . 'Public' . DS . 'uploads' . DS . 'media' . DS;
+            foreach ($files as $file) {
+                foreach (['filename', 'thumbnail_path'] as $col) {
+                    if (!empty($file[$col])) {
+                        $path = $base . str_replace('/', DS, $file[$col]);
+                        if (file_exists($path)) {
+                            @unlink($path);
+                        }
+                    }
+                }
+            }
+
+            $this->db('media_files')
+                ->whereRaw("id IN ({$placeholders})", array_values($ids))
+                ->delete();
+
+            Auth::audit('media.bulk_delete', 'media_files', '', ['count' => $count]);
+            $this->json(['success' => true, 'message' => "{$count} file(s) deleted."]);
+        }
+
+        $this->json(['success' => false, 'message' => 'Unknown bulk action.']);
+    }
+
     // ── Delete ─────────────────────────────────────────────────────────────────
 
     public function delete(string $id): void
@@ -326,61 +390,102 @@ class MediaController extends BaseController
 
     /**
      * Resize original if too wide, then generate a 400×400 cover-crop thumbnail.
+     * Uses raw GD functions directly to avoid blackbox failures from the Image wrapper.
      * Returns ['resized' => bool, 'width' => int, 'height' => int] on success, null on failure.
      */
     private function processUploadedImage(string $fullPath, string $dir, string $stored, ?int $width, ?int $height): ?array
     {
-        $config = ImageConfig::fromArray([
-            'maxWidth'    => 20000,
-            'maxHeight'   => 20000,
-            'maxFileSize' => 100 * 1024 * 1024,
-            'enableLogging' => false,
-        ]);
+        $ext = strtolower(pathinfo($stored, PATHINFO_EXTENSION));
 
+        $src = $this->loadGdImage($fullPath, $ext);
+        if (!$src) return null;
+
+        $w       = imagesx($src);
+        $h       = imagesy($src);
         $resized = false;
 
-        try {
-            // Downscale original if wider than MAX_ORIG_WIDTH
-            if ($width && $width > self::MAX_ORIG_WIDTH) {
-                $targetH = (int) round(($height ?? $width) * (self::MAX_ORIG_WIDTH / $width));
-                $img     = new Image($fullPath, $config);
-                if ($img->isLoaded()) {
-                    $img->resize(self::MAX_ORIG_WIDTH, $targetH)->save($fullPath);
-                    $width   = self::MAX_ORIG_WIDTH;
-                    $height  = $targetH;
-                    $resized = true;
-                }
-                $img->destroy();
-            }
-
-            // Generate thumbnail: cover crop to THUMB_SIZE × THUMB_SIZE
-            $thumbPath = $dir . 'thumb_' . $stored;
-            $img       = new Image($fullPath, $config);
-
-            if ($img->isLoaded()) {
-                $dims  = $img->getCurrentDimensions();
-                $w     = $dims['width'];
-                $h     = $dims['height'];
-                $sz    = self::THUMB_SIZE;
-
-                $ratio  = max($sz / $w, $sz / $h);
-                $interW = max($sz, (int) ceil($w * $ratio));
-                $interH = max($sz, (int) ceil($h * $ratio));
-                $offX   = (int) floor(($interW - $sz) / 2);
-                $offY   = (int) floor(($interH - $sz) / 2);
-
-                $img->resize($interW, $interH)->crop($offX, $offY, $sz, $sz)->save($thumbPath);
-            }
-            $img->destroy();
-
-            if (file_exists($thumbPath)) {
-                return ['resized' => $resized, 'width' => $width ?? 0, 'height' => $height ?? 0];
-            }
-        } catch (\Throwable) {
-            // Thumbnail failure must never break the upload
+        // Downscale original if wider than MAX_ORIG_WIDTH
+        if ($w > self::MAX_ORIG_WIDTH) {
+            $newH = (int) round($h * (self::MAX_ORIG_WIDTH / $w));
+            $dst  = imagecreatetruecolor(self::MAX_ORIG_WIDTH, $newH);
+            imagecopyresampled($dst, $src, 0, 0, 0, 0, self::MAX_ORIG_WIDTH, $newH, $w, $h);
+            imagedestroy($src);
+            $src     = $dst;
+            $w       = self::MAX_ORIG_WIDTH;
+            $h       = $newH;
+            $this->saveGdImage($src, $fullPath, $ext);
+            $resized = true;
         }
 
-        return null;
+        // Cover-crop thumbnail: scale to intermediate size then crop to THUMB_SIZE × THUMB_SIZE
+        $sz     = self::THUMB_SIZE;
+        $ratio  = max($sz / $w, $sz / $h);
+        $interW = (int) ceil($w * $ratio);
+        $interH = (int) ceil($h * $ratio);
+        $offX   = (int) floor(($interW - $sz) / 2);
+        $offY   = (int) floor(($interH - $sz) / 2);
+
+        $inter = imagecreatetruecolor($interW, $interH);
+        if ($ext === 'png') {
+            imagealphablending($inter, false);
+            imagesavealpha($inter, true);
+        }
+        imagecopyresampled($inter, $src, 0, 0, 0, 0, $interW, $interH, $w, $h);
+        imagedestroy($src);
+
+        $thumb = imagecreatetruecolor($sz, $sz);
+        if ($ext === 'png') {
+            imagealphablending($thumb, false);
+            imagesavealpha($thumb, true);
+            $transparent = imagecolorallocatealpha($thumb, 0, 0, 0, 127);
+            imagefilledrectangle($thumb, 0, 0, $sz, $sz, $transparent);
+        } else {
+            $white = imagecolorallocate($thumb, 255, 255, 255);
+            imagefilledrectangle($thumb, 0, 0, $sz, $sz, $white);
+        }
+        imagecopy($thumb, $inter, 0, 0, $offX, $offY, $sz, $sz);
+        imagedestroy($inter);
+
+        $thumbPath = $dir . 'thumb_' . $stored;
+        $saved     = $this->saveGdImage($thumb, $thumbPath, $ext);
+        imagedestroy($thumb);
+
+        return ($saved && file_exists($thumbPath))
+            ? ['resized' => $resized, 'width' => $w, 'height' => $h]
+            : null;
+    }
+
+    /** Load a GD image resource from disk. Returns false on any failure. */
+    private function loadGdImage(string $path, string $ext): \GdImage|false
+    {
+        if (!file_exists($path) || !is_readable($path)) return false;
+
+        $src = match($ext) {
+            'jpg', 'jpeg' => @imagecreatefromjpeg($path),
+            'png'         => @imagecreatefrompng($path),
+            'webp'        => @imagecreatefromwebp($path),
+            default       => false,
+        };
+
+        if (!$src) return false;
+
+        if ($ext === 'png') {
+            imagealphablending($src, true);
+            imagesavealpha($src, true);
+        }
+
+        return $src;
+    }
+
+    /** Save a GD image resource to disk in the correct format. */
+    private function saveGdImage(\GdImage $img, string $path, string $ext): bool
+    {
+        return match($ext) {
+            'jpg', 'jpeg' => (bool) @imagejpeg($img, $path, 85),
+            'png'         => (bool) @imagepng($img, $path, 6),
+            'webp'        => (bool) @imagewebp($img, $path, 85),
+            default       => false,
+        };
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────────

@@ -29,30 +29,23 @@
 
         var overlay = document.createElement('div');
         overlay.id  = 'vtx-media-picker-overlay';
-        overlay.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.5);' +
-            'display:flex;align-items:center;justify-content:center;padding:1rem;';
 
         var panel = document.createElement('div');
-        panel.style.cssText = 'background:var(--ps-bg-surface);border-radius:var(--ps-radius-lg,8px);' +
-            'box-shadow:0 8px 40px rgba(0,0,0,.25);width:min(860px,100%);max-height:85vh;' +
-            'display:flex;flex-direction:column;overflow:hidden;';
+        panel.className = 'vtx-media-picker-panel';
 
         var header = document.createElement('div');
-        header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;' +
-            'padding:.875rem 1rem;border-bottom:1px solid var(--ps-border);';
-        header.innerHTML = '<span style="font-weight:600;font-size:.9375rem;">Media Library</span>';
+        header.className = 'vtx-media-picker-header';
+        header.innerHTML = '<span class="vtx-media-picker-title">Media Library</span>';
 
         var closeBtn = document.createElement('button');
         closeBtn.type      = 'button';
+        closeBtn.className = 'vtx-media-picker-close';
         closeBtn.innerHTML = '<i class="pi pi-x"></i>';
-        closeBtn.style.cssText = 'background:none;border:none;cursor:pointer;font-size:1rem;' +
-            'color:var(--ps-text-muted);padding:.25rem;line-height:1;';
         closeBtn.addEventListener('click', function () { overlay.remove(); });
 
         var body = document.createElement('div');
-        body.id            = 'vtx-picker-panel-body';
-        body.style.cssText = 'flex:1;overflow-y:auto;padding:1rem;';
-        body.innerHTML     = '<div style="text-align:center;padding:2rem;color:var(--ps-text-muted);">Loading…</div>';
+        body.id        = 'vtx-picker-panel-body';
+        body.innerHTML = '<div class="vtx-picker-loading">Loading…</div>';
 
         header.appendChild(closeBtn);
         panel.appendChild(header);
@@ -66,7 +59,7 @@
 
         VtxAjax.get(url, function (ok, html) {
             if (!ok) {
-                body.innerHTML = '<p style="color:var(--ps-danger);padding:1rem;">Failed to load media library.</p>';
+                body.innerHTML = '<p class="vtx-picker-error">Failed to load media library.</p>';
                 return;
             }
             body.innerHTML = html;
@@ -80,7 +73,7 @@
                 var link = e.target.closest('a[data-picker-page]');
                 if (!link) return;
                 e.preventDefault();
-                body.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--ps-text-muted);">Loading…</div>';
+                body.innerHTML = '<div class="vtx-picker-loading">Loading…</div>';
                 VtxAjax.get(link.href, function (ok2, html2) {
                     if (!ok2) return;
                     body.innerHTML = html2;
@@ -137,7 +130,7 @@
             if (previewWrap) previewWrap.style.display = '';
         }
 
-        btn.innerHTML = '<i class="pi pi-image" style="margin-right:.25rem;"></i>Change Image';
+        btn.innerHTML = '<i class="pi pi-image"></i> Change Image';
     };
 
     // ── Static: programmatic open (used by VtxEditor image handler) ──────────

@@ -8,6 +8,9 @@ use Core\Router;
 
 $router = new Router();
 
+// Enforce maintenance mode before any route is matched
+\App\CMS\Maintenance::check();
+
 /*
  *  default route, $this->add($method,$pattern,$controller,$action)
  *  get|post route, $this->get($pattern,$controller,$action) or $this->post($pattern,$controller,$action)
@@ -57,12 +60,17 @@ $router->post('/admin/modules/([a-z0-9\-\_]+)/sync-views',        'Admin\Modules
 $router->get('/admin/themes',                'Admin\ThemesController', 'index');
 $router->post('/admin/themes/set-theme',     'Admin\ThemesController', 'setTheme');
 
+// ── Profile ───────────────────────────────────────────────────────────────────
+$router->get('/admin/profile',               'Admin\ProfileController', 'index');
+$router->post('/admin/profile/update',       'Admin\ProfileController', 'update');
+
 // ── Settings ──────────────────────────────────────────────────────────────────
 $router->get('/admin/settings',              'Admin\SettingsController', 'index');
 $router->post('/admin/settings/save',        'Admin\SettingsController', 'save');
 $router->post('/admin/settings/save-mail',   'Admin\SettingsController', 'saveMail');
 $router->post('/admin/settings/test-mail',   'Admin\SettingsController', 'testMail');
-$router->post('/admin/settings/clear-cache', 'Admin\SettingsController', 'clearCache');
+$router->post('/admin/settings/clear-cache',             'Admin\SettingsController', 'clearCache');
+$router->post('/admin/settings/toggle-maintenance',     'Admin\SettingsController', 'toggleMaintenance');
 
 // ── Non-core module routes (loaded from DB, only when CMS is installed) ────────
 \App\CMS\ModuleManager::loadRoutes($router);

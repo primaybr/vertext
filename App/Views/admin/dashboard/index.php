@@ -122,7 +122,7 @@
       <div class="vtx-panel-body" style="font-size:.8125rem;">
         <div style="display:flex;justify-content:space-between;padding:.25rem 0;border-bottom:1px solid var(--ps-border);">
           <span style="color:var(--ps-text-muted);">CMS Version</span>
-          <span>0.0.2b-alpha</span>
+          <span><?php echo \App\CMS\Version::APP; ?></span>
         </div>
         <div style="display:flex;justify-content:space-between;padding:.25rem 0;border-bottom:1px solid var(--ps-border);">
           <span style="color:var(--ps-text-muted);">PHP Version</span>
@@ -130,7 +130,7 @@
         </div>
         <div style="display:flex;justify-content:space-between;padding:.25rem 0;border-bottom:1px solid var(--ps-border);">
           <span style="color:var(--ps-text-muted);">Framework</span>
-          <span>Phuse 1.2.3</span>
+          <span>Phuse <?php echo \App\CMS\Version::PHUSE; ?></span>
         </div>
         <div style="display:flex;justify-content:space-between;padding:.25rem 0;">
           <span style="color:var(--ps-text-muted);">Database</span>

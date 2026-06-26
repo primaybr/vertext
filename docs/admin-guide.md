@@ -10,6 +10,18 @@ The Vertext admin panel lives at `/admin`. All sections require authentication a
 - Site settings summary
 - Recent audit log entries (who did what, when, from which IP)
 
+## Profile Page
+
+`/admin/profile` - Available to all authenticated users; no extra permission required.
+
+Any logged-in user can update their own:
+
+- **Display name** - shown in the admin sidebar and audit logs
+- **Email address** - must be unique; used for login and mail notifications
+- **Password** - leave blank to keep the current password; new passwords are bcrypt hashed (cost 12)
+
+Changes are logged to the audit trail under `profile.updated`.
+
 ## Authentication
 
 ### Login
@@ -118,6 +130,14 @@ Permissions follow the pattern `resource.action`:
 **Analytics module**:
 
 - `analytics.view`, `analytics.manage`
+
+**Sitemap module**:
+
+- No permissions required (public route at `/sitemap.xml`)
+
+**Webhooks module**:
+
+- `webhooks.view`, `webhooks.manage`
 
 ## Settings
 

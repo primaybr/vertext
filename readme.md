@@ -1,6 +1,6 @@
 # Vertext CMS
 
-![Version](https://img.shields.io/badge/version-0.0.3--alpha-blue)
+![Version](https://img.shields.io/badge/version-0.0.4--alpha-blue)
 ![PHP](https://img.shields.io/badge/PHP-8.2%2B-777BB4)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -8,7 +8,7 @@
 
 Vertext is a lightweight, extensible content management system written in PHP 8.2+. It provides a professional admin panel, role-based access control, and a clean module system so you can ship exactly the features you need - nothing more.
 
-> **Built on [Phuse 1.2.4](https://github.com/primaybr/phuse)** - Vertext is powered by the Phuse framework, which provides the ORM, router, session manager, input helpers, validator, and core utilities.
+> **Built on [Phuse 1.2.5](https://github.com/primaybr/phuse)** - Vertext is powered by the Phuse framework, which provides the ORM, router, session manager, input helpers, validator, and core utilities.
 
 ---
 
@@ -21,10 +21,13 @@ Vertext is a lightweight, extensible content management system written in PHP 8.
 - **Email notifications** - built-in Mailer (PHP mail + SMTP); contact notifications, comment approvals, auto-replies, welcome emails
 - **Slug auto-generation** - `vtx-slug` component generates URL slugs from titles across all module forms
 - **Navigation module** - build front-end menus with custom links, page slugs, and dropdown support; renders automatically in theme layouts via `NavHelper`
-- **Blog module** - posts, categories, tags, comment moderation, Quill editor, SEO fields, dynamic URL routing, public frontend
-- **Analytics module** - privacy-friendly page-view tracking with bot filter, IP hashing, and admin dashboard (views, top pages, referrers, 30-day chart)
-- **Media module** - file upload with image resizing + 400x400 thumbnail generation; grid browser; reusable picker modal
+- **Admin profile page** - any logged-in user can update their own name, email, and password at `/admin/profile`
+- **Blog module** - posts, categories, tags, comment moderation, Quill editor, SEO fields, dynamic URL routing, RSS feed, public frontend
+- **Analytics module** - privacy-friendly page-view tracking; date range filter; period-over-period comparison; CSV export
+- **Media module** - file upload with image resizing + thumbnail generation; grid browser; bulk delete; reusable picker modal
 - **Pages module** - static page CRUD with front-end rendering via ThemeEngine
+- **Sitemap module** - automatic `/sitemap.xml` from published pages and blog posts; extensible via `SitemapProvider` interface
+- **Webhooks module** - outgoing webhooks with HMAC-SHA256 signed payloads; admin UI for endpoint management and delivery logs
 - **Gallery module** - photo albums backed by Media library; drag-to-reorder; CSS lightbox
 - **Contact Form module** - public contact form, admin inbox, email notifications, auto-reply
 - **Videos module** - YouTube/Vimeo embed management; poster thumbnail caching; lazy iframe player
@@ -112,14 +115,16 @@ Install a module: **Admin → Module Manager → Install**
 
 | Module | Version | Category | Description |
 | ------ | ------- | -------- | ----------- |
-| Blog | 0.0.3 | Content | Posts, categories, tags, comments, dynamic URL routing |
+| Blog | 0.0.4 | Content | Posts, categories, tags, comments, dynamic URL routing, RSS feed |
 | Pages | 0.0.1 | Content | Static page CRUD with public rendering |
-| Media | 0.0.2 | Media | File uploads with image resizing and thumbnail generation |
+| Media | 0.0.3 | Media | File uploads with image resizing, thumbnail generation, bulk delete |
 | Gallery | 0.0.1 | Media | Photo albums with lightbox, backed by Media library |
 | Videos | 0.0.1 | Media | YouTube/Vimeo embed management with poster thumbnails |
 | Contact | 0.0.1 | Communication | Public contact form with admin inbox and email notifications |
 | Navigation | 0.0.1 | Navigation | Front-end menu builder with NavHelper theme integration |
-| Analytics | 0.0.1 | Analytics | Privacy-friendly page-view tracking with admin dashboard |
+| Analytics | 0.0.2 | Analytics | Privacy-friendly page-view tracking; date range filter; period comparison; CSV export |
+| Sitemap | 0.0.1 | SEO | Automatic `/sitemap.xml` from published pages and blog posts |
+| Webhooks | 0.0.1 | Integration | Outgoing webhooks with HMAC-SHA256 signing and delivery logs |
 
 See [docs/module-system.md](docs/module-system.md) and [docs/creating-a-module.md](docs/creating-a-module.md) for the full guide.
 
@@ -140,8 +145,11 @@ See [docs/module-system.md](docs/module-system.md) and [docs/creating-a-module.m
 | [Theme System](docs/theme-system.md) | ThemeEngine, dark/light mode, custom themes, asset deployment |
 | [Mail System](docs/mail-system.md) | Mailer, MailMessage, templates, SMTP config |
 | [JS Components](docs/javascript-components.md) | vtx-chart, vtx-editor, vtx-slug, vtx-media-picker, etc. |
-| [Blog Module](docs/blog-module.md) | Routes, permissions, posts, comments |
-| [Media Module](docs/media-module.md) | Upload, image resizing, thumbnails, picker modal |
+| [Blog Module](docs/blog-module.md) | Posts, categories, tags, comments, RSS feed |
+| [Media Module](docs/media-module.md) | Upload, image resizing, thumbnails, bulk delete, picker modal |
+| [Analytics Module](docs/analytics-module.md) | Page-view tracking, date range filter, period comparison, CSV export |
+| [Sitemap Module](docs/sitemap-module.md) | Auto XML sitemap, SitemapProvider interface |
+| [Webhooks Module](docs/webhooks-module.md) | Outgoing webhooks, HMAC signing, delivery logs |
 | [Pages Module](docs/pages-module.md) | Static page CRUD and public rendering |
 | [Gallery Module](docs/gallery-module.md) | Photo albums, lightbox, drag-to-reorder |
 | [Contact Module](docs/contact-module.md) | Public form, admin inbox, email notifications |
@@ -160,6 +168,8 @@ See [docs/module-system.md](docs/module-system.md) and [docs/creating-a-module.m
 | [examples/media-picker-integration.php](examples/media-picker-integration.php) | Adding a media picker to a module form |
 | [examples/sending-mail.php](examples/sending-mail.php) | Sending email with Mailer and MailTemplate |
 | [examples/using-themes.php](examples/using-themes.php) | ThemeEngine, dark/light mode, custom theme layout |
+| [examples/dispatching-webhooks.php](examples/dispatching-webhooks.php) | Dispatching webhook events from a module controller |
+| [examples/sitemap-provider.php](examples/sitemap-provider.php) | Implementing SitemapProvider to contribute URLs to /sitemap.xml |
 
 ---
 

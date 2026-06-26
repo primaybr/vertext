@@ -149,6 +149,7 @@ class Module implements ModuleInterface
         $router->get('/admin/media',                               $c,  'index');
         $router->post('/admin/media/upload',                       $c,  'upload');
         $router->post('/admin/media/regen-thumbnails',             $c,  'regenThumbnails');
+        $router->post('/admin/media/bulk',                         $c,  'bulk');
         $router->get('/admin/media/([a-zA-Z0-9\-]+)/edit-form',   $c,  'editForm');
         $router->post('/admin/media/([a-zA-Z0-9\-]+)/update',     $c,  'update');
         $router->post('/admin/media/([a-zA-Z0-9\-]+)/delete',     $c,  'delete');

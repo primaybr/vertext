@@ -8,7 +8,7 @@ $p       = $editing ? $post : [];
       id="post-editor-form">
   <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token ?? ''); ?>">
   <input type="hidden" name="reading_time" id="post-reading-time" value="<?php echo (int) ($p['reading_time'] ?? 0); ?>">
-  <input type="hidden" name="featured_image_id"  id="post-img-id"  value="<?php echo (int) ($p['featured_image_id'] ?? 0); ?>">
+  <input type="hidden" name="featured_image_id"  id="post-img-id"  value="<?php echo htmlspecialchars($p['featured_image_id'] ?? ''); ?>">
   <input type="hidden" name="featured_image_url" id="post-img-url" value="<?php echo htmlspecialchars($p['featured_image_url'] ?? ''); ?>">
 
   <!-- Title -->

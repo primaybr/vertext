@@ -327,8 +327,8 @@ class Router
 			$handler = [$controller, $this->actions[$pattern]];
 			// If the controller has the action method and it is callable
 			if (method_exists($controller, $this->actions[$pattern]) && is_callable($handler)) {
-				// Cast numeric captures to int so strict-typed int $id params work
-				$matches = array_map(static fn($v) => ctype_digit($v) ? (int) $v : $v, $matches);
+				// Route captures are always passed as strings (IDs are UUIDs, not ints)
+				$matches = array_map('strval', $matches);
 				$handler(...$matches);
 			} else {
 				// If the controller does not have the action method or it is not callable, show a 404 error

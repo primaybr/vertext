@@ -29,7 +29,8 @@
     function showReset() {
       if (resetLink) return;
       resetLink = document.createElement('span');
-      resetLink.innerHTML = ' &bull; <a href="#" style="font-size:.75rem;color:var(--ps-primary,#3b82f6);">Reset to auto</a>';
+      resetLink.className = 'vtx-slug-hint';
+      resetLink.innerHTML = ' &bull; <a href="#" class="vtx-slug-reset">Reset to auto</a>';
       resetLink.querySelector('a').addEventListener('click', function (e) {
         e.preventDefault();
         auto = true;

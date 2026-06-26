@@ -26,7 +26,7 @@
       <div class="vtx-sidebar-logo">V</div>
       <div>
         <div class="vtx-sidebar-name">Vertext</div>
-        <div class="vtx-sidebar-ver">CMS v0.0.3</div>
+        <div class="vtx-sidebar-ver">CMS v<?php echo \App\CMS\Version::APP; ?></div>
       </div>
     </a>
 
@@ -170,6 +170,9 @@
             <i class="pi pi-chevron-down" style="font-size:.75rem;opacity:.6;"></i>
           </button>
           <div id="user-menu" class="vtx-dropdown-menu">
+            <a href="{{baseUrl}}/admin/profile" class="vtx-dropdown-item">
+              <i class="pi pi-user"></i> My Profile
+            </a>
             <a href="{{baseUrl}}/admin/settings" class="vtx-dropdown-item">
               <i class="pi pi-settings"></i> Settings
             </a>

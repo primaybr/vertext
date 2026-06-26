@@ -5,6 +5,75 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.0.4-alpha] - 2026-06-25
+
+### Core
+
+- **Admin profile page** - `GET /admin/profile` + `POST /admin/profile/update`: any logged-in user can update their own display name, email address, and password without needing the Users management permission; email uniqueness validated against other users; passwords hashed with bcrypt cost 12; change logged to audit trail
+
+### Blog (v0.0.3 → v0.0.4)
+
+- **RSS feed** - `GET /{blog_base}/feed.rss`: RSS 2.0 feed of the 20 most recent published posts; includes `atom:link`, `content:encoded` (full post body via CDATA), and `<enclosure>` for featured images; auto-linked via `<link rel="alternate" type="application/rss+xml">` in both theme `<head>` elements when Blog is enabled; `feedUrl` computed centrally in `ThemeEngine` to avoid modifying every render call
+
+### Media (v0.0.2 → v0.0.3)
+
+- **Bulk actions** - checkbox overlay on every media card (shown to users with `media.delete`); select-all toggle in the bulk action bar; bulk delete sends `POST /admin/media/bulk` with CSRF; physical files and thumbnails deleted from disk before DB rows removed; batch uses `whereRaw("id IN (...)")` for efficient single-query deletion; `Auth::audit('media.bulk_delete')` records count
+- **Bulk action bar** - slides in when ≥1 card is selected; shows selection count; `vtxConfirmModal` confirms before delete; `VtxAjax.postForm` submits and reloads grid on success
+
+### Analytics (v0.0.1 → v0.0.2)
+
+- **Date range filter** - from/to date pickers in the dashboard header; quick presets (Today, 7 Days, 30 Days, 90 Days); all stats, chart, top pages, and top referrers now reflect the selected period instead of being hardcoded to 30 days
+- **Period comparison** - "Selected Period" KPI card shows delta (`▲`/`▼`) vs the immediately preceding equivalent period; "Today" card shows delta vs yesterday; computed as `round((current - prev) / prev * 100, 1)%`; "no prior data" shown when previous period is zero
+- **Daily average** - third KPI card shows `total / days` for the selected range
+- **CSV export** - `GET /admin/analytics/export?from=...&to=...` streams a CSV of all `url_path`, `page_title`, `referrer_host`, `viewed_at` rows for the selected period with proper `Content-Disposition: attachment` header
+
+### New Modules
+
+#### Sitemap (v0.0.1)
+
+- `GET /sitemap.xml` - generates an XML sitemap from published pages (priority 0.8, changefreq monthly) and Blog posts (priority 0.7, changefreq weekly) when Blog is enabled; home page included at priority 1.0; blog index at priority 0.9
+- `SitemapProvider` interface - any module can implement `getSitemapUrls(string $siteUrl): array` to contribute URLs in future releases
+- Site URL resolved from `settings.site_url`, falls back to request `HTTP_HOST` + `baseUrl`
+- Settings: `sitemap_include_pages` and `sitemap_include_blog` (both default enabled)
+- 1-hour `Cache-Control` header; wraps all DB calls in try-catch so a missing Pages or Blog table never returns a 500
+
+#### Webhooks (v0.0.1)
+
+- `webhook_endpoints` table: name, payload URL, HMAC secret, JSON events array, enabled flag; `webhook_logs` table: endpoint_id FK (cascade delete), event, payload, HTTP response code, response body (truncated 500 chars), duration ms, success flag
+- `WebhookDispatcher::dispatch(event, payload)` - static method called by any module; finds enabled endpoints subscribed to the event; fires signed HTTP POST via cURL (10s timeout); logs result; fails silently so delivery never breaks a request
+- `WebhookDispatcher::dispatchToEndpoint(id, event, payload)` - dispatches to a specific endpoint regardless of subscription (used for test ping)
+- Payload signing: `X-Vertext-Signature: sha256={HMAC-SHA256}`, `X-Vertext-Event`, `X-Vertext-Delivery` headers on every request
+- Admin UI: endpoint list with last-delivery status badge; create/edit form with event checkboxes and secret regeneration; delivery log table (last 50 per endpoint: event, HTTP status, duration, response preview); test ping button fires a `ping` event immediately
+- Available events: `post.published`, `post.deleted`, `page.published`, `page.deleted`, `media.uploaded`, `media.deleted`, `ping`
+- Permissions: `webhooks.view`, `webhooks.manage`; both auto-granted to Administrator on install
+
+### JavaScript Component UI/UX Overhaul
+
+All `vtx-*` components that used inline `cssText` or inline `style` attributes injected from JavaScript have been refactored to use CSS classes only.
+
+- **`vtx-slug`** - removed hardcoded `style="color:..."` from reset link; added `.vtx-slug-hint` and `.vtx-slug-reset` classes to `admin.css` with hover/active states via CSS transitions
+- **`vtx-upload`** - removed `element.style.cssText` from overlay and progress bar; `.vtx-upload-overlay`, `.vtx-upload-overlay-text`, `.vtx-upload-bar` added to `admin.css`; dark mode override included
+- **`vtx-tags`** - removed all `this.wrap.style.cssText`, `this.inputEl.style.cssText`, `this.dropdown.style.cssText`, `chip.style.cssText`, and mouseover/mouseout inline background handlers; `.vtx-tags-wrap`, `.vtx-tags-dropdown`, `.vtx-tags-option`, `.vtx-tags-option--added`, `.vtx-tags-option-badge`, `.vtx-tag-chip-remove` moved to `blog.css`; hover handled via CSS `:hover`
+- **`vtx-media-picker`** - removed entire modal CSS injected via `panel.style.cssText`; `.vtx-media-picker-panel`, `.vtx-media-picker-header`, `.vtx-media-picker-title`, `.vtx-media-picker-close`, `.vtx-picker-loading`, `.vtx-picker-error`, `#vtx-picker-panel-body` moved to `media.css` with dark mode overrides
+
+### Added
+
+- **Maintenance Mode** - working implementation: `App\CMS\Maintenance::check()` called from `Config/Routes.php` before routing; reads `maintenance_mode` setting from DB; bypasses `/admin`, `/setup`, and logged-in admin sessions automatically; serves `App/Views/maintenance.php` - a standalone self-contained 503 page with inline CSS, dark mode via `prefers-color-scheme`, and animated amber status dot (no theme engine dependency); settings panel shows a proper pill toggle switch (`vtx-pill-toggle`) wired to a dedicated `POST /admin/settings/toggle-maintenance` endpoint that toggles the DB value and clears the page cache; warning banner appears in the system panel while mode is active; note that logged-in admins always see the live site - test in a private window
+- **`App\CMS\Version`** - canonical version constant (`Version::APP`); admin sidebar reads from it instead of a hardcoded string; update this single constant when cutting a new release
+
+### Fixed
+
+- **Clean theme visual overhaul** - `--clr-border` changed from near-black (`#0f0f0f`) to soft gray (`#d4d4d4` light / `#2e2e2e` dark); all `2px solid` borders reduced to `1px solid`; `--radius-sm: 4px` and `--radius-md: 8px` CSS variables added; border-radius applied to dropdown menus, theme toggle, nav toggle, `code`, `pre` elements
+- **Media thumbnail generation - Phuse Image class replaced with raw GD** - the Phuse `Image` wrapper silently short-circuits all operations (resize, crop, save) when its internal `$errors` array is non-empty; dimension validation errors are added to `$errors` without halting execution, so every subsequent GD operation returned false and `processUploadedImage()` returned `null` for all inputs; rewrote thumbnail generation using raw GD functions (`imagecreatefromjpeg`, `imagecreatefrompng`, `imagecreatefromwebp`, `imagecopyresampled`) which fail loudly and predictably; added `loadGdImage()` and `saveGdImage()` helpers; cover-crop math and 400 px target size unchanged
+- **Media thumbnail regeneration - failure sentinel included in retry queries** - files that fail thumbnail generation are marked `thumbnail_path = filename` as a sentinel; the three regen queries (`missingThumbCount`, batch fetch, remaining count) only checked `IS NULL OR = ''`, permanently hiding sentinelled files from future regen attempts; all three queries updated to `IS NULL OR = :emp OR = filename` so failed files can be retried
+- **Media thumbnail regeneration - SQL syntax error** - an empty string literal `''` inside `whereRaw("thumbnail_path = '' ...")` was mangled by the Phuse ORM query builder before reaching PostgreSQL, producing an unterminated string error; replaced with a bound parameter `[':emp' => '']`
+- **UUID router - integer cast removed** - `Core/Router.php` cast numeric-looking route captures to `int` via `ctype_digit`; tables with UUID primary keys can produce IDs whose leading segment is all digits (e.g. role ID `"1"` from a legacy seed row), triggering a `TypeError: string expected, int given` when the capture reached a `string $id` parameter; fixed by replacing the cast with `array_map('strval', $matches)` so all captures are always strings regardless of content
+- **`alert()` replaced with `Phuse.toast()`** - all module views used `if (window.vtxToast) vtxToast(...)` which always evaluated false (`vtxToast` does not exist); the real API is `Phuse.toast(message, type)`; replaced in Media, Contact, Webhooks, and Gallery module views (source + deployed copies)
+- **Blog featured image UUID cast** - updating a post with a featured image failed with PostgreSQL `invalid input syntax for type uuid`; `(int)` cast on a UUID string (e.g. `"647bbb85-..."`) produced a leading-digit integer (`647`) which failed the column type check; fixed with `htmlspecialchars($p['featured_image_id'] ?? '')` in the post form hidden input
+- **Version strings centralized** - `App\CMS\Version::PHUSE` added alongside `Version::APP`; admin dashboard System Info panel reads both constants instead of hardcoded strings; Phuse version updated to `1.2.5` across all files (`Core/Template/Parser.php`, `Core/Template/ParserTrait.php`, `Public/assets/js/scripts.js`, `Public/assets/css/styles.css`)
+
+---
+
 ## [0.0.3-alpha] - 2026-06-24
 
 ### New Modules
@@ -128,7 +197,7 @@ Patch release. Bug fixes only - no new features or schema changes.
 
 ## [0.0.2-alpha] - 2026-06-23
 
-Built on **Phuse 1.2.4** - all ORM, routing, session, and utility primitives come from the Phuse framework layer.
+Built on **Phuse 1.2.5** - all ORM, routing, session, and utility primitives come from the Phuse framework layer.
 
 ### Blog Module (v0.0.3)
 
@@ -291,27 +360,27 @@ APIs and database schema may change before the stable 1.0.0 release.
 
 ## Upcoming
 
-### [0.0.4-alpha]
+### [0.0.5-alpha]
 
 #### Core
 
-- **Admin profile page** - `/admin/profile`: any logged-in user can update their own name, email, and password without needing the Users management permission
+- **Content Revisions** - version history for Pages and Blog posts; snapshot on each save; diff view; restore from previous revision
+- **Scheduled Publishing** - `publish_at` / `expire_at` fields on Posts and Pages; lightweight cron-tick endpoint `GET /admin/system/tick` processes pending state changes; "Scheduled" status badge
 
-#### Blog (v0.0.3 → v0.0.4)
+#### Blog (v0.0.4 → v0.0.5)
 
-- **RSS feed** - `GET /{blog_base}/feed.rss`: standard RSS 2.0 feed of published posts; auto-linked via `<link rel="alternate">` in theme `<head>` when the Blog module is enabled
+- **Related posts** - N related posts below single post view based on shared tags/categories
+- **Reading list** - visitor-side "save for later" to localStorage; no account required
 
-#### Media (v0.0.2 → v0.0.3)
+#### Search Module (v0.0.1)
 
-- **Bulk actions** - multi-select in the media grid (shift-click, select-all toggle); bulk delete and bulk alt-text update; server-side batch endpoint
+- `GET /search?q=...` full-text search across Pages + Blog posts; `SearchProvider` interface for other modules to register content; admin status and manual re-index button
 
-#### Analytics (v0.0.1 → v0.0.2)
+#### Theme Customizer (v0.0.1)
 
-- **Date range filter** - date picker on the Analytics dashboard to filter all stats and charts by a custom range
-- **Period comparison** - show delta vs the previous equivalent period (today vs yesterday, this week vs last week)
-- **CSV export** - download pageviews as CSV for external analysis
+- Admin section to override CSS custom properties (accent color, font, border-radius); stored in settings; generates `custom.css` injected after `theme.css`; live preview via iframe
 
-#### New in 0.0.4
+#### Analytics (v0.0.2 → v0.0.3)
 
-- **Sitemap (v0.0.1)** - installable module; generates `/sitemap.xml` from published pages + blog posts; each installed module can register a `SitemapProvider` to include its URLs; configurable priority and change frequency
-- **Webhooks (v0.0.1)** - outgoing webhooks triggered by CMS events (`post.published`, `comment.approved`, `contact.received`, etc.); admin UI to manage endpoint URLs and event subscriptions; payloads signed with HMAC-SHA256
+- **Unique visitors** - count distinct `ip_hash` per period
+- **Device breakdown** - mobile vs desktop heuristic via UA string

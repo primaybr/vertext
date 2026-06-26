@@ -86,8 +86,7 @@
                 if (d.success) {
                     window.location.reload();
                 } else {
-                    if (window.vtxToast) window.vtxToast(d.message || 'Failed.', 'error');
-                    else alert(d.message || 'Failed.');
+                    Phuse.toast(d.message || 'Failed.', 'error');
                 }
             });
     }
@@ -110,7 +109,7 @@
                         if (empty) empty.style.display = '';
                     }
                 } else {
-                    if (window.vtxToast) window.vtxToast(d.message || 'Failed.', 'error');
+                    Phuse.toast(d.message || 'Failed.', 'error');
                 }
             });
     });

@@ -49,6 +49,21 @@ class ThemeEngine
         $siteName = $site['site_name']        ?? 'Vertext';
         $siteDesc = $site['site_description'] ?? '';
 
+        // Inject RSS feed autodiscovery link when Blog module is active
+        $feedUrl = '';
+        if (\App\CMS\ModuleLoader::isEnabled('blog')) {
+            try {
+                $bpRow = (new \Core\Model('settings'))
+                    ->select('value')
+                    ->where('key', 'blog_base_path')
+                    ->where('grp', 'blog')
+                    ->get(1);
+                $rawBase  = trim($bpRow['value'] ?? 'blog', '/');
+                $blogBase = $rawBase === '' ? '' : '/' . $rawBase;
+                $feedUrl  = rtrim($baseUrl, '/') . $blogBase . '/feed.rss';
+            } catch (\Throwable) {}
+        }
+
         $layoutFile = ROOT . 'App' . DS . 'Themes' . DS . $theme . DS . 'layout.php';
         if (!file_exists($layoutFile)) {
             // Graceful degradation: output content without layout
@@ -61,7 +76,7 @@ class ThemeEngine
         extract(compact(
             'content', 'pageTitle', 'pageDesc', 'pageImage',
             'baseUrl', 'themeUrl', 'siteName', 'siteDesc',
-            'site', 'data'
+            'site', 'data', 'feedUrl'
         ));
         include $layoutFile;
         echo ob_get_clean();

@@ -9,8 +9,9 @@ use App\Controllers\Admin\BaseController;
 /**
  * Analytics dashboard.
  *
- * GET /admin/analytics        index()
- * GET /admin/analytics/data   data()  (JSON for charts)
+ * GET /admin/analytics          index()
+ * GET /admin/analytics/data     data()   (JSON for charts)
+ * GET /admin/analytics/export   export() (CSV download)
  */
 class AnalyticsDashboardController extends BaseController
 {
@@ -25,65 +26,105 @@ class AnalyticsDashboardController extends BaseController
     {
         $this->requirePermission('analytics.view');
 
-        $today = date('Y-m-d');
+        [$from, $to] = $this->parseDateRange();
+
+        $fromTs = strtotime($from);
+        $toTs   = strtotime($to);
+        $days   = max(1, (int)(($toTs - $fromTs) / 86400) + 1);
+
+        // Previous equivalent period (same duration, immediately before $from)
+        $prevTo   = date('Y-m-d', $fromTs - 86400);
+        $prevFrom = date('Y-m-d', $fromTs - $days * 86400);
+
+        // Selected period total
+        $viewsPeriod = (int) ($this->db('analytics_pageviews')
+            ->whereRaw('DATE(viewed_at) >= :f AND DATE(viewed_at) <= :t', [':f' => $from, ':t' => $to])
+            ->totalRows() ?: 0);
+
+        // Previous period total (for comparison)
+        $viewsPrevPeriod = (int) ($this->db('analytics_pageviews')
+            ->whereRaw('DATE(viewed_at) >= :f AND DATE(viewed_at) <= :t', [':f' => $prevFrom, ':t' => $prevTo])
+            ->totalRows() ?: 0);
+
+        // Period delta percentage
+        $deltaPeriod = $viewsPrevPeriod > 0
+            ? round((($viewsPeriod - $viewsPrevPeriod) / $viewsPrevPeriod) * 100, 1)
+            : null;
+
+        // Today vs yesterday (always fixed, independent of filter)
+        $today     = date('Y-m-d');
+        $yesterday = date('Y-m-d', strtotime('-1 day'));
 
         $viewsToday = (int) ($this->db('analytics_pageviews')
             ->whereRaw('viewed_at >= :d::date', [':d' => $today])
             ->totalRows() ?: 0);
 
-        $viewsWeek = (int) ($this->db('analytics_pageviews')
-            ->whereRaw("viewed_at >= NOW() - INTERVAL '7 days'", [])
+        $viewsYesterday = (int) ($this->db('analytics_pageviews')
+            ->whereRaw('DATE(viewed_at) = :d', [':d' => $yesterday])
             ->totalRows() ?: 0);
 
-        $viewsMonth = (int) ($this->db('analytics_pageviews')
-            ->whereRaw("viewed_at >= NOW() - INTERVAL '30 days'", [])
-            ->totalRows() ?: 0);
+        $deltaToday = $viewsYesterday > 0
+            ? round((($viewsToday - $viewsYesterday) / $viewsYesterday) * 100, 1)
+            : null;
 
-        // Top pages (last 30 days)
+        // Daily average for selected period
+        $dailyAvg = $days > 0 ? round($viewsPeriod / $days, 1) : 0;
+
+        // Top pages (selected period)
         $topPages = $this->db('analytics_pageviews')
             ->select('url_path, MAX(page_title) AS page_title, COUNT(*) AS views')
-            ->whereRaw("viewed_at >= NOW() - INTERVAL '30 days'", [])
+            ->whereRaw('DATE(viewed_at) >= :f AND DATE(viewed_at) <= :t', [':f' => $from, ':t' => $to])
             ->groupBy('url_path')
             ->orderBy('views', 'DESC')
             ->limitOffset(10, 0)
             ->get() ?: [];
 
-        // Top referrers (last 30 days)
+        // Top referrers (selected period)
         $topReferrers = $this->db('analytics_pageviews')
             ->select('referrer_host, COUNT(*) AS views')
-            ->whereRaw("viewed_at >= NOW() - INTERVAL '30 days'", [])
+            ->whereRaw('DATE(viewed_at) >= :f AND DATE(viewed_at) <= :t', [':f' => $from, ':t' => $to])
             ->whereRaw('referrer_host IS NOT NULL AND referrer_host != :empty', [':empty' => ''])
             ->groupBy('referrer_host')
             ->orderBy('views', 'DESC')
             ->limitOffset(10, 0)
             ->get() ?: [];
 
-        // Daily views for last 30 days (for chart)
+        // Daily chart data (selected period)
         $chartRows = $this->db('analytics_pageviews')
             ->select('DATE(viewed_at) AS day, COUNT(*) AS views')
-            ->whereRaw("viewed_at >= NOW() - INTERVAL '30 days'", [])
+            ->whereRaw('DATE(viewed_at) >= :f AND DATE(viewed_at) <= :t', [':f' => $from, ':t' => $to])
             ->groupBy('DATE(viewed_at)')
             ->orderBy('day', 'ASC')
             ->get() ?: [];
 
-        // Fill gaps in the 30-day range with 0
-        $chartMap = array_column($chartRows, 'views', 'day');
+        $chartMap    = array_column($chartRows, 'views', 'day');
         $chartLabels = [];
         $chartValues = [];
-        for ($i = 29; $i >= 0; $i--) {
-            $day = date('Y-m-d', strtotime("-{$i} days"));
-            $chartLabels[] = date('M j', strtotime($day));
+        $cursor      = $fromTs;
+        while ($cursor <= $toTs) {
+            $day           = date('Y-m-d', $cursor);
+            $chartLabels[] = date('M j', $cursor);
             $chartValues[] = (int) ($chartMap[$day] ?? 0);
+            $cursor       += 86400;
         }
 
         $this->adminRender('modules/analytics/admin/analytics/index', [
-            'viewsToday'   => $viewsToday,
-            'viewsWeek'    => $viewsWeek,
-            'viewsMonth'   => $viewsMonth,
-            'topPages'     => $topPages,
-            'topReferrers' => $topReferrers,
-            'chartLabels'  => $chartLabels,
-            'chartValues'  => $chartValues,
+            'from'            => $from,
+            'to'              => $to,
+            'days'            => $days,
+            'prevFrom'        => $prevFrom,
+            'prevTo'          => $prevTo,
+            'viewsPeriod'     => $viewsPeriod,
+            'viewsPrevPeriod' => $viewsPrevPeriod,
+            'deltaPeriod'     => $deltaPeriod,
+            'viewsToday'      => $viewsToday,
+            'viewsYesterday'  => $viewsYesterday,
+            'deltaToday'      => $deltaToday,
+            'dailyAvg'        => $dailyAvg,
+            'topPages'        => $topPages,
+            'topReferrers'    => $topReferrers,
+            'chartLabels'     => $chartLabels,
+            'chartValues'     => $chartValues,
         ], 'Analytics', 'analytics');
     }
 
@@ -91,24 +132,72 @@ class AnalyticsDashboardController extends BaseController
     {
         $this->requirePermission('analytics.view');
 
-        $days = max(7, min(90, (int) ($this->input->get('days') ?? 30)));
+        [$from, $to] = $this->parseDateRange();
 
         $rows = $this->db('analytics_pageviews')
             ->select('DATE(viewed_at) AS day, COUNT(*) AS views')
-            ->whereRaw("viewed_at >= NOW() - INTERVAL '{$days} days'", [])
+            ->whereRaw('DATE(viewed_at) >= :f AND DATE(viewed_at) <= :t', [':f' => $from, ':t' => $to])
             ->groupBy('DATE(viewed_at)')
             ->orderBy('day', 'ASC')
             ->get() ?: [];
 
-        $map = array_column($rows, 'views', 'day');
+        $map    = array_column($rows, 'views', 'day');
         $labels = [];
         $values = [];
-        for ($i = $days - 1; $i >= 0; $i--) {
-            $day = date('Y-m-d', strtotime("-{$i} days"));
-            $labels[] = date('M j', strtotime($day));
+        $cursor = strtotime($from);
+        $toTs   = strtotime($to);
+        while ($cursor <= $toTs) {
+            $day      = date('Y-m-d', $cursor);
+            $labels[] = date('M j', $cursor);
             $values[] = (int) ($map[$day] ?? 0);
+            $cursor  += 86400;
         }
 
         $this->json(['success' => true, 'labels' => $labels, 'values' => $values]);
+    }
+
+    public function export(): void
+    {
+        $this->requirePermission('analytics.view');
+
+        [$from, $to] = $this->parseDateRange();
+
+        $rows = $this->db('analytics_pageviews')
+            ->select('url_path, page_title, referrer_host, viewed_at')
+            ->whereRaw('DATE(viewed_at) >= :f AND DATE(viewed_at) <= :t', [':f' => $from, ':t' => $to])
+            ->orderBy('viewed_at', 'DESC')
+            ->get() ?: [];
+
+        $filename = 'analytics_' . $from . '_to_' . $to . '.csv';
+
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: no-cache, no-store');
+        header('Pragma: no-cache');
+
+        $out = fopen('php://output', 'w');
+        fputcsv($out, ['url_path', 'page_title', 'referrer_host', 'viewed_at']);
+        foreach ($rows as $row) {
+            fputcsv($out, [
+                $row['url_path']      ?? '',
+                $row['page_title']    ?? '',
+                $row['referrer_host'] ?? '',
+                $row['viewed_at']     ?? '',
+            ]);
+        }
+        fclose($out);
+        exit;
+    }
+
+    private function parseDateRange(): array
+    {
+        $rawFrom = trim($this->input->get('from') ?? '');
+        $rawTo   = trim($this->input->get('to')   ?? '');
+        $today   = date('Y-m-d');
+
+        $to   = (preg_match('/^\d{4}-\d{2}-\d{2}$/', $rawTo)   && $rawTo   <= $today) ? $rawTo   : $today;
+        $from = (preg_match('/^\d{4}-\d{2}-\d{2}$/', $rawFrom) && $rawFrom <= $to)     ? $rawFrom : date('Y-m-d', strtotime($to . ' -29 days'));
+
+        return [$from, $to];
     }
 }

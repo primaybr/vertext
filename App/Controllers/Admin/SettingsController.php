@@ -67,7 +67,7 @@ class SettingsController extends BaseController
             $this->redirect($this->baseUrl . '/admin/settings');
         }
 
-        $allowed = ['site_name', 'site_url', 'site_description', 'admin_email', 'default_language', 'timezone', 'date_format', 'time_format', 'maintenance_mode'];
+        $allowed = ['site_name', 'site_url', 'site_description', 'admin_email', 'default_language', 'timezone', 'date_format', 'time_format'];
 
         foreach ($allowed as $key) {
             $value = $this->input->post($key, false) ?? '';
@@ -129,6 +129,32 @@ class SettingsController extends BaseController
         } else {
             $this->json(['success' => false, 'message' => 'Send failed: ' . $mailer->getLastError()]);
         }
+    }
+
+    /** POST /admin/settings/toggle-maintenance */
+    public function toggleMaintenance(): void
+    {
+        $this->requirePermission('settings.manage');
+
+        $token = $this->input->post('csrf_token') ?? '';
+        if (!$this->csrf->validateToken($token)) {
+            $this->json(['success' => false, 'message' => 'Security token invalid.'], 403);
+        }
+
+        $row     = $this->db('settings')->where('key', 'maintenance_mode')->get(1);
+        $current = $row['value'] ?? '0';
+        $new     = $current === '1' ? '0' : '1';
+
+        $this->db('settings')->where('key', 'maintenance_mode')->update(['value' => $new]);
+        $this->deleteCacheFiles(rtrim(Path::CACHE, DS));
+        Auth::audit('settings.maintenance_toggle', 'settings');
+
+        $status = $new === '1' ? 'on' : 'off';
+        $this->json([
+            'success' => true,
+            'enabled' => $new === '1',
+            'message' => "Maintenance mode turned {$status}.",
+        ]);
     }
 
     /** POST /admin/settings/clear-cache */

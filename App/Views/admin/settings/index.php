@@ -272,22 +272,30 @@ document.getElementById('vtx-test-mail-btn').addEventListener('click', function 
         </div>
         <div class="vtx-panel-body">
 
+          <?php $maintenanceOn = ($settings['maintenance_mode'] ?? '0') === '1'; ?>
+          <div id="vtx-maint-banner"
+               style="<?php echo $maintenanceOn ? 'display:flex' : 'display:none'; ?>;background:color-mix(in srgb,var(--ps-warning) 12%,transparent);border:1px solid color-mix(in srgb,var(--ps-warning) 40%,transparent);border-radius:6px;padding:.5rem .75rem;margin-bottom:.75rem;font-size:.8125rem;align-items:center;gap:.5rem;">
+            <i class="pi pi-warning-circle" style="color:var(--ps-warning);flex-shrink:0;"></i>
+            <span><strong>Maintenance mode is ON.</strong> Visitors see the maintenance page. Admins bypass it - test in a private window.</span>
+          </div>
           <div style="display:flex;align-items:center;justify-content:space-between;padding:.5rem 0;">
             <div>
               <div style="font-size:.875rem;font-weight:500;">Maintenance Mode</div>
               <div class="vtx-help" style="display:block;margin-top:1px;">
-                Temporarily make the site unavailable to visitors.
+                Shows a maintenance page to visitors. Admins always bypass it automatically.
               </div>
             </div>
-            <label style="position:relative;display:inline-flex;align-items:center;cursor:pointer;flex-shrink:0;">
-              <input type="hidden" name="maintenance_mode" value="0">
-              <input type="checkbox" name="maintenance_mode" value="1"
-                     <?php echo ($settings['maintenance_mode'] ?? '0') === '1' ? 'checked' : ''; ?>
-                     style="width:36px;height:20px;appearance:none;border-radius:20px;
-                            background:var(--ps-border);cursor:pointer;transition:background .2s;
-                            outline:none;"
-                     class="vtx-toggle-input">
-            </label>
+            <div style="display:flex;align-items:center;gap:.625rem;">
+              <span id="vtx-maint-status" style="font-size:.8125rem;color:var(--ps-text-secondary);"><?php echo $maintenanceOn ? 'On' : 'Off'; ?></span>
+              <button type="button"
+                      id="vtx-maint-toggle"
+                      class="vtx-pill-toggle<?php echo $maintenanceOn ? ' vtx-pill-toggle--on' : ''; ?>"
+                      aria-pressed="<?php echo $maintenanceOn ? 'true' : 'false'; ?>"
+                      title="Toggle maintenance mode"
+                      data-csrf="{{csrf_token}}">
+                <span class="vtx-pill-toggle__knob"></span>
+              </button>
+            </div>
           </div>
 
         </div>
@@ -341,8 +349,66 @@ document.getElementById('vtx-test-mail-btn').addEventListener('click', function 
 </form>
 
 <style>
-.vtx-toggle-input:checked { background: var(--ps-primary); }
+.vtx-pill-toggle {
+  width:44px;height:24px;border-radius:12px;
+  background:var(--ps-border,#ccc);
+  border:none;cursor:pointer;position:relative;
+  padding:0;flex-shrink:0;
+  transition:background .2s ease;
+  outline-offset:2px;
+  display:inline-block;
+  vertical-align:middle;
+}
+.vtx-pill-toggle--on { background:var(--ps-primary,#3b82f6); }
+.vtx-pill-toggle:focus-visible { outline:2px solid var(--ps-primary,#3b82f6); }
+.vtx-pill-toggle--loading { opacity:.5;cursor:wait; }
+.vtx-pill-toggle__knob {
+  position:absolute;top:3px;left:3px;
+  width:18px;height:18px;border-radius:50%;
+  background:#fff;
+  box-shadow:0 1px 2px rgba(0,0,0,.2);
+  transition:transform .2s ease;
+  display:block;pointer-events:none;
+}
+.vtx-pill-toggle--on .vtx-pill-toggle__knob { transform:translateX(20px); }
 </style>
+<script>
+(function () {
+  var btn = document.getElementById('vtx-maint-toggle');
+  if (!btn) return;
+  btn.addEventListener('click', function () {
+    if (btn.disabled) return;
+    btn.disabled = true;
+    btn.classList.add('vtx-pill-toggle--loading');
+    var fd = new FormData();
+    fd.append('csrf_token', btn.dataset.csrf);
+    fetch('{{baseUrl}}/admin/settings/toggle-maintenance', { method: 'POST', body: fd })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        btn.disabled = false;
+        btn.classList.remove('vtx-pill-toggle--loading');
+        if (d.success) {
+          var on = d.enabled;
+          btn.classList.toggle('vtx-pill-toggle--on', on);
+          btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+          var lbl = document.getElementById('vtx-maint-status');
+          if (lbl) lbl.textContent = on ? 'On' : 'Off';
+          var banner = document.getElementById('vtx-maint-banner');
+          if (banner) banner.style.display = on ? 'flex' : 'none';
+          Phuse.toast(d.message, 'success');
+          setTimeout(function () { window.location.reload(); }, 1200);
+        } else {
+          Phuse.toast(d.message || 'Failed to save.', 'error');
+        }
+      })
+      .catch(function () {
+        btn.disabled = false;
+        btn.classList.remove('vtx-pill-toggle--loading');
+        Phuse.toast('Request failed.', 'error');
+      });
+  });
+}());
+</script>
 
 <?php endif; ?>
 

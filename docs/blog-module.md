@@ -1,6 +1,6 @@
 # Blog Module
 
-The Blog module (`slug: blog`, version 0.0.2) is a full-featured publishing system with posts, categories, tags, comment moderation, and a public frontend.
+The Blog module (`slug: blog`, version 0.0.4) is a full-featured publishing system with posts, categories, tags, comment moderation, RSS feed, and a public frontend.
 
 ## Features
 
@@ -12,11 +12,12 @@ The Blog module (`slug: blog`, version 0.0.2) is a full-featured publishing syst
 - Public comment submission with moderation queue
 - Analytics dashboard with 30-day publication chart
 - Bulk operations on posts and comments
-- Configurable blog settings
+- **RSS 2.0 feed** - auto-linked in theme `<head>` when Blog is enabled
+- Configurable blog settings with dynamic URL path and SEO redirect support
 
 ## Installation
 
-Go to **Admin → Modules** and click **Install** next to Blog. This creates all required tables and seeds 17 permissions.
+Go to **Admin → Modules** and click **Install** next to Blog. This creates all required tables and seeds 17 permissions. A setup wizard runs after install to configure the URL path and blog identity.
 
 ## Database Tables
 
@@ -90,12 +91,31 @@ Go to **Admin → Modules** and click **Install** next to Blog. This creates all
 
 ## Public Routes
 
+The base path (`/blog` by default) is configurable from Blog Settings. All routes below use `{base}` to represent it.
+
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/blog` | Blog home (paginated post list) |
-| GET | `/blog/{slug}` | Single post view with comments |
-| GET | `/blog/category/{slug}` | Posts filtered by category |
-| POST | `/blog/{slug}/comment` | Submit a comment |
+| GET | `/{base}` | Blog home (paginated post list) |
+| GET | `/{base}/{slug}` | Single post view with comments |
+| GET | `/{base}/category/{slug}` | Posts filtered by category |
+| POST | `/{base}/{slug}/comment` | Submit a comment |
+| GET | `/{base}/feed.rss` | RSS 2.0 feed of recent published posts |
+
+## RSS Feed
+
+The feed at `/{base}/feed.rss` is an RSS 2.0 document containing the 20 most recent published posts. It includes:
+
+- `atom:link` self-reference
+- `content:encoded` with the full post body (CDATA)
+- `<enclosure>` tag for posts with a featured image
+
+The theme `<head>` automatically includes:
+
+```html
+<link rel="alternate" type="application/rss+xml" title="Blog Feed" href="/blog/feed.rss">
+```
+
+This is computed in `ThemeEngine` and injected into both bundled themes whenever the Blog module is enabled.
 
 ## Permissions
 
