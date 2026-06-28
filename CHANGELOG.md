@@ -5,7 +5,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [0.0.5-alpha] - 2026-06-26
+## [0.0.5-alpha] - 2026-06-28
 
 ### Core
 
