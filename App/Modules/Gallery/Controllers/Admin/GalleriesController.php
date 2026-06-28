@@ -40,14 +40,15 @@ class GalleriesController extends BaseController
                       media_files.filename AS cover_filename,
                       media_files.thumbnail_path AS cover_thumb')
             ->join('media_files', 'media_files.id = galleries.cover_image_id', 'LEFT')
+            ->whereNull('galleries.deleted_at')
             ->orderBy('galleries.created_at', 'DESC')
             ->limitOffset($perPage, $offset)
             ->get() ?: [];
 
-        $total = (int) ($this->db('galleries')->totalRows() ?: 0);
+        $total = (int) ($this->db('galleries')->whereNull('deleted_at')->totalRows() ?: 0);
 
         foreach ($galleries as &$g) {
-            $itemCount        = (int) ($this->db('gallery_items')->where('gallery_id', $g['id'])->totalRows() ?: 0);
+            $itemCount        = (int) ($this->db('gallery_items')->where('gallery_id', $g['id'])->whereNull('deleted_at')->totalRows() ?: 0);
             $g['item_count']  = $itemCount;
             $g['cover_url']   = $g['cover_filename']
                 ? $this->baseUrl . '/uploads/media/' . ($g['cover_thumb'] ?: $g['cover_filename'])
@@ -114,7 +115,7 @@ class GalleriesController extends BaseController
     public function editForm(string $id): void
     {
         $this->requirePermission('gallery.edit');
-        $gallery = $this->db('galleries')->where('id', $id)->get(1);
+        $gallery = $this->db('galleries')->where('id', $id)->whereNull('deleted_at')->get(1);
         if (!$gallery) {
             $this->json(['success' => false, 'message' => 'Album not found.'], 404);
         }
@@ -145,7 +146,7 @@ class GalleriesController extends BaseController
             $this->json(['success' => false, 'message' => 'Title is required.']);
         }
 
-        $existing = $this->db('galleries')->select('slug')->where('id', $id)->get(1);
+        $existing = $this->db('galleries')->select('slug')->where('id', $id)->whereNull('deleted_at')->get(1);
         $rawSlug  = trim($this->input->post('slug', false) ?? '');
         $newSlug  = $rawSlug ? $this->makeSlug($rawSlug) : null;
         if ($newSlug && $newSlug !== ($existing['slug'] ?? '')) {
@@ -184,8 +185,16 @@ class GalleriesController extends BaseController
         $this->requirePermission('gallery.delete');
         $this->validateCsrf();
 
-        $this->db('gallery_items')->where('gallery_id', $id)->delete();
-        $this->db('galleries')->where('id', $id)->delete();
+        $now    = date('Y-m-d H:i:s');
+        $userId = $this->currentUser['id'];
+        $this->db('gallery_items')->where('gallery_id', $id)->whereNull('deleted_at')->update([
+            'deleted_at' => $now,
+            'deleted_by' => $userId,
+        ]);
+        $this->db('galleries')->where('id', $id)->whereNull('deleted_at')->update([
+            'deleted_at' => $now,
+            'deleted_by' => $userId,
+        ]);
 
         Auth::audit('gallery.delete', 'galleries', $id);
         $this->json(['success' => true, 'message' => 'Album deleted.']);

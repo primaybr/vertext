@@ -118,6 +118,59 @@ function vtx_delta_html(?float $delta): string {
     </div>
   </div>
 
+  <!-- Unique visitors -->
+  <div class="vtx-panel" style="padding:1.25rem;">
+    <div style="font-size:.75rem;font-weight:500;color:var(--ps-text-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.5rem;">
+      Unique Visitors
+    </div>
+    <div style="font-size:2rem;font-weight:700;color:var(--ps-primary);line-height:1;">
+      <?php echo number_format($uniqueVisitors); ?>
+    </div>
+    <div style="font-size:.7rem;color:var(--ps-text-muted);margin-top:.375rem;">
+      distinct IPs (hashed, daily rotation)
+    </div>
+  </div>
+
+  <!-- Device breakdown -->
+  <?php
+  $mobile  = (int) ($deviceBreakdown['mobile']  ?? 0);
+  $desktop = (int) ($deviceBreakdown['desktop'] ?? 0);
+  $devTotal = $mobile + $desktop;
+  $mobPct  = $devTotal > 0 ? round($mobile  / $devTotal * 100) : 0;
+  $dskPct  = $devTotal > 0 ? round($desktop / $devTotal * 100) : 0;
+  ?>
+  <div class="vtx-panel" style="padding:1.25rem;">
+    <div style="font-size:.75rem;font-weight:500;color:var(--ps-text-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.5rem;">
+      Device Breakdown
+    </div>
+    <?php if ($devTotal > 0): ?>
+    <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.5rem;">
+      <span style="font-size:.8125rem;min-width:72px;">
+        <i class="pi pi-monitor" style="font-size:.75rem;"></i> Desktop
+      </span>
+      <div style="flex:1;background:var(--ps-border);border-radius:4px;height:8px;overflow:hidden;">
+        <div style="width:<?php echo $dskPct; ?>%;background:var(--ps-primary);height:100%;"></div>
+      </div>
+      <span style="font-size:.75rem;font-weight:600;min-width:36px;text-align:right;"><?php echo $dskPct; ?>%</span>
+    </div>
+    <div style="display:flex;gap:.5rem;align-items:center;">
+      <span style="font-size:.8125rem;min-width:72px;">
+        <i class="pi pi-mobile" style="font-size:.75rem;"></i> Mobile
+      </span>
+      <div style="flex:1;background:var(--ps-border);border-radius:4px;height:8px;overflow:hidden;">
+        <div style="width:<?php echo $mobPct; ?>%;background:var(--ps-info,#0ea5e9);height:100%;"></div>
+      </div>
+      <span style="font-size:.75rem;font-weight:600;min-width:36px;text-align:right;"><?php echo $mobPct; ?>%</span>
+    </div>
+    <div style="font-size:.7rem;color:var(--ps-text-muted);margin-top:.375rem;">
+      based on <?php echo number_format($devTotal); ?> tracked visits
+    </div>
+    <?php else: ?>
+    <div style="font-size:.8125rem;color:var(--ps-text-muted);">No device data yet</div>
+    <div style="font-size:.7rem;color:var(--ps-text-muted);margin-top:.25rem;">New visits will be classified as mobile or desktop</div>
+    <?php endif; ?>
+  </div>
+
 </div>
 
 <!-- Daily trend chart -->

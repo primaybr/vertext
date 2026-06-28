@@ -131,6 +131,34 @@ class SettingsController extends BaseController
         }
     }
 
+    /** POST /admin/settings/run-migration */
+    public function runMigration(): void
+    {
+        $this->requirePermission('settings.manage');
+
+        $token = $this->input->post('csrf_token') ?? '';
+        if (!$this->csrf->validateToken($token)) {
+            $this->json(['success' => false, 'message' => 'Security token invalid.'], 403);
+        }
+
+        try {
+            $dbConfig = require ROOT . 'Storage' . DS . 'db.php';
+            $dsn = "pgsql:host={$dbConfig['host']};port={$dbConfig['port']};dbname={$dbConfig['database']}";
+            $pdo = new \PDO($dsn, $dbConfig['username'], $dbConfig['password'], [
+                \PDO::ATTR_ERRMODE            => \PDO::ERRMODE_EXCEPTION,
+                \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
+            ]);
+
+            require_once ROOT . 'Migrations' . DS . '002_uuid_migration.php';
+            (new \Migration_002_UuidMigration($pdo))->up();
+
+            Auth::audit('settings.run_migration', 'settings');
+            $this->json(['success' => true, 'message' => 'UUID migration completed. All primary keys are now UUIDs.']);
+        } catch (\Throwable $e) {
+            $this->json(['success' => false, 'message' => 'Migration failed: ' . $e->getMessage()]);
+        }
+    }
+
     /** POST /admin/settings/toggle-maintenance */
     public function toggleMaintenance(): void
     {

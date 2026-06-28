@@ -1,0 +1,16 @@
+{
+    "name":        "Theme Customizer",
+    "slug":        "theme-customizer",
+    "version":     "0.0.1",
+    "description": "Customize the public site appearance: accent color, font family, logo, and custom CSS.",
+    "author":      "Vertext",
+    "category":    "Design",
+    "requires":    { "vertext": ">=0.0.5" },
+    "nav": {
+        "label":      "Customizer",
+        "icon":       "pi-palette",
+        "path":       "/admin/theme-customizer",
+        "active":     "theme-customizer",
+        "permission": "theme-customizer.manage"
+    }
+}

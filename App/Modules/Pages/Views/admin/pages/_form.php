@@ -62,11 +62,11 @@
     </div>
   </details>
 
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;" class="mb-3">
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;" class="mb-3">
     <div class="vtx-field">
       <label class="vtx-label" for="page-status">Status</label>
-      <select class="form-control" id="page-status" name="status">
-        <?php foreach (['draft' => 'Draft', 'published' => 'Published', 'archived' => 'Archived'] as $val => $label): ?>
+      <select class="form-select" id="page-status" name="status" data-vtx-select>
+        <?php foreach (['draft' => 'Draft', 'published' => 'Published', 'scheduled' => 'Scheduled', 'archived' => 'Archived'] as $val => $label): ?>
         <option value="<?php echo $val; ?>"
           <?php echo ($page['status'] ?? 'draft') === $val ? 'selected' : ''; ?>>
           <?php echo $label; ?>
@@ -74,6 +74,24 @@
         <?php endforeach; ?>
       </select>
     </div>
+    <div class="vtx-field">
+      <label class="vtx-label" for="page-pub-date">Publish Date</label>
+      <input class="form-control" type="datetime-local" id="page-pub-date" name="published_at"
+             value="<?php echo !empty($page['published_at'])
+               ? date('Y-m-d\TH:i', strtotime($page['published_at']))
+               : ''; ?>">
+      <div class="vtx-help">Required when status is Scheduled.</div>
+    </div>
+    <div class="vtx-field">
+      <label class="vtx-label" for="page-expire-date">Expire Date</label>
+      <input class="form-control" type="datetime-local" id="page-expire-date" name="expire_at"
+             value="<?php echo !empty($page['expire_at'])
+               ? date('Y-m-d\TH:i', strtotime($page['expire_at']))
+               : ''; ?>">
+      <div class="vtx-help">Optional. Page goes offline after this date.</div>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 2fr;gap:1rem;" class="mb-3">
     <div class="vtx-field">
       <label class="vtx-label" for="page-order">Sort Order</label>
       <input class="form-control" type="number" id="page-order" name="sort_order" min="0"

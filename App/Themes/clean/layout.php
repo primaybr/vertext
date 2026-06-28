@@ -20,13 +20,19 @@
   <?php endif; ?>
   <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl . '/assets/css/styles.css'); ?>">
   <link rel="stylesheet" href="<?php echo htmlspecialchars($themeUrl . '/css/theme.css'); ?>">
+  <?php if (class_exists('App\Modules\ThemeCustomizer\ThemeCustomizerHelper')) echo \App\Modules\ThemeCustomizer\ThemeCustomizerHelper::getCss(); ?>
 </head>
 <body>
 
 <header class="site-header">
   <div class="container">
     <a href="<?php echo htmlspecialchars($baseUrl ?: '/'); ?>" class="site-name">
-      <?php echo htmlspecialchars($siteName); ?>
+      <?php
+      $tcLogo = class_exists('App\Modules\ThemeCustomizer\ThemeCustomizerHelper')
+          ? \App\Modules\ThemeCustomizer\ThemeCustomizerHelper::getLogoUrl() : '';
+      if ($tcLogo): ?>
+      <img src="<?php echo htmlspecialchars($tcLogo); ?>" alt="<?php echo htmlspecialchars($siteName); ?>" style="max-height:48px;width:auto;vertical-align:middle;">
+      <?php else: echo htmlspecialchars($siteName); endif; ?>
     </a>
     <nav class="site-nav">
       <?php

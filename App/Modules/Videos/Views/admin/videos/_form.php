@@ -22,7 +22,7 @@
     <div class="row">
         <div class="col-sm-4 mb-3">
             <label class="form-label">Provider</label>
-            <select name="provider" class="form-select" id="vp-provider">
+            <select name="provider" class="form-select" id="vp-provider" data-vtx-select>
                 <?php foreach (['youtube' => 'YouTube', 'vimeo' => 'Vimeo', 'other' => 'Other'] as $k => $l): ?>
                     <option value="<?= $k ?>" <?= ($video['provider'] ?? 'youtube') === $k ? 'selected' : '' ?>><?= $l ?></option>
                 <?php endforeach; ?>
@@ -45,7 +45,7 @@
     <div class="row">
         <div class="col-sm-6 mb-3">
             <label class="form-label">Status</label>
-            <select name="status" class="form-select">
+            <select name="status" class="form-select" data-vtx-select>
                 <option value="draft"     <?= ($video['status'] ?? 'draft') === 'draft'     ? 'selected' : '' ?>>Draft</option>
                 <option value="published" <?= ($video['status'] ?? '') === 'published' ? 'selected' : '' ?>>Published</option>
             </select>

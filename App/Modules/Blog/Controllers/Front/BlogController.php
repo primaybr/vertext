@@ -25,6 +25,8 @@ class BlogController extends Controller
     {
         parent::__construct();
 
+        $this->ensurePostsSchema();
+
         // Load all blog settings
         $rows = (new \Core\Model('settings'))->where('grp', 'blog')->get() ?: [];
         foreach ($rows as $row) {
@@ -34,30 +36,55 @@ class BlogController extends Controller
         $this->perPage = max(1, (int) ($this->settings['posts_per_page'] ?? 10));
     }
 
+    private function ensurePostsSchema(): void
+    {
+        static $checked = false;
+        if ($checked) return;
+        $checked = true;
+        try {
+            $db = (new \Core\Model('posts'))->db;
+            foreach ([
+                "ALTER TABLE posts ADD COLUMN IF NOT EXISTS published_at       TIMESTAMP",
+                "ALTER TABLE posts ADD COLUMN IF NOT EXISTS expire_at          TIMESTAMP",
+                "ALTER TABLE posts ADD COLUMN IF NOT EXISTS featured_image_url VARCHAR(500)",
+                "ALTER TABLE posts ADD COLUMN IF NOT EXISTS featured_image_id  UUID",
+                "ALTER TABLE posts ADD COLUMN IF NOT EXISTS reading_time       SMALLINT DEFAULT 0",
+                "ALTER TABLE posts ADD COLUMN IF NOT EXISTS deleted_at         TIMESTAMP",
+            ] as $ddl) {
+                $db->query($ddl);
+                $db->execute();
+            }
+        } catch (\Throwable) {}
+    }
+
     public function index(): void
     {
         $page   = max(1, (int) ($this->input->get('page') ?? 1));
         $offset = ($page - 1) * $this->perPage;
 
+        $visibleFilter = "(posts.status = 'published' OR (posts.status = 'scheduled' AND posts.published_at <= NOW())) AND (posts.expire_at IS NULL OR posts.expire_at > NOW())";
+
         $posts = (new \Core\Model('posts'))
             ->select('posts.id, posts.title, posts.slug, posts.excerpt, posts.published_at,
                       posts.reading_time, posts.featured_image_url,
                       users.name AS author_name')
-            ->join('users', 'users.id = posts.author_id', 'LEFT')
-            ->where('posts.status', 'published')
+            ->join('users', 'users.id = posts.created_by', 'LEFT')
+            ->whereRaw($visibleFilter, [])
             ->whereNull('posts.deleted_at')
             ->orderBy('posts.published_at', 'DESC')
             ->limitOffset($this->perPage, $offset)
             ->get() ?: [];
 
+        $totalFilter = "(status = 'published' OR (status = 'scheduled' AND published_at <= NOW())) AND (expire_at IS NULL OR expire_at > NOW())";
+
         $total = (int) ((new \Core\Model('posts'))
-            ->where('status', 'published')
+            ->whereRaw($totalFilter, [])
             ->whereNull('deleted_at')
             ->totalRows() ?: 0);
 
         // Attach categories to each post
         foreach ($posts as &$p) {
-            $p['categories'] = $this->postCategories((int) $p['id']);
+            $p['categories'] = $this->postCategories($p['id']);
         }
         unset($p);
 
@@ -77,20 +104,20 @@ class BlogController extends Controller
     {
         $post = (new \Core\Model('posts'))
             ->select('posts.*, users.name AS author_name')
-            ->join('users', 'users.id = posts.author_id', 'LEFT')
+            ->join('users', 'users.id = posts.created_by', 'LEFT')
             ->where('posts.slug', $slug)
-            ->where('posts.status', 'published')
+            ->whereRaw("(posts.status = 'published' OR (posts.status = 'scheduled' AND posts.published_at <= NOW())) AND (posts.expire_at IS NULL OR posts.expire_at > NOW())", [])
             ->whereNull('posts.deleted_at')
             ->get(1);
 
         if (!$post) {
             http_response_code(404);
-            $this->render('errors/404', ['baseUrl' => $this->baseUrl]);
+            $this->render('error/404', ['baseUrl' => $this->baseUrl]);
             return;
         }
 
-        $post['categories'] = $this->postCategories((int) $post['id']);
-        $post['tags']       = $this->postTags((int) $post['id']);
+        $post['categories'] = $this->postCategories($post['id']);
+        $post['tags']       = $this->postTags($post['id']);
 
         // Comments enabled?
         $commentsEnabled = $this->settingBool('comments_enabled', true);
@@ -130,20 +157,22 @@ class BlogController extends Controller
 
         if (!$category) {
             http_response_code(404);
-            $this->render('errors/404', ['baseUrl' => $this->baseUrl]);
+            $this->render('error/404', ['baseUrl' => $this->baseUrl]);
             return;
         }
 
         $page   = max(1, (int) ($this->input->get('page') ?? 1));
         $offset = ($page - 1) * $this->perPage;
 
+        $catFilter = "(posts.status = 'published' OR (posts.status = 'scheduled' AND posts.published_at <= NOW())) AND (posts.expire_at IS NULL OR posts.expire_at > NOW())";
+
         $posts = (new \Core\Model('posts'))
             ->select('posts.id, posts.title, posts.slug, posts.excerpt, posts.published_at,
                       posts.reading_time, posts.featured_image_url, users.name AS author_name')
-            ->join('users', 'users.id = posts.author_id', 'LEFT')
+            ->join('users', 'users.id = posts.created_by', 'LEFT')
             ->join('post_category_pivot', 'post_category_pivot.post_id = posts.id', 'INNER')
             ->where('post_category_pivot.category_id', $category['id'])
-            ->where('posts.status', 'published')
+            ->whereRaw($catFilter, [])
             ->whereNull('posts.deleted_at')
             ->orderBy('posts.published_at', 'DESC')
             ->limitOffset($this->perPage, $offset)
@@ -152,12 +181,12 @@ class BlogController extends Controller
         $total = (int) ((new \Core\Model('posts'))
             ->join('post_category_pivot', 'post_category_pivot.post_id = posts.id', 'INNER')
             ->where('post_category_pivot.category_id', $category['id'])
-            ->where('posts.status', 'published')
+            ->whereRaw($catFilter, [])
             ->whereNull('posts.deleted_at')
             ->totalRows() ?: 0);
 
         foreach ($posts as &$p) {
-            $p['categories'] = $this->postCategories((int) $p['id']);
+            $p['categories'] = $this->postCategories($p['id']);
         }
         unset($p);
 
@@ -216,7 +245,7 @@ class BlogController extends Controller
             ?? '';
 
         (new \Core\Model('blog_comments'))->save([
-            'post_id'      => (int) $post['id'],
+            'post_id'      => (string) $post['id'],
             'author_name'  => $authorName,
             'author_email' => $authorEmail ?: null,
             'body'         => $body,
@@ -256,7 +285,7 @@ class BlogController extends Controller
             ->select('posts.id, posts.title, posts.slug, posts.excerpt, posts.body,
                       posts.published_at, posts.featured_image_url,
                       users.name AS author_name')
-            ->join('users', 'users.id = posts.author_id', 'LEFT')
+            ->join('users', 'users.id = posts.created_by', 'LEFT')
             ->where('posts.status', 'published')
             ->whereNull('posts.deleted_at')
             ->orderBy('posts.published_at', 'DESC')
@@ -321,7 +350,7 @@ class BlogController extends Controller
         try {
             $author = (new \Core\Model('users'))
                 ->select('email, name')
-                ->where('id', $post['author_id'])
+                ->where('id', $post['created_by'])
                 ->get(1);
 
             if (!$author || empty($author['email'])) {
@@ -355,22 +384,30 @@ class BlogController extends Controller
         }
     }
 
-    private function postCategories(int $postId): array
+    private function postCategories(string|int $postId): array
     {
-        return (new \Core\Model('post_categories'))
-            ->select('post_categories.id, post_categories.name, post_categories.slug')
-            ->join('post_category_pivot', 'post_category_pivot.category_id = post_categories.id', 'INNER')
-            ->where('post_category_pivot.post_id', $postId)
-            ->get() ?: [];
+        try {
+            return (new \Core\Model('post_categories'))
+                ->select('post_categories.id, post_categories.name, post_categories.slug')
+                ->join('post_category_pivot', 'post_category_pivot.category_id = post_categories.id', 'INNER')
+                ->where('post_category_pivot.post_id', (string) $postId)
+                ->get() ?: [];
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
-    private function postTags(int $postId): array
+    private function postTags(string|int $postId): array
     {
-        return (new \Core\Model('post_tags'))
-            ->select('post_tags.id, post_tags.name, post_tags.slug')
-            ->join('post_tag_pivot', 'post_tag_pivot.tag_id = post_tags.id', 'INNER')
-            ->where('post_tag_pivot.post_id', $postId)
-            ->get() ?: [];
+        try {
+            return (new \Core\Model('post_tags'))
+                ->select('post_tags.id, post_tags.name, post_tags.slug')
+                ->join('post_tag_pivot', 'post_tag_pivot.tag_id = post_tags.id', 'INNER')
+                ->where('post_tag_pivot.post_id', (string) $postId)
+                ->get() ?: [];
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     private function settingBool(string $key, bool $default = false): bool

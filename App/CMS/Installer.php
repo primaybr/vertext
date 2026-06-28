@@ -198,6 +198,10 @@ class Installer
             $migration->up();
             $migration->seed();
 
+            // Convert any SERIAL/INTEGER PKs to UUID (no-op on fresh UUID installs)
+            require_once ROOT . 'Migrations' . DS . '002_uuid_migration.php';
+            (new \Migration_002_UuidMigration($pdo))->up();
+
             return ['success' => true];
         } catch (\Exception $e) {
             return ['success' => false, 'message' => $e->getMessage()];

@@ -149,7 +149,7 @@ class MediaController extends BaseController
         $storedFilename = $year . '/' . $month . '/' . $stored;
 
         try {
-            $id = (string) $this->db('media_files')->withoutTimestamps()->save([
+            $id = (string) $this->db('media_files')->save([
                 'filename'       => $storedFilename,
                 'original_name'  => basename($file['name']),
                 'mime_type'      => $file['type'],
@@ -158,7 +158,7 @@ class MediaController extends BaseController
                 'height'         => $height,
                 'thumbnail_path' => $thumbnailPath,
                 'resized'        => $resized,
-                'uploaded_by'    => $this->currentUser['id'],
+                'created_by'     => $this->currentUser['id'],
             ]);
         } catch (\Exception) {
             @unlink($fullPath);

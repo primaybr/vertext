@@ -15,9 +15,26 @@ class Module implements ModuleInterface
             name       VARCHAR(120) NOT NULL,
             slug       VARCHAR(120) UNIQUE NOT NULL,
             created_at TIMESTAMP    DEFAULT NOW(),
-            updated_at TIMESTAMP    DEFAULT NOW()
+            updated_at TIMESTAMP    DEFAULT NOW(),
+            deleted_at TIMESTAMP,
+            created_by UUID,
+            updated_by UUID,
+            deleted_by UUID
         )");
         $db->execute();
+
+        try {
+            $db->query("SAVEPOINT sp_nav_menus_users_fk"); $db->execute();
+            $db->query("ALTER TABLE nav_menus DROP CONSTRAINT IF EXISTS nav_menus_created_by_fkey"); $db->execute();
+            $db->query("ALTER TABLE nav_menus ADD CONSTRAINT nav_menus_created_by_fkey FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL"); $db->execute();
+            $db->query("ALTER TABLE nav_menus DROP CONSTRAINT IF EXISTS nav_menus_updated_by_fkey"); $db->execute();
+            $db->query("ALTER TABLE nav_menus ADD CONSTRAINT nav_menus_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL"); $db->execute();
+            $db->query("ALTER TABLE nav_menus DROP CONSTRAINT IF EXISTS nav_menus_deleted_by_fkey"); $db->execute();
+            $db->query("ALTER TABLE nav_menus ADD CONSTRAINT nav_menus_deleted_by_fkey FOREIGN KEY (deleted_by) REFERENCES users(id) ON DELETE SET NULL"); $db->execute();
+            $db->query("RELEASE SAVEPOINT sp_nav_menus_users_fk"); $db->execute();
+        } catch (\Exception) {
+            try { $db->query("ROLLBACK TO SAVEPOINT sp_nav_menus_users_fk"); $db->execute(); } catch (\Exception) {}
+        }
 
         $db->query("CREATE TABLE IF NOT EXISTS nav_items (
             id          UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -30,9 +47,26 @@ class Module implements ModuleInterface
             sort_order  INT          NOT NULL DEFAULT 0,
             open_in_new BOOLEAN      NOT NULL DEFAULT FALSE,
             created_at  TIMESTAMP    DEFAULT NOW(),
-            updated_at  TIMESTAMP    DEFAULT NOW()
+            updated_at  TIMESTAMP    DEFAULT NOW(),
+            deleted_at  TIMESTAMP,
+            created_by  UUID,
+            updated_by  UUID,
+            deleted_by  UUID
         )");
         $db->execute();
+
+        try {
+            $db->query("SAVEPOINT sp_nav_items_users_fk"); $db->execute();
+            $db->query("ALTER TABLE nav_items DROP CONSTRAINT IF EXISTS nav_items_created_by_fkey"); $db->execute();
+            $db->query("ALTER TABLE nav_items ADD CONSTRAINT nav_items_created_by_fkey FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL"); $db->execute();
+            $db->query("ALTER TABLE nav_items DROP CONSTRAINT IF EXISTS nav_items_updated_by_fkey"); $db->execute();
+            $db->query("ALTER TABLE nav_items ADD CONSTRAINT nav_items_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL"); $db->execute();
+            $db->query("ALTER TABLE nav_items DROP CONSTRAINT IF EXISTS nav_items_deleted_by_fkey"); $db->execute();
+            $db->query("ALTER TABLE nav_items ADD CONSTRAINT nav_items_deleted_by_fkey FOREIGN KEY (deleted_by) REFERENCES users(id) ON DELETE SET NULL"); $db->execute();
+            $db->query("RELEASE SAVEPOINT sp_nav_items_users_fk"); $db->execute();
+        } catch (\Exception) {
+            try { $db->query("ROLLBACK TO SAVEPOINT sp_nav_items_users_fk"); $db->execute(); } catch (\Exception) {}
+        }
 
         // Seed primary menu
         $db->query("INSERT INTO nav_menus (name, slug) VALUES ('Primary Navigation', 'primary') ON CONFLICT (slug) DO NOTHING");

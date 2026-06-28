@@ -68,8 +68,8 @@ $p       = $editing ? $post : [];
         <?php else: foreach ($categories as $cat): ?>
         <label style="display:flex;align-items:center;gap:.5rem;font-size:.875rem;padding:.2rem 0;cursor:pointer;">
           <input type="checkbox" name="category_ids[]"
-                 value="<?php echo (int) $cat['id']; ?>"
-                 <?php echo in_array((int)$cat['id'], (array)($postCatIds ?? [])) ? 'checked' : ''; ?>>
+                 value="<?php echo htmlspecialchars($cat['id']); ?>"
+                 <?php echo in_array($cat['id'], (array)($postCatIds ?? [])) ? 'checked' : ''; ?>>
           <?php echo htmlspecialchars($cat['name']); ?>
         </label>
         <?php endforeach; endif; ?>
@@ -153,12 +153,12 @@ $p       = $editing ? $post : [];
   </details>
 
   <!-- Publish settings -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;" class="mb-3">
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;" class="mb-3">
     <div class="vtx-field">
       <label class="vtx-label" for="post-status">Status</label>
-      <select class="form-control" id="post-status" name="status">
+      <select class="form-select" id="post-status" name="status" data-vtx-select>
         <?php
-        $statuses = ['draft' => 'Draft', 'published' => 'Published', 'archived' => 'Archived'];
+        $statuses = ['draft' => 'Draft', 'published' => 'Published', 'scheduled' => 'Scheduled', 'archived' => 'Archived'];
         foreach ($statuses as $val => $label): ?>
         <option value="<?php echo $val; ?>"
           <?php echo ($p['status'] ?? 'draft') === $val ? 'selected' : ''; ?>>
@@ -173,7 +173,15 @@ $p       = $editing ? $post : [];
              value="<?php echo !empty($p['published_at'])
                ? date('Y-m-d\TH:i', strtotime($p['published_at']))
                : ''; ?>">
-      <div class="vtx-help">Leave blank to publish immediately.</div>
+      <div class="vtx-help">Required when status is Scheduled.</div>
+    </div>
+    <div class="vtx-field">
+      <label class="vtx-label" for="post-expire-date">Expire Date</label>
+      <input class="form-control" type="datetime-local" id="post-expire-date" name="expire_at"
+             value="<?php echo !empty($p['expire_at'])
+               ? date('Y-m-d\TH:i', strtotime($p['expire_at']))
+               : ''; ?>">
+      <div class="vtx-help">Optional. Content goes offline after this date.</div>
     </div>
   </div>
 

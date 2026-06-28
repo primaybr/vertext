@@ -125,6 +125,88 @@ public function registerRoutes(Router $router): void
 | `nav.permission` | If the user lacks this permission, the nav item is hidden |
 | `nav.subnav` | Array of sub-navigation items with the same structure |
 
+## Public Navigation Auto-Registration
+
+Modules that expose public front-end routes can declare them via `nav_routes` in `module.json`. Two things happen automatically:
+
+1. **On install** - the module's `install()` method reads the primary navigation menu and inserts a nav item for each declared route (if one with that URL does not already exist).
+2. **Navigation builder** - the builder page lists all `nav_routes` from enabled modules as "Module Route" type items, so editors can add them to any menu without typing the path manually.
+
+```json
+{
+    "name": "My Module",
+    "slug": "my-module",
+    "nav_routes": [
+        { "label": "My Module", "path": "/my-module" }
+    ]
+}
+```
+
+The `nav_routes` array supports multiple entries (for modules with more than one public page). Each entry needs `path` (required) and `label` (used as the default menu label). Nav items inserted this way have `type = 'module'` in the `nav_items` table.
+
+**Install snippet** - add this at the end of `Module::install()`:
+
+```php
+try {
+    $pm = \Core\Model::on($db, 'nav_menus')->select('id')->where('slug', 'primary')->get(1);
+    if ($pm) {
+        $exists = \Core\Model::on($db, 'nav_items')
+            ->where('menu_id', $pm['id'])->where('url', '/my-module')->get(1);
+        if (!$exists) {
+            $order = (int) (\Core\Model::on($db, 'nav_items')
+                ->where('menu_id', $pm['id'])->whereRaw('parent_id IS NULL', [])->totalRows() ?: 0);
+            \Core\Model::on($db, 'nav_items')->save([
+                'menu_id'     => $pm['id'],
+                'type'        => 'module',
+                'label'       => 'My Module',
+                'url'         => '/my-module',
+                'sort_order'  => $order,
+                'open_in_new' => false,
+            ]);
+        }
+    }
+} catch (\Exception) {}
+```
+
+The entire block is wrapped in `try/catch` so it is safe when the Navigation module is not installed.
+
+## Module Dependencies
+
+Modules can declare dependencies on other modules via `requires.modules` in `module.json`. The install/uninstall lifecycle enforces these automatically.
+
+```json
+{
+    "name": "My Newsletter",
+    "slug": "newsletter",
+    "requires": {
+        "vertext": ">=0.0.5",
+        "modules": ["media"]
+    }
+}
+```
+
+### Install-time enforcement
+
+`ModuleManager::checkModuleDeps()` runs before `Module::install()`. If a required module is not installed **and enabled**, installation is blocked with a clear error:
+
+> "Cannot install: required module(s) are not installed: \"media\""
+
+The Module Manager UI shows a disabled Install button with a tooltip listing missing dependencies.
+
+### Uninstall-time protection
+
+`ModuleManager::checkDependents()` runs before `Module::uninstall()`. If any installed module declares a dependency on the module being removed, uninstallation is blocked:
+
+> "Cannot uninstall: \"newsletter\" depends on this module. Uninstall it first."
+
+### Dependency status in the UI
+
+`ModuleManager::getDependencyInfo(array $slugs): array` returns per-slug install+enabled status. The Module Manager passes this to the card view to render green/red dependency badges on module cards.
+
+### No circular dependency detection
+
+The system does not check for circular dependencies (A → B → A). Module authors are responsible for avoiding cycles.
+
 ## Module Lifecycle
 
 ### Discovery

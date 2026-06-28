@@ -16,8 +16,13 @@ class Module implements ModuleInterface
             page_title    VARCHAR(255),
             referrer_host VARCHAR(255),
             ip_hash       VARCHAR(64),
+            device_type   VARCHAR(10),
             viewed_at     TIMESTAMP    DEFAULT NOW()
         )");
+        $db->execute();
+
+        // Migration for existing installations
+        $db->query("ALTER TABLE analytics_pageviews ADD COLUMN IF NOT EXISTS device_type VARCHAR(10)");
         $db->execute();
 
         $db->query("CREATE INDEX IF NOT EXISTS idx_analytics_viewed_at ON analytics_pageviews(viewed_at)");

@@ -5,6 +5,79 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.0.5-alpha] - 2026-06-26
+
+### Core
+
+- **Content Revisions** - snapshot before every update on Posts and Pages; `content_revisions` table shared between both modules; revision list per content item; restore from any revision with a single click; snapshot captures title, body/content, and status
+- **Scheduled/Expired Publishing** - `published_at` and `expire_at` columns on both Posts and Pages; public queries filter at render time (`(status='published') OR (status='scheduled' AND published_at <= NOW()) AND (expire_at IS NULL OR expire_at > NOW())`) with no cron required; "Scheduled" tab in Posts admin; "Live (scheduled)" badge when a scheduled post has passed its `published_at`; `expire_at` field in both post and page forms
+- **vtx-select Standardization** - all admin `<select>` elements gain `data-vtx-select` for consistent searchable dropdown UX; class normalized to `form-select` across all module forms
+
+### Navigation Module (v0.0.1 → v0.0.2)
+
+- **Module Route type** - Navigation builder gains "Module Route" as a third item type alongside Custom URL and Page; lists all front-end routes declared by installed modules via `nav_routes` in `module.json`
+- **Auto-registration on install** - modules with front-end routes (Contact, Gallery, Videos, Blog, Search) declare `nav_routes` in `module.json`; on install, a nav item is auto-inserted into the primary navigation menu
+
+### Search Module (v0.0.1)
+
+- `search_index` table with `UNIQUE(content_type, content_id)`; `ON CONFLICT DO UPDATE` upsert for idempotent reindex; admin dashboard shows total count, per-type breakdown, and last indexed timestamp; Reindex button for users with `search.manage`
+- `GET /search?q=...` - ILIKE search across `title` and `body` of indexed Pages and Blog posts; up to 30 results; contextual excerpt with match-position snippet; type badge per result
+- Permission: `search.manage`; auto-granted to Administrator on install
+
+### Theme Customizer (v0.0.1)
+
+- Accent color picker with hex input and live JS preview; font family selector (system, Inter, Georgia, Helvetica, Courier); logo URL field (replaces site name text with `<img>` in both default and clean themes); freeform custom CSS textarea
+- Settings stored in `settings` table (grp: `theme-customizer`); `ThemeCustomizerHelper::getCss()` injects a `<style>` block with `--ps-primary`, `--ps-primary-hover`, `--ps-primary-light`, `--ps-font-sans` CSS variable overrides and custom CSS after `theme.css` in all theme layouts
+- Permission: `theme-customizer.manage`; auto-granted to Administrator on install
+
+### Analytics (v0.0.2 → v0.0.3)
+
+- **Unique visitors** - count distinct `ip_hash` per period; KPI card in the analytics dashboard
+- **Device breakdown** - mobile vs desktop split from User-Agent string; displayed as percentage in the dashboard
+
+### Docs
+
+- **Module dependency system** - `docs/module-system.md` updated to document `requires.modules` in `module.json`, install guards (`checkModuleDeps()`), and uninstall protection (`checkDependents()`) - fully implemented since v0.0.3 but previously undocumented
+
+---
+
+## Upcoming
+
+### [0.0.6-alpha]
+
+#### Core
+
+- **Multi-language / i18n** - language switcher, translatable content fields, locale-aware date/number formatting
+- **Role/permission builder UI** - create custom permissions in admin without hardcoding in module code
+- **Two-factor authentication (2FA)** - TOTP authenticator app support for admin users
+- **Admin audit log UI** - searchable, filterable view of `audit_logs` table (data collected since v0.0.1)
+
+#### Blog (v0.0.6)
+
+- **Related posts** - N related posts below single post view based on shared tags/categories
+- **Reading list** - visitor-side "save for later" to localStorage; no account required
+- **Comments** - threaded comments with moderation; Disqus embed as alternative
+- **Post series** - ordered multi-part posts with prev/next navigation
+
+#### New Modules
+
+- **Forms Builder** - drag-and-drop custom form creation; extends Contact module patterns; stores submissions in DB
+- **Newsletter** - subscriber list management + email blast; integrates with Webhooks for delivery events
+- **Events** - event listings with date, location, RSVP; front-end calendar view
+
+#### Analytics (v0.0.4)
+
+- **Referrer breakdown** - top traffic sources with domain grouping
+- **Search term tracking** - captures queries from the Search module
+- **Export** - structured CSV/JSON export for import into external analytics tools
+
+#### DX / Infrastructure
+
+- **Module scaffold CLI** - `php vertext make:module Foo` generates boilerplate module files
+- **Module marketplace** - install a module directly from a URL via the Module Manager UI
+
+---
+
 ## [0.0.4-alpha] - 2026-06-25
 
 ### Core
@@ -355,32 +428,3 @@ APIs and database schema may change before the stable 1.0.0 release.
 - CSS custom properties (`--ps-*`) for theming
 - 50+ SVG icon system via `.pi .pi-{name}` classes
 - Responsive grid, utility classes, form styles, badges, cards, tables, alerts
-
----
-
-## Upcoming
-
-### [0.0.5-alpha]
-
-#### Core
-
-- **Content Revisions** - version history for Pages and Blog posts; snapshot on each save; diff view; restore from previous revision
-- **Scheduled Publishing** - `publish_at` / `expire_at` fields on Posts and Pages; lightweight cron-tick endpoint `GET /admin/system/tick` processes pending state changes; "Scheduled" status badge
-
-#### Blog (v0.0.4 → v0.0.5)
-
-- **Related posts** - N related posts below single post view based on shared tags/categories
-- **Reading list** - visitor-side "save for later" to localStorage; no account required
-
-#### Search Module (v0.0.1)
-
-- `GET /search?q=...` full-text search across Pages + Blog posts; `SearchProvider` interface for other modules to register content; admin status and manual re-index button
-
-#### Theme Customizer (v0.0.1)
-
-- Admin section to override CSS custom properties (accent color, font, border-radius); stored in settings; generates `custom.css` injected after `theme.css`; live preview via iframe
-
-#### Analytics (v0.0.2 → v0.0.3)
-
-- **Unique visitors** - count distinct `ip_hash` per period
-- **Device breakdown** - mobile vs desktop heuristic via UA string

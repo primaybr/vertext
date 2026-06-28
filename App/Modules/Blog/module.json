@@ -1,7 +1,7 @@
 {
     "name":        "Blog",
     "slug":        "blog",
-    "version":     "0.0.3",
+    "version":     "0.0.4",
     "description": "Full-featured blog with posts, categories, tags, comments, analytics, and public frontend",
     "setup":       "/admin/blog/setup",
     "author":      "Vertext",
@@ -13,6 +13,9 @@
             "js":  ["js/blog.js"]
         }
     },
+    "nav_routes": [
+        {"label": "Blog", "path": "/blog"}
+    ],
     "nav": {
         "label":      "Blog",
         "icon":       "pi-edit",

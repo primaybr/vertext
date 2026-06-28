@@ -37,9 +37,10 @@ class VideosController extends BaseController
         $perPage = 20;
         $offset  = ($page - 1) * $perPage;
 
-        $total   = (int) ($this->db('videos')->totalRows() ?: 0);
+        $total   = (int) ($this->db('videos')->whereNull('deleted_at')->totalRows() ?: 0);
         $videos  = $this->db('videos')
             ->select('id, title, slug, provider, status, thumbnail_path, sort_order, created_at')
+            ->whereNull('deleted_at')
             ->orderBy('sort_order', 'ASC')
             ->orderBy('created_at', 'DESC')
             ->limitOffset($perPage, $offset)
@@ -90,7 +91,7 @@ class VideosController extends BaseController
     public function editForm(string $id): void
     {
         $this->requirePermission('videos.edit');
-        $video = $this->db('videos')->where('id', $id)->get(1);
+        $video = $this->db('videos')->where('id', $id)->whereNull('deleted_at')->get(1);
         if (!$video) {
             $this->json(['success' => false, 'message' => 'Not found.'], 404);
         }
@@ -102,7 +103,7 @@ class VideosController extends BaseController
         $this->requirePermission('videos.edit');
         $this->validateCsrf();
 
-        $existing = $this->db('videos')->where('id', $id)->get(1);
+        $existing = $this->db('videos')->where('id', $id)->whereNull('deleted_at')->get(1);
         if (!$existing) {
             $this->json(['success' => false, 'message' => 'Not found.'], 404);
         }
@@ -139,12 +140,10 @@ class VideosController extends BaseController
         $this->requirePermission('videos.delete');
         $this->validateCsrf();
 
-        $video = $this->db('videos')->where('id', $id)->get(1);
-        if ($video && $video['thumbnail_path'] && is_file($video['thumbnail_path'])) {
-            @unlink($video['thumbnail_path']);
-        }
-
-        $this->db('videos')->where('id', $id)->delete();
+        $this->db('videos')->where('id', $id)->whereNull('deleted_at')->update([
+            'deleted_at' => date('Y-m-d H:i:s'),
+            'deleted_by' => Auth::id(),
+        ]);
         Auth::audit('videos.delete', 'videos', $id);
         $this->json(['success' => true, 'message' => 'Video deleted.']);
     }

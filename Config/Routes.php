@@ -71,6 +71,7 @@ $router->post('/admin/settings/save-mail',   'Admin\SettingsController', 'saveMa
 $router->post('/admin/settings/test-mail',   'Admin\SettingsController', 'testMail');
 $router->post('/admin/settings/clear-cache',             'Admin\SettingsController', 'clearCache');
 $router->post('/admin/settings/toggle-maintenance',     'Admin\SettingsController', 'toggleMaintenance');
+$router->post('/admin/settings/run-migration',          'Admin\SettingsController', 'runMigration');
 
 // ── Non-core module routes (loaded from DB, only when CMS is installed) ────────
 \App\CMS\ModuleManager::loadRoutes($router);

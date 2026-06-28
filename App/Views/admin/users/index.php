@@ -95,7 +95,7 @@
                       data-form-title="Edit User">
                 <i class="pi pi-edit"></i>
               </button>
-              <?php if ((int)$row['id'] !== (int)($currentUser['id'] ?? 0)): ?>
+              <?php if ($row['id'] !== ($currentUser['id'] ?? '')): ?>
               <form id="del-user-<?php echo $row['id']; ?>" method="POST"
                     action="{{baseUrl}}/admin/users/<?php echo $row['id']; ?>/delete"
                     style="display:none;">

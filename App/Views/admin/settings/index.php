@@ -33,7 +33,7 @@
 
           <div class="vtx-field mb-3">
             <label class="vtx-label" for="mail_driver">Driver</label>
-            <select class="form-select" id="mail_driver" name="mail_driver" onchange="vtxToggleSmtp(this.value)">
+            <select class="form-select" id="mail_driver" name="mail_driver" data-vtx-select onchange="vtxToggleSmtp(this.value)">
               <option value="mail" <?php echo ($settings['mail_driver'] ?? 'mail') === 'mail' ? 'selected' : ''; ?>>PHP mail() - uses server sendmail</option>
               <option value="smtp" <?php echo ($settings['mail_driver'] ?? '') === 'smtp' ? 'selected' : ''; ?>>SMTP</option>
             </select>
@@ -61,7 +61,7 @@
 
             <div class="vtx-field mb-3">
               <label class="vtx-label" for="mail_encryption">Encryption</label>
-              <select class="form-select" id="mail_encryption" name="mail_encryption">
+              <select class="form-select" id="mail_encryption" name="mail_encryption" data-vtx-select>
                 <option value="tls" <?php echo ($settings['mail_encryption'] ?? 'tls') === 'tls' ? 'selected' : ''; ?>>TLS (port 587)</option>
                 <option value="ssl" <?php echo ($settings['mail_encryption'] ?? '') === 'ssl' ? 'selected' : ''; ?>>SSL (port 465)</option>
                 <option value="" <?php echo ($settings['mail_encryption'] ?? 'x') === '' ? 'selected' : ''; ?>>None</option>
@@ -220,7 +220,7 @@ document.getElementById('vtx-test-mail-btn').addEventListener('click', function 
             <div class="col-md-6">
               <div class="vtx-field">
                 <label class="vtx-label" for="default_language">Default Language</label>
-                <select class="form-select" id="default_language" name="default_language">
+                <select class="form-select" id="default_language" name="default_language" data-vtx-select>
                   <option value="en" <?php echo ($settings['default_language'] ?? 'en') === 'en' ? 'selected' : ''; ?>>English</option>
                   <option value="id" <?php echo ($settings['default_language'] ?? '') === 'id' ? 'selected' : ''; ?>>Bahasa Indonesia</option>
                 </select>
@@ -297,6 +297,25 @@ document.getElementById('vtx-test-mail-btn').addEventListener('click', function 
               </button>
             </div>
           </div>
+
+          <hr style="border-color:var(--ps-border);margin:.75rem 0;">
+
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:.5rem 0;gap:1rem;">
+            <div>
+              <div style="font-size:.875rem;font-weight:500;">UUID Migration</div>
+              <div class="vtx-help" style="display:block;margin-top:1px;">
+                Convert all primary keys from integer (SERIAL) to UUID. Safe to run multiple times - tables already on UUID are skipped automatically. <strong>Back up your database first.</strong>
+              </div>
+            </div>
+            <button type="button"
+                    id="vtx-run-migration-btn"
+                    class="btn btn-sm btn-outline-primary"
+                    style="white-space:nowrap;flex-shrink:0;"
+                    data-csrf="{{csrf_token}}">
+              <i class="pi pi-database me-1"></i> Run Migration
+            </button>
+          </div>
+          <div id="vtx-migration-result" style="display:none;margin-top:.5rem;font-size:.8125rem;border-radius:6px;padding:.5rem .75rem;"></div>
 
         </div>
       </div>
@@ -404,6 +423,45 @@ document.getElementById('vtx-test-mail-btn').addEventListener('click', function 
       .catch(function () {
         btn.disabled = false;
         btn.classList.remove('vtx-pill-toggle--loading');
+        Phuse.toast('Request failed.', 'error');
+      });
+  });
+}());
+
+(function () {
+  var btn = document.getElementById('vtx-run-migration-btn');
+  var result = document.getElementById('vtx-migration-result');
+  if (!btn) return;
+  btn.addEventListener('click', function () {
+    if (btn.disabled) return;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="pi pi-spinner me-1"></i> Running...';
+    result.style.display = 'none';
+    var fd = new FormData();
+    fd.append('csrf_token', btn.dataset.csrf);
+    fetch('{{baseUrl}}/admin/settings/run-migration', { method: 'POST', body: fd })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="pi pi-database me-1"></i> Run Migration';
+        result.style.display = 'block';
+        if (d.success) {
+          result.style.background = 'color-mix(in srgb,var(--ps-success,#22c55e) 12%,transparent)';
+          result.style.border = '1px solid color-mix(in srgb,var(--ps-success,#22c55e) 40%,transparent)';
+          result.style.color = 'var(--ps-success,#16a34a)';
+          result.textContent = d.message;
+          Phuse.toast(d.message, 'success');
+        } else {
+          result.style.background = 'color-mix(in srgb,var(--ps-danger,#ef4444) 12%,transparent)';
+          result.style.border = '1px solid color-mix(in srgb,var(--ps-danger,#ef4444) 40%,transparent)';
+          result.style.color = 'var(--ps-danger,#dc2626)';
+          result.textContent = d.message;
+          Phuse.toast(d.message || 'Migration failed.', 'error');
+        }
+      })
+      .catch(function () {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="pi pi-database me-1"></i> Run Migration';
         Phuse.toast('Request failed.', 'error');
       });
   });

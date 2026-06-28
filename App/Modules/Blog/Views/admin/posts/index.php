@@ -25,6 +25,7 @@
     <?php
     $tabDefs = [
       'published' => ['label' => 'Published', 'icon' => 'pi-check-circle'],
+      'scheduled' => ['label' => 'Scheduled', 'icon' => 'pi-clock'],
       'draft'     => ['label' => 'Draft',     'icon' => 'pi-pencil'],
       'archived'  => ['label' => 'Archived',  'icon' => 'pi-archive'],
     ];
@@ -117,12 +118,18 @@
       </thead>
       <tbody>
         <?php foreach ($posts as $post):
-          $statusClass = match($post['status'] ?? '') {
-            'published' => 'success',
-            'draft'     => 'warning',
-            'archived'  => 'gray',
-            default     => 'gray',
+          $isLive = $post['status'] === 'scheduled'
+              && !empty($post['published_at'])
+              && strtotime($post['published_at']) <= time();
+          $statusClass = match(true) {
+            $post['status'] === 'published'  => 'success',
+            $isLive                          => 'info',
+            $post['status'] === 'scheduled'  => 'primary',
+            $post['status'] === 'draft'      => 'warning',
+            $post['status'] === 'archived'   => 'gray',
+            default                          => 'gray',
           };
+          $statusLabel = $isLive ? 'Live (scheduled)' : ucfirst($post['status'] ?? '');
         ?>
         <tr>
           <td style="padding-left:.875rem;">
@@ -138,7 +145,7 @@
             </div>
             <?php endif; ?>
           </td>
-          <td><span class="vtx-tag <?php echo $statusClass; ?>"><?php echo ucfirst($post['status']); ?></span></td>
+          <td><span class="vtx-tag <?php echo $statusClass; ?>"><?php echo $statusLabel; ?></span></td>
           <td style="font-size:.8125rem;color:var(--ps-text-muted);">
             <?php echo ($post['reading_time'] ?? 0) > 0 ? $post['reading_time'] . ' min' : '-'; ?>
           </td>
@@ -156,6 +163,10 @@
               </a>
               <?php endif; ?>
               <?php if (\App\CMS\Auth::can('posts.edit')): ?>
+              <a href="<?php echo $baseUrl; ?>/admin/blog/posts/<?php echo $post['id']; ?>/revisions"
+                 class="vtx-icon-btn" title="Revision history">
+                <i class="pi pi-history"></i>
+              </a>
               <button type="button" class="vtx-icon-btn" title="Edit"
                       data-form-url="<?php echo $baseUrl; ?>/admin/blog/posts/<?php echo $post['id']; ?>/form"
                       data-form-title="Edit Post"

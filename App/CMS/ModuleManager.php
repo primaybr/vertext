@@ -139,20 +139,16 @@ class ModuleManager
 
             (new $className())->install($conn);
 
-            // Insert the module record on the same connection so it is part of the
-            // transaction. withoutTimestamps() prevents auto-injection of created_at
-            // (modules uses installed_at instead).
-            \Core\Model::on($conn, 'modules')->withoutTimestamps()->save([
-                'name'         => $manifest['name']        ?? $dirName,
-                'slug'         => $slug,
-                'version'      => $manifest['version']     ?? '1.0.0',
-                'description'  => $manifest['description'] ?? '',
-                'author'       => $manifest['author']      ?? '',
-                'is_core'      => false,
-                'status'       => 'enabled',
-                'directory'    => $dirName,
-                'installed_at' => date('Y-m-d H:i:s'),
-                'updated_at'   => date('Y-m-d H:i:s'),
+            // Insert the module record on the same connection so it is part of the transaction.
+            \Core\Model::on($conn, 'modules')->save([
+                'name'        => $manifest['name']        ?? $dirName,
+                'slug'        => $slug,
+                'version'     => $manifest['version']     ?? '1.0.0',
+                'description' => $manifest['description'] ?? '',
+                'author'      => $manifest['author']      ?? '',
+                'is_core'     => false,
+                'status'      => 'enabled',
+                'directory'   => $dirName,
             ]);
 
             $conn->endTransaction();
@@ -289,6 +285,7 @@ class ModuleManager
                 ->whereQuery('is_core = FALSE')
                 ->where('status', 'enabled')
                 ->whereNotNull('directory')
+                ->orderBy('name', 'ASC')
                 ->get() ?: [];
         } catch (\Exception $e) {
             return;
@@ -332,6 +329,16 @@ class ModuleManager
     {
         if (file_exists(self::ROUTE_CACHE)) {
             @unlink(self::ROUTE_CACHE);
+        }
+
+        // Also flush the ORM query cache so the next request reads the modules
+        // table fresh from DB (the cached query would otherwise return stale results
+        // for up to an hour after install/uninstall).
+        $dbCacheDir = ROOT . 'Cache' . DS . 'database' . DS;
+        if (is_dir($dbCacheDir)) {
+            foreach (glob($dbCacheDir . '*.cache') ?: [] as $f) {
+                @unlink($f);
+            }
         }
     }
 

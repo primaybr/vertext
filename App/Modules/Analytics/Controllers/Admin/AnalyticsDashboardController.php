@@ -89,6 +89,24 @@ class AnalyticsDashboardController extends BaseController
             ->limitOffset(10, 0)
             ->get() ?: [];
 
+        // Unique visitors (distinct ip_hash) for selected period
+        $uniqueRow = $this->db('analytics_pageviews')
+            ->select('COUNT(DISTINCT ip_hash) AS unique_count')
+            ->whereRaw('DATE(viewed_at) >= :f AND DATE(viewed_at) <= :t', [':f' => $from, ':t' => $to])
+            ->whereRaw('ip_hash IS NOT NULL', [])
+            ->get(1);
+        $uniqueVisitors = (int) ($uniqueRow['unique_count'] ?? 0);
+
+        // Device breakdown (mobile vs desktop) for selected period
+        $deviceRows = $this->db('analytics_pageviews')
+            ->select('device_type, COUNT(*) AS views')
+            ->whereRaw('DATE(viewed_at) >= :f AND DATE(viewed_at) <= :t', [':f' => $from, ':t' => $to])
+            ->whereRaw('device_type IS NOT NULL', [])
+            ->groupBy('device_type')
+            ->orderBy('views', 'DESC')
+            ->get() ?: [];
+        $deviceBreakdown = array_column($deviceRows, 'views', 'device_type');
+
         // Daily chart data (selected period)
         $chartRows = $this->db('analytics_pageviews')
             ->select('DATE(viewed_at) AS day, COUNT(*) AS views')
@@ -121,6 +139,8 @@ class AnalyticsDashboardController extends BaseController
             'viewsYesterday'  => $viewsYesterday,
             'deltaToday'      => $deltaToday,
             'dailyAvg'        => $dailyAvg,
+            'uniqueVisitors'  => $uniqueVisitors,
+            'deviceBreakdown' => $deviceBreakdown,
             'topPages'        => $topPages,
             'topReferrers'    => $topReferrers,
             'chartLabels'     => $chartLabels,

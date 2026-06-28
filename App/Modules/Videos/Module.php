@@ -36,8 +36,10 @@ class Module implements ModuleInterface
             sort_order       INT          NOT NULL DEFAULT 0,
             created_at       TIMESTAMP    DEFAULT NOW(),
             updated_at       TIMESTAMP    DEFAULT NOW(),
+            deleted_at       TIMESTAMP,
             created_by       {$userIdType},
-            updated_by       {$userIdType}
+            updated_by       {$userIdType},
+            deleted_by       {$userIdType}
         )");
         $db->execute();
 
@@ -68,6 +70,8 @@ class Module implements ModuleInterface
             $db->query("ALTER TABLE videos ADD CONSTRAINT videos_created_by_fkey FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL"); $db->execute();
             $db->query("ALTER TABLE videos DROP CONSTRAINT IF EXISTS videos_updated_by_fkey"); $db->execute();
             $db->query("ALTER TABLE videos ADD CONSTRAINT videos_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL"); $db->execute();
+            $db->query("ALTER TABLE videos DROP CONSTRAINT IF EXISTS videos_deleted_by_fkey"); $db->execute();
+            $db->query("ALTER TABLE videos ADD CONSTRAINT videos_deleted_by_fkey FOREIGN KEY (deleted_by) REFERENCES users(id) ON DELETE SET NULL"); $db->execute();
             $db->query("RELEASE SAVEPOINT sp_videos_users_fk"); $db->execute();
         } catch (\Exception) {
             try { $db->query("ROLLBACK TO SAVEPOINT sp_videos_users_fk"); $db->execute(); } catch (\Exception) {}
@@ -95,6 +99,31 @@ class Module implements ModuleInterface
              ON CONFLICT DO NOTHING"
         );
         $db->execute();
+
+        // Auto-insert into primary navigation if Navigation module is installed
+        try {
+            $db->query("SAVEPOINT sp_videos_nav"); $db->execute();
+            $pm = \Core\Model::on($db, 'nav_menus')->select('id')->where('slug', 'primary')->get(1);
+            if ($pm) {
+                $exists = \Core\Model::on($db, 'nav_items')
+                    ->where('menu_id', $pm['id'])->where('url', '/videos')->get(1);
+                if (!$exists) {
+                    $order = (int) (\Core\Model::on($db, 'nav_items')
+                        ->where('menu_id', $pm['id'])->whereRaw('parent_id IS NULL', [])->totalRows() ?: 0);
+                    \Core\Model::on($db, 'nav_items')->save([
+                        'menu_id'     => $pm['id'],
+                        'type'        => 'module',
+                        'label'       => 'Videos',
+                        'url'         => '/videos',
+                        'sort_order'  => $order,
+                        'open_in_new' => false,
+                    ]);
+                }
+            }
+            $db->query("RELEASE SAVEPOINT sp_videos_nav"); $db->execute();
+        } catch (\Exception) {
+            try { $db->query("ROLLBACK TO SAVEPOINT sp_videos_nav"); $db->execute(); } catch (\Exception) {}
+        }
     }
 
     public function uninstall(\Core\Database\Connection $db): void

@@ -101,12 +101,33 @@ class NavigationController extends BaseController
                 ->get() ?: [];
         }
 
+        // Collect nav_routes from enabled modules' manifests
+        $moduleRoutes = [];
+        $modulesDir   = dirname(__DIR__, 3); // App/Modules/
+        foreach (ModuleLoader::getEnabled() as $slug) {
+            $dir          = str_replace('-', '', ucwords($slug, '-'));
+            $manifestPath = $modulesDir . '/' . $dir . '/module.json';
+            if (!is_file($manifestPath)) {
+                continue;
+            }
+            $manifest = json_decode(file_get_contents($manifestPath) ?: '{}', true) ?: [];
+            foreach ($manifest['nav_routes'] ?? [] as $route) {
+                if (!empty($route['path'])) {
+                    $moduleRoutes[] = [
+                        'label' => $route['label'] ?? $slug,
+                        'path'  => $route['path'],
+                    ];
+                }
+            }
+        }
+
         $this->adminRender('modules/navigation/admin/navigation/builder', [
             'menu'           => $menu,
             'parents'        => $parents,
             'children'       => $children,
             'availablePages' => $availablePages,
             'pagesEnabled'   => ModuleLoader::isEnabled('pages'),
+            'moduleRoutes'   => $moduleRoutes,
         ], 'Edit: ' . $menu['name'], 'navigation');
     }
 
@@ -147,13 +168,13 @@ class NavigationController extends BaseController
         $parentId  = $this->input->post('parent_id') ?: null;
         $openInNew = $this->input->post('open_in_new') ? 1 : 0;
 
-        if (!in_array($type, ['custom', 'page'], true)) {
+        if (!in_array($type, ['custom', 'page', 'module'], true)) {
             $type = 'custom';
         }
         if (!$label) {
             $this->json(['success' => false, 'message' => 'Label is required.']);
         }
-        if ($type === 'custom' && !$url) {
+        if (in_array($type, ['custom', 'module'], true) && !$url) {
             $this->json(['success' => false, 'message' => 'URL is required for custom links.']);
         }
         if ($type === 'page' && !$pageSlug) {
@@ -175,7 +196,7 @@ class NavigationController extends BaseController
             'parent_id'   => $parentId,
             'type'        => $type,
             'label'       => $label,
-            'url'         => $type === 'custom' ? $url : null,
+            'url'         => in_array($type, ['custom', 'module'], true) ? $url : null,
             'page_slug'   => $type === 'page' ? $pageSlug : null,
             'sort_order'  => $maxOrder,
             'open_in_new' => $openInNew,
@@ -209,7 +230,7 @@ class NavigationController extends BaseController
             'updated_at'  => date('Y-m-d H:i:s'),
         ];
 
-        if ($item['type'] === 'custom') {
+        if (in_array($item['type'], ['custom', 'module'], true)) {
             $updates['url'] = $url;
         } elseif ($item['type'] === 'page') {
             $updates['page_slug'] = $pageSlug ?: $item['page_slug'];

@@ -43,7 +43,7 @@ class PostsController extends BaseController
         $q  = $this->db('posts')
             ->select('posts.id, posts.title, posts.slug, posts.status, posts.reading_time,
                       posts.published_at, posts.created_at, users.name AS author_name')
-            ->join('users', 'users.id = posts.author_id', 'LEFT')
+            ->join('users', 'users.id = posts.created_by', 'LEFT')
             ->whereNull('posts.deleted_at')
             ->orderBy('posts.created_at', 'DESC')
             ->limitOffset($perPage, $offset);
@@ -52,11 +52,11 @@ class PostsController extends BaseController
 
         // Status filter counts (for tabs)
         $counts = [];
-        foreach (['published', 'draft', 'archived'] as $s) {
+        foreach (['published', 'scheduled', 'draft', 'archived'] as $s) {
             $counts[$s] = (int) ($this->db('posts')->where('status', $s)->whereNull('deleted_at')->totalRows() ?: 0);
         }
 
-        if ($status && in_array($status, ['published', 'draft', 'archived'], true)) {
+        if ($status && in_array($status, ['published', 'scheduled', 'draft', 'archived'], true)) {
             $q->where('posts.status', $status);
             $qc->where('status', $status);
         }
@@ -116,6 +116,7 @@ class PostsController extends BaseController
         $metaTitle       = trim($this->input->post('meta_title', false) ?? '');
         $metaDesc        = trim($this->input->post('meta_description', false) ?? '');
         $scheduledAt     = trim($this->input->post('published_at', false) ?? '');
+        $expireAt        = trim($this->input->post('expire_at', false) ?? '') ?: null;
         $readingTime     = max(0, (int) ($this->input->post('reading_time', false) ?? 0));
         $featuredImgId   = trim((string) ($this->input->post('featured_image_id', false) ?? '')) ?: null;
         $featuredImgUrl  = trim($this->input->post('featured_image_url', false) ?? '');
@@ -126,7 +127,7 @@ class PostsController extends BaseController
             $this->json(['success' => false, 'message' => 'Post title is required.']);
         }
 
-        if (!in_array($status, ['draft', 'published', 'archived'], true)) {
+        if (!in_array($status, ['draft', 'published', 'scheduled', 'archived'], true)) {
             $status = 'draft';
         }
 
@@ -140,22 +141,29 @@ class PostsController extends BaseController
         $publishedAt = null;
         if ($status === 'published') {
             $publishedAt = $scheduledAt ? date('Y-m-d H:i:s', strtotime($scheduledAt)) : date('Y-m-d H:i:s');
+        } elseif ($status === 'scheduled' && $scheduledAt) {
+            $publishedAt = date('Y-m-d H:i:s', strtotime($scheduledAt));
         }
 
-        $postId = (string) $this->db('posts')->save([
-            'title'              => $title,
-            'slug'               => $slug,
-            'body'               => $body,
-            'excerpt'            => $excerpt,
-            'status'             => $status,
-            'author_id'          => $this->currentUser['id'],
-            'published_at'       => $publishedAt,
-            'featured_image_id'  => $featuredImgId,
-            'featured_image_url' => $featuredImgUrl ?: null,
-            'meta_title'         => $metaTitle ?: null,
-            'meta_description'   => $metaDesc ?: null,
-            'reading_time'       => $readingTime,
-        ]);
+        try {
+            $postId = (string) $this->db('posts')->save([
+                'title'              => $title,
+                'slug'               => $slug,
+                'body'               => $body,
+                'excerpt'            => $excerpt,
+                'status'             => $status,
+                'created_by'         => $this->currentUser['id'],
+                'published_at'       => $publishedAt,
+                'expire_at'          => $expireAt ? date('Y-m-d H:i:s', strtotime($expireAt)) : null,
+                'featured_image_id'  => $featuredImgId,
+                'featured_image_url' => $featuredImgUrl ?: null,
+                'meta_title'         => $metaTitle ?: null,
+                'meta_description'   => $metaDesc ?: null,
+                'reading_time'       => $readingTime,
+            ]);
+        } catch (\Exception $e) {
+            $this->json(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
+        }
 
         $this->syncCategories($postId, $categoryIds);
         $this->syncTags($postId, $tagNames);
@@ -231,6 +239,7 @@ class PostsController extends BaseController
         $metaTitle       = trim($this->input->post('meta_title', false) ?? '');
         $metaDesc        = trim($this->input->post('meta_description', false) ?? '');
         $scheduledAt     = trim($this->input->post('published_at', false) ?? '');
+        $expireAt        = trim($this->input->post('expire_at', false) ?? '') ?: null;
         $readingTime     = max(0, (int) ($this->input->post('reading_time', false) ?? 0));
         $featuredImgId   = trim((string) ($this->input->post('featured_image_id', false) ?? '')) ?: null;
         $featuredImgUrl  = trim($this->input->post('featured_image_url', false) ?? '');
@@ -241,7 +250,7 @@ class PostsController extends BaseController
             $this->json(['success' => false, 'message' => 'Post title is required.']);
         }
 
-        if (!in_array($status, ['draft', 'published', 'archived'], true)) {
+        if (!in_array($status, ['draft', 'published', 'scheduled', 'archived'], true)) {
             $status = 'draft';
         }
 
@@ -263,6 +272,7 @@ class PostsController extends BaseController
             'reading_time'       => $readingTime,
             'featured_image_id'  => $featuredImgId,
             'featured_image_url' => $featuredImgUrl ?: null,
+            'expire_at'          => $expireAt ? date('Y-m-d H:i:s', strtotime($expireAt)) : null,
             'updated_at'         => date('Y-m-d H:i:s'),
         ];
         if ($newSlug) {
@@ -277,14 +287,23 @@ class PostsController extends BaseController
             } elseif ($scheduledAt) {
                 $data['published_at'] = date('Y-m-d H:i:s', strtotime($scheduledAt));
             }
+        } elseif ($status === 'scheduled' && $scheduledAt) {
+            $data['published_at'] = date('Y-m-d H:i:s', strtotime($scheduledAt));
         }
+
+        // Snapshot current state before overwriting
+        $revisionError = $this->snapshotRevision('post', $id, $existing);
 
         $this->db('posts')->where('id', $id)->update($data);
         $this->syncCategories($id, $categoryIds);
         $this->syncTags($id, $tagNames);
 
         Auth::audit('post.update', 'posts', $id, ['status' => $status]);
-        $this->json(['success' => true, 'message' => 'Post updated successfully.']);
+        $response = ['success' => true, 'message' => 'Post updated successfully.'];
+        if ($revisionError) {
+            $response['_revision_error'] = $revisionError;
+        }
+        $this->json($response);
     }
 
     // ── Delete ─────────────────────────────────────────────────────────────────
@@ -294,7 +313,10 @@ class PostsController extends BaseController
         $this->requirePermission('posts.delete');
         $this->validateCsrf();
 
-        $this->db('posts')->where('id', $id)->whereNull('deleted_at')->update(['deleted_at' => date('Y-m-d H:i:s')]);
+        $this->db('posts')->where('id', $id)->whereNull('deleted_at')->update([
+            'deleted_at' => date('Y-m-d H:i:s'),
+            'deleted_by' => $this->currentUser['id'],
+        ]);
 
         Auth::audit('post.delete', 'posts', $id);
         $this->json(['success' => true, 'message' => 'Post moved to trash.']);
@@ -314,25 +336,191 @@ class PostsController extends BaseController
             $this->json(['success' => false, 'message' => 'No posts selected.']);
         }
 
-        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $namedBinds = [];
+        $namedPlaceholders = [];
+        foreach (array_values($ids) as $i => $id) {
+            $key = ":bulk_id_{$i}";
+            $namedPlaceholders[] = $key;
+            $namedBinds[$key]    = $id;
+        }
+        $inClause = implode(',', $namedPlaceholders);
 
         match ($action) {
             'publish' => $this->db('posts')
-                ->whereRaw("id IN ({$placeholders})", array_values($ids))
+                ->whereRaw("id IN ({$inClause})", $namedBinds)
                 ->whereNull('deleted_at')
                 ->update(['status' => 'published', 'published_at' => date('Y-m-d H:i:s')]),
             'draft'   => $this->db('posts')
-                ->whereRaw("id IN ({$placeholders})", array_values($ids))
+                ->whereRaw("id IN ({$inClause})", $namedBinds)
                 ->whereNull('deleted_at')
                 ->update(['status' => 'draft']),
             'delete'  => $this->db('posts')
-                ->whereRaw("id IN ({$placeholders})", array_values($ids))
-                ->update(['deleted_at' => date('Y-m-d H:i:s')]),
+                ->whereRaw("id IN ({$inClause})", $namedBinds)
+                ->update(['deleted_at' => date('Y-m-d H:i:s'), 'deleted_by' => $this->currentUser['id']]),
             default   => null,
         };
 
         Auth::audit('posts.bulk', 'posts', '', ['action' => $action, 'count' => count($ids)]);
         $this->json(['success' => true, 'message' => 'Bulk action applied.']);
+    }
+
+    // ── Revisions ──────────────────────────────────────────────────────────────
+
+    private function ensureRevisionsTable(): void
+    {
+        static $checked = false;
+        if ($checked) return;
+        $checked = true;
+        try {
+            $db = (new \Core\Model('content_revisions'))->db;
+            $db->query("CREATE TABLE IF NOT EXISTS content_revisions (
+                id              UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+                content_type    VARCHAR(20)  NOT NULL,
+                content_id      UUID         NOT NULL,
+                revision_number INT          NOT NULL DEFAULT 1,
+                title           VARCHAR(255),
+                body            TEXT,
+                status          VARCHAR(20),
+                created_at      TIMESTAMP    DEFAULT NOW(),
+                updated_at      TIMESTAMP    DEFAULT NOW(),
+                created_by      UUID,
+                updated_by      UUID
+            )");
+            $db->execute();
+            $db->query("CREATE INDEX IF NOT EXISTS idx_content_revisions_content ON content_revisions (content_type, content_id)");
+            $db->execute();
+            // Add missing columns on existing tables created without them
+            foreach ([
+                "ALTER TABLE content_revisions ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW()",
+                "ALTER TABLE content_revisions ADD COLUMN IF NOT EXISTS updated_by UUID",
+                "ALTER TABLE content_revisions ADD COLUMN IF NOT EXISTS slug VARCHAR(255)",
+                "ALTER TABLE content_revisions ADD COLUMN IF NOT EXISTS excerpt TEXT",
+                "ALTER TABLE content_revisions ADD COLUMN IF NOT EXISTS meta_title VARCHAR(255)",
+                "ALTER TABLE content_revisions ADD COLUMN IF NOT EXISTS meta_description TEXT",
+            ] as $ddl) {
+                $db->query($ddl);
+                $db->execute();
+            }
+        } catch (\Exception) {}
+    }
+
+    public function revisions(string $id): void
+    {
+        $this->ensureRevisionsTable();
+        $this->requirePermission('posts.edit');
+
+        $post = $this->db('posts')->select('id, title, slug')->where('id', $id)->whereNull('deleted_at')->get(1);
+        if (!$post) {
+            $this->flash('error', 'Post not found.');
+            $this->redirect($this->baseUrl . '/admin/blog/posts');
+        }
+
+        $revisions = $this->db('content_revisions')
+            ->select('content_revisions.id, content_revisions.revision_number, content_revisions.title,
+                      content_revisions.status, content_revisions.created_at, users.name AS created_by_name')
+            ->join('users', 'users.id = content_revisions.created_by', 'LEFT')
+            ->where('content_type', 'post')
+            ->where('content_id', $id)
+            ->orderBy('revision_number', 'DESC')
+            ->get() ?: [];
+
+        $this->adminRender('modules/blog/admin/posts/revisions', [
+            'post'      => $post,
+            'revisions' => $revisions,
+        ], 'Revisions: ' . $post['title'], 'blog.posts');
+    }
+
+    public function restoreRevision(string $id, string $revId): void
+    {
+        $this->requirePermission('posts.edit');
+        $this->validateCsrf();
+
+        $post = $this->db('posts')->where('id', $id)->whereNull('deleted_at')->get(1);
+        if (!$post) {
+            $this->json(['success' => false, 'message' => 'Post not found.'], 404);
+        }
+
+        $rev = $this->db('content_revisions')
+            ->where('id', $revId)->where('content_type', 'post')->where('content_id', $id)->get(1);
+        if (!$rev) {
+            $this->json(['success' => false, 'message' => 'Revision not found.'], 404);
+        }
+
+        // Snapshot current state before restoring
+        $this->snapshotRevision('post', $id, $post);
+
+        $this->db('posts')->where('id', $id)->update([
+            'title'            => $rev['title'],
+            'body'             => $rev['body'],
+            'status'           => $rev['status'],
+            'excerpt'          => $rev['excerpt'],
+            'meta_title'       => $rev['meta_title'],
+            'meta_description' => $rev['meta_description'],
+            'updated_at'       => date('Y-m-d H:i:s'),
+        ]);
+
+        Auth::audit('post.revision.restore', 'posts', $id, ['revision' => $revId]);
+        $this->json(['success' => true, 'message' => 'Revision #' . $rev['revision_number'] . ' restored.']);
+    }
+
+    public function viewRevision(string $id, string $revId): void
+    {
+        $this->requirePermission('posts.edit');
+        $this->ensureRevisionsTable();
+
+        $post = $this->db('posts')->where('id', $id)->whereNull('deleted_at')->get(1);
+        if (!$post) {
+            $this->json(['success' => false, 'message' => 'Post not found.'], 404);
+        }
+
+        $rev = $this->db('content_revisions')
+            ->select('content_revisions.*, users.name AS created_by_name')
+            ->join('users', 'users.id = content_revisions.created_by', 'LEFT')
+            ->where('content_revisions.id', $revId)
+            ->where('content_type', 'post')
+            ->where('content_id', $id)
+            ->get(1);
+        if (!$rev) {
+            $this->json(['success' => false, 'message' => 'Revision not found.'], 404);
+        }
+
+        $this->renderPartial('modules/blog/admin/posts/_revision_diff', [
+            'post'          => $post,
+            'rev'           => $rev,
+            'restoreAction' => $this->baseUrl . "/admin/blog/posts/{$id}/revisions/{$revId}/restore",
+        ]);
+    }
+
+    private function snapshotRevision(string $type, string $contentId, array $current): ?string
+    {
+        $this->ensureRevisionsTable();
+        try {
+            $lastRev = $this->db('content_revisions')
+                ->select('revision_number')
+                ->where('content_type', $type)
+                ->where('content_id', $contentId)
+                ->orderBy('revision_number', 'DESC')
+                ->get(1);
+            $nextNum = (int) ($lastRev['revision_number'] ?? 0) + 1;
+
+            $bodyField = $type === 'post' ? 'body' : 'content';
+            $this->db('content_revisions')->save([
+                'content_type'    => $type,
+                'content_id'      => $contentId,
+                'revision_number' => $nextNum,
+                'title'           => $current['title'] ?? null,
+                'body'            => $current[$bodyField] ?? null,
+                'status'          => $current['status'] ?? null,
+                'slug'            => $current['slug'] ?? null,
+                'excerpt'         => $current['excerpt'] ?? null,
+                'meta_title'      => $current['meta_title'] ?? null,
+                'meta_description' => $current['meta_description'] ?? null,
+                'created_by'      => $this->currentUser['id'],
+            ]);
+            return null;
+        } catch (\Exception $e) {
+            return $e->getMessage();
+        }
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────────
@@ -414,17 +602,17 @@ class PostsController extends BaseController
 
     private function uniqueSlug(string $table, string $base, string $excludeId = ''): string
     {
-        $slug      = $base;
-        $suffix    = 2;
-        $q         = $this->db($table)->select('id')->where('slug', $slug);
+        $slug   = $base;
+        $suffix = 2;
+        $q      = $this->db($table)->select('id')->where('slug', $slug);
         if ($excludeId) {
-            $q->whereRaw('id != ?', [$excludeId]);
+            $q->whereRaw('id != :excl_id', [':excl_id' => $excludeId]);
         }
         while ($q->get(1)) {
             $slug = $base . '-' . $suffix++;
             $q    = $this->db($table)->select('id')->where('slug', $slug);
             if ($excludeId) {
-                $q->whereRaw('id != ?', [$excludeId]);
+                $q->whereRaw('id != :excl_id', [':excl_id' => $excludeId]);
             }
         }
         return $slug;

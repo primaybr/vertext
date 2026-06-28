@@ -59,7 +59,7 @@
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;" class="mb-3">
     <div class="vtx-field">
       <label class="vtx-label" for="gallery-status">Status</label>
-      <select class="form-control" id="gallery-status" name="status">
+      <select class="form-select" id="gallery-status" name="status" data-vtx-select>
         <?php foreach (['draft' => 'Draft', 'published' => 'Published', 'archived' => 'Archived'] as $val => $lbl): ?>
         <option value="<?php echo $val; ?>"
           <?php echo ($gallery['status'] ?? 'draft') === $val ? 'selected' : ''; ?>>

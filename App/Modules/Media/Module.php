@@ -17,7 +17,7 @@ class Module implements ModuleInterface
 {
     public function install(\Core\Database\Connection $db): void
     {
-        // Detect users.id type so uploaded_by uses a compatible type for JOINs
+        // Detect users.id type so created_by/updated_by/deleted_by use a compatible type for JOINs
         $userIdType = 'UUID';
         try {
             $r = \Core\Model::on($db, 'information_schema.columns')
@@ -40,22 +40,25 @@ class Module implements ModuleInterface
             caption        TEXT,
             thumbnail_path VARCHAR(500),
             resized        BOOLEAN      DEFAULT FALSE,
-            uploaded_by    {$userIdType},
             created_at     TIMESTAMP    DEFAULT NOW(),
-            updated_at     TIMESTAMP    DEFAULT NOW()
+            updated_at     TIMESTAMP    DEFAULT NOW(),
+            deleted_at     TIMESTAMP,
+            created_by     {$userIdType},
+            updated_by     {$userIdType},
+            deleted_by     {$userIdType}
         )");
         $db->execute();
 
-        // Correct uploaded_by type if table was created before this detection was added
+        // Correct created_by type if table was created before this detection was added
         if ($userIdType === 'BIGINT') {
             try {
                 $db->query("SAVEPOINT sp_fix_media_type"); $db->execute();
                 $cr = \Core\Model::on($db, 'information_schema.columns')
                     ->select('data_type')->where('table_name', 'media_files')
-                    ->where('column_name', 'uploaded_by')->where('table_schema', 'public')->get(1);
+                    ->where('column_name', 'created_by')->where('table_schema', 'public')->get(1);
                 if ($cr && strtolower($cr['data_type'] ?? '') === 'uuid') {
-                    $db->query("ALTER TABLE media_files DROP COLUMN IF EXISTS uploaded_by"); $db->execute();
-                    $db->query("ALTER TABLE media_files ADD COLUMN uploaded_by BIGINT"); $db->execute();
+                    $db->query("ALTER TABLE media_files DROP COLUMN IF EXISTS created_by"); $db->execute();
+                    $db->query("ALTER TABLE media_files ADD COLUMN created_by BIGINT"); $db->execute();
                 }
                 $db->query("RELEASE SAVEPOINT sp_fix_media_type"); $db->execute();
             } catch (\Exception) {
@@ -63,12 +66,16 @@ class Module implements ModuleInterface
             }
         }
 
-        // FK added separately - survives when users.id type doesn't match UUID yet.
+        // FKs added separately - survives when users.id type doesn't match UUID yet.
         // SAVEPOINT/ROLLBACK TO clears the aborted-transaction state on failure.
         try {
             $db->query("SAVEPOINT sp_media_users_fk"); $db->execute();
-            $db->query("ALTER TABLE media_files DROP CONSTRAINT IF EXISTS media_files_uploaded_by_fkey"); $db->execute();
-            $db->query("ALTER TABLE media_files ADD CONSTRAINT media_files_uploaded_by_fkey FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE SET NULL"); $db->execute();
+            $db->query("ALTER TABLE media_files DROP CONSTRAINT IF EXISTS media_files_created_by_fkey"); $db->execute();
+            $db->query("ALTER TABLE media_files ADD CONSTRAINT media_files_created_by_fkey FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL"); $db->execute();
+            $db->query("ALTER TABLE media_files DROP CONSTRAINT IF EXISTS media_files_updated_by_fkey"); $db->execute();
+            $db->query("ALTER TABLE media_files ADD CONSTRAINT media_files_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL"); $db->execute();
+            $db->query("ALTER TABLE media_files DROP CONSTRAINT IF EXISTS media_files_deleted_by_fkey"); $db->execute();
+            $db->query("ALTER TABLE media_files ADD CONSTRAINT media_files_deleted_by_fkey FOREIGN KEY (deleted_by) REFERENCES users(id) ON DELETE SET NULL"); $db->execute();
             $db->query("RELEASE SAVEPOINT sp_media_users_fk"); $db->execute();
         } catch (\Exception) {
             try { $db->query("ROLLBACK TO SAVEPOINT sp_media_users_fk"); $db->execute(); } catch (\Exception) {}

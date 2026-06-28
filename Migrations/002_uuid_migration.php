@@ -3,19 +3,24 @@
 declare(strict_types=1);
 
 /**
- * Vertext CMS - Migration 002: Convert all primary keys from SERIAL to UUID
+ * Migration 002: Convert SERIAL/INTEGER primary keys to UUID
  *
- * Converts all tables that used SERIAL/INTEGER primary keys to UUID.
- * Preserves all existing data - foreign key references are re-mapped
- * by joining on the new UUID column before swapping.
+ * Uses a shadow-column strategy so FK mappings are done while old INT ids
+ * still exist - avoiding the ROW_NUMBER() gap bug and FK ordering deadlocks:
  *
- * Run order matters due to FK dependencies:
- *   users, roles, permissions → role_permissions, user_roles
- *   settings, modules, audit_logs (no cross-table FKs)
- *   posts (FK: users) → post_categories, post_tags, blog_comments
- *   post_category_pivot, post_tag_pivot (FK: posts, categories, tags)
- *   media_files (FK: users)
- *   login_attempts (standalone)
+ *  Phase 1 - Discover all tables with INT id column
+ *  Phase 2 - Add _uuid shadow column to every parent table; populate immediately
+ *  Phase 3 - Add _uuid_<col> shadow columns to FK columns in child tables;
+ *             map via JOIN on old INT id while it still exists
+ *  Phase 4 - Drop ALL FK constraints (unblocks column drops/renames)
+ *  Phase 5 - Swap id columns: DROP id, RENAME _uuid TO id, ADD PRIMARY KEY
+ *  Phase 6 - Swap FK columns: DROP old INT col, RENAME _uuid_<col> TO <col>
+ *  Phase 7 - Re-add composite PKs for known pivot tables
+ *  Phase 8 - Fix audit_logs.resource_id type INT -> TEXT
+ *  Phase 9 - Ensure updated_at exists on all converted tables
+ *
+ * Safe to run on a DB already using UUIDs - Phase 1 returns empty list and
+ * the migration exits as a no-op without touching anything.
  */
 class Migration_002_UuidMigration
 {
@@ -29,35 +34,88 @@ class Migration_002_UuidMigration
     public function up(): void
     {
         $this->pdo->beginTransaction();
-
         try {
-            // ── 1. Standalone tables (no cross-table FKs) ────────────────────────
-            $this->convertStandaloneTable('settings');
-            $this->convertStandaloneTable('modules');
-            $this->convertStandaloneTable('login_attempts', 'attempted_at');
+            // ── Phase 1: Discover tables with INT id ───────────────────────────
+            $idTables = $this->tablesWithIntId();
 
-            // ── 2. Core identity tables ───────────────────────────────────────────
-            $this->convertStandaloneTable('permissions');
-            $this->convertStandaloneTable('roles');
-            $this->convertStandaloneTable('users');
+            if (empty($idTables)) {
+                $this->pdo->commit();
+                return; // Already UUID - nothing to do
+            }
 
-            // ── 3. Pivot tables that reference users/roles/permissions ─────────
-            $this->convertPivotTable('user_roles',       ['user_id' => 'users', 'role_id' => 'roles']);
-            $this->convertPivotTable('role_permissions', ['role_id' => 'roles', 'permission_id' => 'permissions']);
+            // ── Phase 2: Add _uuid shadow to every parent table ────────────────
+            // Populate NOW while old INT id still exists (needed for Phase 3 JOIN)
+            foreach ($idTables as $t) {
+                $this->pdo->exec("ALTER TABLE \"{$t}\" ADD COLUMN IF NOT EXISTS _uuid UUID DEFAULT gen_random_uuid()");
+                $this->pdo->exec("UPDATE \"{$t}\" SET _uuid = gen_random_uuid() WHERE _uuid IS NULL");
+            }
 
-            // ── 4. Audit logs (user_id FK → users, resource_id stays TEXT) ────────
-            $this->convertAuditLogs();
+            // ── Phase 3: Map FK columns in child tables via old INT id ─────────
+            // CRITICAL: child.fk_col = parent.id (INT) - parent.id still exists here.
+            // For NULL FK values (nullable FKs) the JOIN produces no match and the
+            // shadow column stays NULL, which is the correct outcome.
+            $fks = $this->intFkColumns($idTables);
+            foreach ($fks as ['table' => $t, 'col' => $c, 'ref' => $r]) {
+                $tmp = "_uuid_{$c}";
+                $this->pdo->exec("ALTER TABLE \"{$t}\" ADD COLUMN IF NOT EXISTS \"{$tmp}\" UUID");
+                $this->pdo->exec(
+                    "UPDATE \"{$t}\" x
+                     SET    \"{$tmp}\" = p._uuid
+                     FROM   \"{$r}\" p
+                     WHERE  x.\"{$c}\" = p.id"
+                );
+            }
 
-            // ── 5. Blog tables ────────────────────────────────────────────────────
-            $this->convertPosts();
-            $this->convertStandaloneTable('post_categories');
-            $this->convertStandaloneTable('post_tags');
-            $this->convertBlogComments();
-            $this->convertPivotTable('post_category_pivot', ['post_id' => 'posts', 'category_id' => 'post_categories']);
-            $this->convertPivotTable('post_tag_pivot',      ['post_id' => 'posts', 'tag_id' => 'post_tags']);
+            // ── Phase 4: Drop ALL FK constraints ──────────────────────────────
+            // Must happen before we drop/rename columns that FK constraints reference.
+            foreach ($this->allFkConstraints() as ['table' => $t, 'name' => $n]) {
+                $this->pdo->exec("ALTER TABLE \"{$t}\" DROP CONSTRAINT IF EXISTS \"{$n}\"");
+            }
 
-            // ── 6. Media ──────────────────────────────────────────────────────────
-            $this->convertMediaFiles();
+            // ── Phase 5: Swap id columns on parent tables ─────────────────────
+            foreach ($idTables as $t) {
+                $pk = $this->pkConstraintName($t);
+                if ($pk) {
+                    $this->pdo->exec("ALTER TABLE \"{$t}\" DROP CONSTRAINT \"{$pk}\"");
+                }
+                $this->pdo->exec("ALTER TABLE \"{$t}\" DROP COLUMN id");
+                $this->pdo->exec("ALTER TABLE \"{$t}\" RENAME COLUMN _uuid TO id");
+                $this->pdo->exec("ALTER TABLE \"{$t}\" ADD PRIMARY KEY (id)");
+                $this->pdo->exec("ALTER TABLE \"{$t}\" ALTER COLUMN id SET DEFAULT gen_random_uuid()");
+            }
+
+            // ── Phase 6: Swap FK columns in child tables ───────────────────────
+            foreach ($fks as ['table' => $t, 'col' => $c]) {
+                $tmp = "_uuid_{$c}";
+                $this->pdo->exec("ALTER TABLE \"{$t}\" DROP COLUMN \"{$c}\"");
+                $this->pdo->exec("ALTER TABLE \"{$t}\" RENAME COLUMN \"{$tmp}\" TO \"{$c}\"");
+            }
+
+            // ── Phase 7: Re-add composite PKs for known pivot tables ──────────
+            foreach ($this->compositePivots() as $tbl => $cols) {
+                if (!$this->tableExists($tbl)) {
+                    continue;
+                }
+                if ($this->pkConstraintName($tbl)) {
+                    continue; // Already has PK
+                }
+                $this->pdo->exec("ALTER TABLE \"{$tbl}\" ADD PRIMARY KEY (" . implode(', ', $cols) . ")");
+            }
+
+            // ── Phase 8: Fix audit_logs.resource_id INT -> TEXT ────────────────
+            if ($this->tableExists('audit_logs')) {
+                $rt = $this->colType('audit_logs', 'resource_id');
+                if ($rt !== null && in_array($rt, ['integer', 'bigint', 'smallint'], true)) {
+                    $this->pdo->exec("ALTER TABLE audit_logs ALTER COLUMN resource_id TYPE TEXT USING resource_id::TEXT");
+                }
+            }
+
+            // ── Phase 9: Ensure updated_at on all converted tables ─────────────
+            foreach ($idTables as $t) {
+                if ($this->colType($t, 'updated_at') === null) {
+                    $this->pdo->exec("ALTER TABLE \"{$t}\" ADD COLUMN updated_at TIMESTAMP DEFAULT NOW()");
+                }
+            }
 
             $this->pdo->commit();
         } catch (\Throwable $e) {
@@ -68,292 +126,120 @@ class Migration_002_UuidMigration
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    /**
-     * Convert a table that has a SERIAL id column with no outbound FK references to other tables.
-     * Adds a UUID column, generates UUIDs, drops old SERIAL id, renames the UUID column.
-     *
-     * @param string $table
-     * @param string $createdAtColumn  Used to detect whether ORM timestamp columns exist.
-     */
-    private function convertStandaloneTable(string $table, string $createdAtColumn = 'created_at'): void
+    /** Returns table names in public schema whose id column is an integer type. */
+    private function tablesWithIntId(): array
     {
-        // Skip if already UUID
-        $type = $this->columnType($table, 'id');
-        if ($type === null || str_contains(strtolower($type), 'uuid')) {
-            return;
-        }
-
-        $this->pdo->exec("ALTER TABLE {$table} ADD COLUMN IF NOT EXISTS new_uuid UUID DEFAULT gen_random_uuid()");
-        $this->pdo->exec("UPDATE {$table} SET new_uuid = gen_random_uuid() WHERE new_uuid IS NULL");
-        $this->pdo->exec("ALTER TABLE {$table} DROP CONSTRAINT IF EXISTS {$table}_pkey");
-        $this->pdo->exec("ALTER TABLE {$table} DROP COLUMN id");
-        $this->pdo->exec("ALTER TABLE {$table} RENAME COLUMN new_uuid TO id");
-        $this->pdo->exec("ALTER TABLE {$table} ADD PRIMARY KEY (id)");
-        $this->pdo->exec("ALTER TABLE {$table} ALTER COLUMN id SET DEFAULT gen_random_uuid()");
-
-        // Add updated_at if missing (required by ORM setTimestamps)
-        $this->ensureUpdatedAt($table);
-    }
-
-    /**
-     * Convert a pivot/junction table - no single id column, FK columns are INT, no outbound FKs from id.
-     * Drops FK constraints, re-adds UUID FK columns by joining on the new UUID ids.
-     *
-     * @param string   $table
-     * @param array    $fkMap  ['col' => 'referenced_table', ...]
-     */
-    private function convertPivotTable(string $table, array $fkMap): void
-    {
-        // Detect if already converted by checking column type of first FK
-        $firstCol = array_key_first($fkMap);
-        $type = $this->columnType($table, $firstCol);
-        if ($type === null || str_contains(strtolower($type), 'uuid')) {
-            return;
-        }
-
-        // Drop all FK constraints on this table
-        $this->dropForeignKeys($table);
-
-        foreach ($fkMap as $col => $refTable) {
-            $tmp = "new_{$col}";
-            $this->pdo->exec("ALTER TABLE {$table} ADD COLUMN {$tmp} UUID");
-            // Map old integer FK to new UUID via a subquery join
-            $this->pdo->exec("
-                UPDATE {$table} t
-                SET    {$tmp} = r.id
-                FROM   (SELECT old_serial.old_int_id, n.id
-                        FROM   (SELECT id AS id, ROW_NUMBER() OVER (ORDER BY id) AS old_int_id FROM {$refTable}) n
-                        JOIN   (SELECT DISTINCT {$col} AS old_int_id FROM {$table}) old_serial USING (old_int_id)) r
-                WHERE  t.{$col} = r.old_int_id
-            ");
-        }
-
-        // Drop old INT FK columns and rename new UUID columns
-        foreach (array_keys($fkMap) as $col) {
-            $this->pdo->exec("ALTER TABLE {$table} DROP COLUMN {$col}");
-            $this->pdo->exec("ALTER TABLE {$table} RENAME COLUMN new_{$col} TO {$col}");
-        }
-
-        // Re-add PK and FK constraints
-        $pkCols = implode(', ', array_keys($fkMap));
-        $this->pdo->exec("ALTER TABLE {$table} ADD PRIMARY KEY ({$pkCols})");
-
-        foreach ($fkMap as $col => $refTable) {
-            $this->pdo->exec("ALTER TABLE {$table} ADD FOREIGN KEY ({$col}) REFERENCES {$refTable}(id) ON DELETE CASCADE");
-        }
-    }
-
-    private function convertAuditLogs(): void
-    {
-        $type = $this->columnType('audit_logs', 'id');
-        if ($type === null || str_contains(strtolower($type), 'uuid')) {
-            return;
-        }
-
-        // id column
-        $this->pdo->exec("ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS new_uuid UUID DEFAULT gen_random_uuid()");
-        $this->pdo->exec("UPDATE audit_logs SET new_uuid = gen_random_uuid() WHERE new_uuid IS NULL");
-        $this->pdo->exec("ALTER TABLE audit_logs DROP CONSTRAINT IF EXISTS audit_logs_pkey");
-        $this->pdo->exec("ALTER TABLE audit_logs DROP COLUMN id");
-        $this->pdo->exec("ALTER TABLE audit_logs RENAME COLUMN new_uuid TO id");
-        $this->pdo->exec("ALTER TABLE audit_logs ADD PRIMARY KEY (id)");
-        $this->pdo->exec("ALTER TABLE audit_logs ALTER COLUMN id SET DEFAULT gen_random_uuid()");
-
-        // user_id FK → users
-        $userIdType = $this->columnType('audit_logs', 'user_id');
-        if ($userIdType && !str_contains(strtolower($userIdType), 'uuid')) {
-            $this->dropForeignKeys('audit_logs');
-            $this->pdo->exec("ALTER TABLE audit_logs ADD COLUMN new_user_id UUID");
-            $this->pdo->exec("
-                UPDATE audit_logs al
-                SET    new_user_id = u.id
-                FROM   (SELECT id, ROW_NUMBER() OVER (ORDER BY id) AS old_int FROM users) u
-                WHERE  al.user_id = u.old_int
-            ");
-            $this->pdo->exec("ALTER TABLE audit_logs DROP COLUMN user_id");
-            $this->pdo->exec("ALTER TABLE audit_logs RENAME COLUMN new_user_id TO user_id");
-        }
-
-        // resource_id: change from INT to TEXT if needed
-        $ridType = $this->columnType('audit_logs', 'resource_id');
-        if ($ridType && !str_contains(strtolower($ridType), 'text') && !str_contains(strtolower($ridType), 'char')) {
-            $this->pdo->exec("ALTER TABLE audit_logs ALTER COLUMN resource_id TYPE TEXT USING resource_id::TEXT");
-        }
-    }
-
-    private function convertPosts(): void
-    {
-        $type = $this->columnType('posts', 'id');
-        if ($type === null || str_contains(strtolower($type), 'uuid')) {
-            return;
-        }
-
-        // Drop FKs pointing FROM other tables TO posts.id first
-        $this->dropForeignKeysReferencingTable('blog_comments', 'posts');
-        $this->dropForeignKeysReferencingTable('post_category_pivot', 'posts');
-        $this->dropForeignKeysReferencingTable('post_tag_pivot', 'posts');
-
-        // Convert posts.id
-        $this->pdo->exec("ALTER TABLE posts ADD COLUMN new_uuid UUID DEFAULT gen_random_uuid()");
-        $this->pdo->exec("UPDATE posts SET new_uuid = gen_random_uuid() WHERE new_uuid IS NULL");
-        $this->pdo->exec("ALTER TABLE posts DROP CONSTRAINT IF EXISTS posts_pkey");
-        $this->pdo->exec("ALTER TABLE posts DROP COLUMN id");
-        $this->pdo->exec("ALTER TABLE posts RENAME COLUMN new_uuid TO id");
-        $this->pdo->exec("ALTER TABLE posts ADD PRIMARY KEY (id)");
-        $this->pdo->exec("ALTER TABLE posts ALTER COLUMN id SET DEFAULT gen_random_uuid()");
-
-        // Convert posts.author_id (INT → UUID, FK → users)
-        $authorType = $this->columnType('posts', 'author_id');
-        if ($authorType && !str_contains(strtolower($authorType), 'uuid')) {
-            $this->pdo->exec("ALTER TABLE posts ADD COLUMN new_author_id UUID");
-            $this->pdo->exec("
-                UPDATE posts p
-                SET    new_author_id = u.id
-                FROM   (SELECT id, ROW_NUMBER() OVER (ORDER BY id) AS old_int FROM users) u
-                WHERE  p.author_id = u.old_int
-            ");
-            $this->pdo->exec("ALTER TABLE posts DROP COLUMN author_id");
-            $this->pdo->exec("ALTER TABLE posts RENAME COLUMN new_author_id TO author_id");
-            $this->pdo->exec("ALTER TABLE posts ADD FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE SET NULL");
-        }
-
-        // Convert posts.featured_image_id (INT → UUID, no FK enforced - media module may not be installed)
-        $imgType = $this->columnType('posts', 'featured_image_id');
-        if ($imgType && str_contains(strtolower($imgType), 'int')) {
-            $this->pdo->exec("ALTER TABLE posts ALTER COLUMN featured_image_id TYPE UUID USING NULL");
-        }
-
-        $this->ensureUpdatedAt('posts');
-    }
-
-    private function convertBlogComments(): void
-    {
-        $type = $this->columnType('blog_comments', 'id');
-        if ($type === null || str_contains(strtolower($type), 'uuid')) {
-            return;
-        }
-
-        $this->dropForeignKeys('blog_comments');
-
-        // id
-        $this->pdo->exec("ALTER TABLE blog_comments ADD COLUMN new_uuid UUID DEFAULT gen_random_uuid()");
-        $this->pdo->exec("UPDATE blog_comments SET new_uuid = gen_random_uuid() WHERE new_uuid IS NULL");
-        $this->pdo->exec("ALTER TABLE blog_comments DROP CONSTRAINT IF EXISTS blog_comments_pkey");
-        $this->pdo->exec("ALTER TABLE blog_comments DROP COLUMN id");
-        $this->pdo->exec("ALTER TABLE blog_comments RENAME COLUMN new_uuid TO id");
-        $this->pdo->exec("ALTER TABLE blog_comments ADD PRIMARY KEY (id)");
-        $this->pdo->exec("ALTER TABLE blog_comments ALTER COLUMN id SET DEFAULT gen_random_uuid()");
-
-        // post_id FK → posts
-        $postIdType = $this->columnType('blog_comments', 'post_id');
-        if ($postIdType && !str_contains(strtolower($postIdType), 'uuid')) {
-            $this->pdo->exec("ALTER TABLE blog_comments ADD COLUMN new_post_id UUID");
-            $this->pdo->exec("
-                UPDATE blog_comments c
-                SET    new_post_id = p.id
-                FROM   (SELECT id, ROW_NUMBER() OVER (ORDER BY id) AS old_int FROM posts) p
-                WHERE  c.post_id = p.old_int
-            ");
-            $this->pdo->exec("ALTER TABLE blog_comments DROP COLUMN post_id");
-            $this->pdo->exec("ALTER TABLE blog_comments RENAME COLUMN new_post_id TO post_id");
-            $this->pdo->exec("ALTER TABLE blog_comments ALTER COLUMN post_id SET NOT NULL");
-            $this->pdo->exec("ALTER TABLE blog_comments ADD FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE");
-        }
-
-        $this->ensureUpdatedAt('blog_comments');
-    }
-
-    private function convertMediaFiles(): void
-    {
-        $type = $this->columnType('media_files', 'id');
-        if ($type === null || str_contains(strtolower($type), 'uuid')) {
-            return;
-        }
-
-        $this->dropForeignKeys('media_files');
-
-        // id
-        $this->pdo->exec("ALTER TABLE media_files ADD COLUMN new_uuid UUID DEFAULT gen_random_uuid()");
-        $this->pdo->exec("UPDATE media_files SET new_uuid = gen_random_uuid() WHERE new_uuid IS NULL");
-        $this->pdo->exec("ALTER TABLE media_files DROP CONSTRAINT IF EXISTS media_files_pkey");
-        $this->pdo->exec("ALTER TABLE media_files DROP COLUMN id");
-        $this->pdo->exec("ALTER TABLE media_files RENAME COLUMN new_uuid TO id");
-        $this->pdo->exec("ALTER TABLE media_files ADD PRIMARY KEY (id)");
-        $this->pdo->exec("ALTER TABLE media_files ALTER COLUMN id SET DEFAULT gen_random_uuid()");
-
-        // uploaded_by FK → users
-        $uploadedByType = $this->columnType('media_files', 'uploaded_by');
-        if ($uploadedByType && !str_contains(strtolower($uploadedByType), 'uuid')) {
-            $this->pdo->exec("ALTER TABLE media_files ADD COLUMN new_uploaded_by UUID");
-            $this->pdo->exec("
-                UPDATE media_files m
-                SET    new_uploaded_by = u.id
-                FROM   (SELECT id, ROW_NUMBER() OVER (ORDER BY id) AS old_int FROM users) u
-                WHERE  m.uploaded_by = u.old_int
-            ");
-            $this->pdo->exec("ALTER TABLE media_files DROP COLUMN uploaded_by");
-            $this->pdo->exec("ALTER TABLE media_files RENAME COLUMN new_uploaded_by TO uploaded_by");
-            $this->pdo->exec("ALTER TABLE media_files ADD FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE SET NULL");
-        }
-
-        $this->ensureUpdatedAt('media_files');
-    }
-
-    // ── Internal utilities ────────────────────────────────────────────────────
-
-    private function columnType(string $table, string $column): ?string
-    {
-        $stmt = $this->pdo->prepare("
-            SELECT data_type
+        $stmt = $this->pdo->query("
+            SELECT table_name
             FROM   information_schema.columns
-            WHERE  table_name = :t AND column_name = :c AND table_schema = 'public'
+            WHERE  table_schema = 'public'
+            AND    column_name  = 'id'
+            AND    data_type   IN ('integer', 'bigint', 'smallint')
+            ORDER  BY table_name
         ");
-        $stmt->execute([':t' => $table, ':c' => $column]);
-        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
-        return $row ? $row['data_type'] : null;
+        return $stmt->fetchAll(\PDO::FETCH_COLUMN);
     }
 
-    private function ensureUpdatedAt(string $table): void
+    /**
+     * FK columns that:
+     *  - point to one of the $idTables (we're converting those tables)
+     *  - are themselves integer-typed (not already UUID)
+     *
+     * Returns array of ['table' => ..., 'col' => ..., 'ref' => ...]
+     */
+    private function intFkColumns(array $idTables): array
     {
-        $type = $this->columnType($table, 'updated_at');
-        if ($type === null) {
-            $this->pdo->exec("ALTER TABLE {$table} ADD COLUMN updated_at TIMESTAMP DEFAULT NOW()");
+        if (empty($idTables)) {
+            return [];
         }
+        $placeholders = implode(',', array_fill(0, count($idTables), '?'));
+        $stmt = $this->pdo->prepare("
+            SELECT
+                kcu.table_name  AS \"table\",
+                kcu.column_name AS col,
+                ccu.table_name  AS ref
+            FROM   information_schema.table_constraints      tc
+            JOIN   information_schema.key_column_usage       kcu
+                   ON  kcu.constraint_name = tc.constraint_name
+                   AND kcu.table_schema    = tc.table_schema
+            JOIN   information_schema.constraint_column_usage ccu
+                   ON  ccu.constraint_name = tc.constraint_name
+                   AND ccu.table_schema    = tc.table_schema
+            JOIN   information_schema.columns                c
+                   ON  c.table_name   = kcu.table_name
+                   AND c.column_name  = kcu.column_name
+                   AND c.table_schema = tc.table_schema
+            WHERE  tc.constraint_type = 'FOREIGN KEY'
+            AND    tc.table_schema    = 'public'
+            AND    ccu.table_name    IN ({$placeholders})
+            AND    c.data_type       IN ('integer', 'bigint', 'smallint')
+        ");
+        $stmt->execute($idTables);
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
-    private function dropForeignKeys(string $table): void
+    /** All FK constraint names across the public schema. */
+    private function allFkConstraints(): array
+    {
+        $stmt = $this->pdo->query("
+            SELECT table_name AS \"table\", constraint_name AS name
+            FROM   information_schema.table_constraints
+            WHERE  constraint_type = 'FOREIGN KEY'
+            AND    table_schema    = 'public'
+        ");
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    /** Returns the PK constraint name for a table, or null if none found. */
+    private function pkConstraintName(string $table): ?string
     {
         $stmt = $this->pdo->prepare("
             SELECT constraint_name
             FROM   information_schema.table_constraints
-            WHERE  table_name = :t AND constraint_type = 'FOREIGN KEY' AND table_schema = 'public'
+            WHERE  table_name      = ?
+            AND    constraint_type = 'PRIMARY KEY'
+            AND    table_schema    = 'public'
+            LIMIT  1
         ");
-        $stmt->execute([':t' => $table]);
-        foreach ($stmt->fetchAll(\PDO::FETCH_COLUMN) as $name) {
-            $this->pdo->exec("ALTER TABLE {$table} DROP CONSTRAINT IF EXISTS \"{$name}\"");
-        }
+        $stmt->execute([$table]);
+        return $stmt->fetchColumn() ?: null;
     }
 
-    private function dropForeignKeysReferencingTable(string $fromTable, string $toTable): void
+    /** Known pivot tables with composite PKs (no separate id column). */
+    private function compositePivots(): array
+    {
+        return [
+            'user_roles'          => ['user_id', 'role_id'],
+            'role_permissions'    => ['role_id', 'permission_id'],
+            'post_category_pivot' => ['post_id', 'category_id'],
+            'post_tag_pivot'      => ['post_id', 'tag_id'],
+        ];
+    }
+
+    private function tableExists(string $table): bool
     {
         $stmt = $this->pdo->prepare("
-            SELECT tc.constraint_name
-            FROM   information_schema.table_constraints tc
-            JOIN   information_schema.referential_constraints rc
-                   ON rc.constraint_name = tc.constraint_name
-            JOIN   information_schema.table_constraints tc2
-                   ON tc2.constraint_name = rc.unique_constraint_name
-            WHERE  tc.table_name = :from AND tc2.table_name = :to AND tc.table_schema = 'public'
+            SELECT 1 FROM information_schema.tables
+            WHERE  table_schema = 'public' AND table_name = ?
         ");
-        $stmt->execute([':from' => $fromTable, ':to' => $toTable]);
-        foreach ($stmt->fetchAll(\PDO::FETCH_COLUMN) as $name) {
-            $this->pdo->exec("ALTER TABLE {$fromTable} DROP CONSTRAINT IF EXISTS \"{$name}\"");
-        }
+        $stmt->execute([$table]);
+        return (bool) $stmt->fetchColumn();
+    }
+
+    /** Returns the data_type of a column, or null if the column does not exist. */
+    private function colType(string $table, string $column): ?string
+    {
+        $stmt = $this->pdo->prepare("
+            SELECT data_type
+            FROM   information_schema.columns
+            WHERE  table_schema = 'public' AND table_name = ? AND column_name = ?
+        ");
+        $stmt->execute([$table, $column]);
+        return $stmt->fetchColumn() ?: null;
     }
 
     public function down(): void
     {
-        // UUID→SERIAL downgrade is destructive (data loss) - not supported.
         throw new \RuntimeException('Migration 002 cannot be rolled back. Restore from backup if needed.');
     }
 }

@@ -50,7 +50,7 @@ class GalleryController extends Controller
 
         if (!$gallery) {
             http_response_code(404);
-            $this->render('errors/404', ['baseUrl' => $this->baseUrl]);
+            $this->render('error/404', ['baseUrl' => $this->baseUrl]);
             return;
         }
 

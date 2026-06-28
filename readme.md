@@ -1,6 +1,6 @@
 # Vertext CMS
 
-![Version](https://img.shields.io/badge/version-0.0.4--alpha-blue)
+![Version](https://img.shields.io/badge/version-0.0.5--alpha-blue)
 ![PHP](https://img.shields.io/badge/PHP-8.2%2B-777BB4)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -20,12 +20,14 @@ Vertext is a lightweight, extensible content management system written in PHP 8.
 - **Public theme system** - `ThemeEngine` wraps all front-end module views in a shared theme layout; both bundled themes (Default, Clean) support dark/light mode with OS preference detection and a toggle button
 - **Email notifications** - built-in Mailer (PHP mail + SMTP); contact notifications, comment approvals, auto-replies, welcome emails
 - **Slug auto-generation** - `vtx-slug` component generates URL slugs from titles across all module forms
-- **Navigation module** - build front-end menus with custom links, page slugs, and dropdown support; renders automatically in theme layouts via `NavHelper`
+- **Navigation module** - build front-end menus with custom links, page slugs, module routes, and dropdown support; modules auto-register nav items on install; renders automatically in theme layouts via `NavHelper`
 - **Admin profile page** - any logged-in user can update their own name, email, and password at `/admin/profile`
-- **Blog module** - posts, categories, tags, comment moderation, Quill editor, SEO fields, dynamic URL routing, RSS feed, public frontend
-- **Analytics module** - privacy-friendly page-view tracking; date range filter; period-over-period comparison; CSV export
+- **Blog module** - posts, categories, tags, comment moderation, Quill editor, SEO fields, dynamic URL routing, RSS feed, scheduled/expired publishing, content revisions
+- **Analytics module** - privacy-friendly page-view tracking; unique visitors; device breakdown; date range filter; period comparison; CSV export
+- **Search module** - full-text ILIKE search across indexed pages and posts; `GET /search`; admin reindex dashboard
+- **Theme Customizer module** - accent color, font family, logo, and freeform custom CSS overrides injected into all theme layouts
 - **Media module** - file upload with image resizing + thumbnail generation; grid browser; bulk delete; reusable picker modal
-- **Pages module** - static page CRUD with front-end rendering via ThemeEngine
+- **Pages module** - static page CRUD with front-end rendering via ThemeEngine; scheduled/expired publishing; content revisions
 - **Sitemap module** - automatic `/sitemap.xml` from published pages and blog posts; extensible via `SitemapProvider` interface
 - **Webhooks module** - outgoing webhooks with HMAC-SHA256 signed payloads; admin UI for endpoint management and delivery logs
 - **Gallery module** - photo albums backed by Media library; drag-to-reorder; CSS lightbox
@@ -115,14 +117,16 @@ Install a module: **Admin → Module Manager → Install**
 
 | Module | Version | Category | Description |
 | ------ | ------- | -------- | ----------- |
-| Blog | 0.0.4 | Content | Posts, categories, tags, comments, dynamic URL routing, RSS feed |
-| Pages | 0.0.1 | Content | Static page CRUD with public rendering |
+| Blog | 0.0.5 | Content | Posts, categories, tags, comments, dynamic URL routing, RSS feed, scheduled/expired publishing, content revisions |
+| Pages | 0.0.2 | Content | Static page CRUD with public rendering, scheduled/expired publishing, content revisions |
 | Media | 0.0.3 | Media | File uploads with image resizing, thumbnail generation, bulk delete |
 | Gallery | 0.0.1 | Media | Photo albums with lightbox, backed by Media library |
 | Videos | 0.0.1 | Media | YouTube/Vimeo embed management with poster thumbnails |
 | Contact | 0.0.1 | Communication | Public contact form with admin inbox and email notifications |
-| Navigation | 0.0.1 | Navigation | Front-end menu builder with NavHelper theme integration |
-| Analytics | 0.0.2 | Analytics | Privacy-friendly page-view tracking; date range filter; period comparison; CSV export |
+| Navigation | 0.0.2 | Navigation | Front-end menu builder; Module Route type; auto-registration of module nav routes on install |
+| Analytics | 0.0.3 | Analytics | Privacy-friendly page-view tracking; unique visitors; device breakdown; date range filter; CSV export |
+| Search | 0.0.1 | Content | Full-text search across pages and posts; `GET /search`; admin reindex button |
+| Theme Customizer | 0.0.1 | Design | Accent color, font, logo, and custom CSS overrides for the public theme |
 | Sitemap | 0.0.1 | SEO | Automatic `/sitemap.xml` from published pages and blog posts |
 | Webhooks | 0.0.1 | Integration | Outgoing webhooks with HMAC-SHA256 signing and delivery logs |
 

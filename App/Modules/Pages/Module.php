@@ -34,8 +34,10 @@ class Module implements ModuleInterface
             sort_order       INT          NOT NULL DEFAULT 0,
             created_at       TIMESTAMP    DEFAULT NOW(),
             updated_at       TIMESTAMP    DEFAULT NOW(),
+            deleted_at       TIMESTAMP,
             created_by       {$userIdType},
-            updated_by       {$userIdType}
+            updated_by       {$userIdType},
+            deleted_by       {$userIdType}
         )");
         $db->execute();
 
@@ -66,9 +68,49 @@ class Module implements ModuleInterface
             $db->query("ALTER TABLE pages ADD CONSTRAINT pages_created_by_fkey FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL"); $db->execute();
             $db->query("ALTER TABLE pages DROP CONSTRAINT IF EXISTS pages_updated_by_fkey"); $db->execute();
             $db->query("ALTER TABLE pages ADD CONSTRAINT pages_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL"); $db->execute();
+            $db->query("ALTER TABLE pages DROP CONSTRAINT IF EXISTS pages_deleted_by_fkey"); $db->execute();
+            $db->query("ALTER TABLE pages ADD CONSTRAINT pages_deleted_by_fkey FOREIGN KEY (deleted_by) REFERENCES users(id) ON DELETE SET NULL"); $db->execute();
             $db->query("RELEASE SAVEPOINT sp_pages_users_fk"); $db->execute();
         } catch (\Exception) {
             try { $db->query("ROLLBACK TO SAVEPOINT sp_pages_users_fk"); $db->execute(); } catch (\Exception) {}
+        }
+
+        // ── Content revisions (shared with Blog module) ───────────────────────
+        $db->query("CREATE TABLE IF NOT EXISTS content_revisions (
+            id               UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+            content_type     VARCHAR(20)  NOT NULL,
+            content_id       UUID         NOT NULL,
+            revision_number  INT          NOT NULL DEFAULT 1,
+            title            VARCHAR(255),
+            body             TEXT,
+            status           VARCHAR(20),
+            slug             VARCHAR(255),
+            excerpt          TEXT,
+            meta_title       VARCHAR(255),
+            meta_description TEXT,
+            created_at       TIMESTAMP    DEFAULT NOW(),
+            updated_at       TIMESTAMP    DEFAULT NOW(),
+            created_by       UUID,
+            updated_by       UUID
+        )");
+        $db->execute();
+
+        $db->query("CREATE INDEX IF NOT EXISTS idx_content_revisions_content ON content_revisions (content_type, content_id)");
+        $db->execute();
+
+        // Safely add new columns to existing tables (re-install safe)
+        foreach ([
+            "ALTER TABLE pages ADD COLUMN IF NOT EXISTS published_at TIMESTAMP",
+            "ALTER TABLE pages ADD COLUMN IF NOT EXISTS expire_at    TIMESTAMP",
+            "ALTER TABLE content_revisions ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW()",
+            "ALTER TABLE content_revisions ADD COLUMN IF NOT EXISTS updated_by UUID",
+            "ALTER TABLE content_revisions ADD COLUMN IF NOT EXISTS slug VARCHAR(255)",
+            "ALTER TABLE content_revisions ADD COLUMN IF NOT EXISTS excerpt TEXT",
+            "ALTER TABLE content_revisions ADD COLUMN IF NOT EXISTS meta_title VARCHAR(255)",
+            "ALTER TABLE content_revisions ADD COLUMN IF NOT EXISTS meta_description TEXT",
+        ] as $ddl) {
+            $db->query($ddl);
+            $db->execute();
         }
 
         $permSql = "INSERT INTO permissions (name, slug, description, module)
@@ -120,6 +162,9 @@ class Module implements ModuleInterface
         $router->get('/admin/pages/([a-zA-Z0-9\-]+)/form',        $ca, 'editForm');
         $router->post('/admin/pages/([a-zA-Z0-9\-]+)/update',     $ca, 'update');
         $router->post('/admin/pages/([a-zA-Z0-9\-]+)/delete',     $ca, 'delete');
+        $router->get('/admin/pages/([a-zA-Z0-9\-]+)/revisions',  $ca, 'revisions');
+        $router->post('/admin/pages/([a-zA-Z0-9\-]+)/revisions/([a-zA-Z0-9\-]+)/restore', $ca, 'restoreRevision');
+        $router->get('/admin/pages/([a-zA-Z0-9\-]+)/revisions/([a-zA-Z0-9\-]+)/diff',    $ca, 'viewRevision');
 
         // Front-end - registered last so it doesn't shadow admin routes
         $router->get('/([a-z0-9][a-z0-9\-]*)',                   $cf, 'show');

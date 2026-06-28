@@ -30,10 +30,10 @@ class Auth
     }
 
     /** Get the currently logged-in user ID */
-    public static function id(): ?int
+    public static function id(): ?string
     {
         $id = self::session()->get('admin_user_id');
-        return $id ? (int) $id : null;
+        return $id ? (string) $id : null;
     }
 
     /** Get the currently logged-in user data (from session cache) */
@@ -49,12 +49,12 @@ class Auth
     {
         $session = self::session();
         $session->regenerateId(true);
-        $session->set('admin_user_id', (int) $user['id']);
+        $session->set('admin_user_id', (string) $user['id']);
         $session->set('admin_user', [
-            'id'     => (int)   $user['id'],
-            'name'   => (string)$user['name'],
-            'email'  => (string)$user['email'],
-            'status' => (string)$user['status'],
+            'id'     => (string) $user['id'],
+            'name'   => (string) $user['name'],
+            'email'  => (string) $user['email'],
+            'status' => (string) $user['status'],
         ]);
         $session->set('admin_roles',       $roles);
         $session->set('admin_permissions', $permissions);
@@ -104,7 +104,7 @@ class Auth
                 return null;
             }
 
-            (new Model('users'))->where('id', (int) $user['id'])->update(['last_login' => date('Y-m-d H:i:s')]);
+            (new Model('users'))->where('id', (string) $user['id'])->update(['last_login' => date('Y-m-d H:i:s')]);
 
             return $user;
         } catch (\Exception $e) {

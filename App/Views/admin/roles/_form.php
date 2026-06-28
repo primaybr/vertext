@@ -54,7 +54,7 @@
                           padding:.25rem .375rem;border-radius:4px;cursor:pointer;font-size:.8125rem;">
               <input type="checkbox" name="permissions[]" value="<?php echo $perm['id']; ?>"
                      class="r-perm-cb"
-                     <?php echo in_array((int)$perm['id'], $assignedIds) ? 'checked' : ''; ?>
+                     <?php echo in_array($perm['id'], $assignedIds) ? 'checked' : ''; ?>
                      style="width:14px;height:14px;flex-shrink:0;">
               <?php echo htmlspecialchars($perm['name']); ?>
             </label>

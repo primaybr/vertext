@@ -61,7 +61,7 @@ class BlogDashboardController extends BaseController
         // Recent posts
         $recentPosts = $this->db('posts')
             ->select('posts.id, posts.title, posts.status, posts.published_at, posts.created_at, users.name AS author_name')
-            ->join('users', 'users.id = posts.author_id', 'LEFT')
+            ->join('users', 'users.id = posts.created_by', 'LEFT')
             ->whereNull('posts.deleted_at')
             ->orderBy('posts.created_at', 'DESC')
             ->limitOffset(8, 0)

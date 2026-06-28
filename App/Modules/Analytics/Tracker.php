@@ -46,6 +46,11 @@ class Tracker
                 }
             }
 
+            // Device detection (mobile keyword heuristic, privacy-safe)
+            $deviceType = ($ua && preg_match('/(android|iphone|ipad|ipod|mobile|blackberry|windows phone)/i', $ua))
+                ? 'mobile'
+                : 'desktop';
+
             $ip   = $_SERVER['HTTP_CF_CONNECTING_IP']
                  ?? $_SERVER['HTTP_X_FORWARDED_FOR']
                  ?? $_SERVER['REMOTE_ADDR']
@@ -59,6 +64,7 @@ class Tracker
                 'page_title'    => $pageTitle ? substr($pageTitle, 0, 255) : null,
                 'referrer_host' => $referrerHost ? substr($referrerHost, 0, 255) : null,
                 'ip_hash'       => $ipHash,
+                'device_type'   => $deviceType,
                 'viewed_at'     => date('Y-m-d H:i:s'),
             ]);
         } catch (\Throwable) {

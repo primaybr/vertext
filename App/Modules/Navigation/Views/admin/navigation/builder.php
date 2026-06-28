@@ -49,8 +49,9 @@
             <?php endif; ?>
           </td>
           <td>
-            <span class="vtx-tag <?php echo $item['type'] === 'page' ? 'info' : ''; ?>">
-              <?php echo ucfirst(htmlspecialchars($item['type'])); ?>
+            <?php $tagClass = match($item['type']) { 'page' => 'info', 'module' => 'primary', default => '' }; ?>
+            <span class="vtx-tag <?php echo $tagClass; ?>">
+              <?php echo $item['type'] === 'module' ? 'Module' : ucfirst(htmlspecialchars($item['type'])); ?>
             </span>
           </td>
           <td style="font-size:.8125rem;color:var(--ps-text-muted);max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
@@ -104,8 +105,9 @@
             <?php endif; ?>
           </td>
           <td>
-            <span class="vtx-tag <?php echo $child['type'] === 'page' ? 'info' : ''; ?>" style="font-size:.75rem;">
-              <?php echo ucfirst(htmlspecialchars($child['type'])); ?>
+            <?php $childTagClass = match($child['type']) { 'page' => 'info', 'module' => 'primary', default => '' }; ?>
+            <span class="vtx-tag <?php echo $childTagClass; ?>" style="font-size:.75rem;">
+              <?php echo $child['type'] === 'module' ? 'Module' : ucfirst(htmlspecialchars($child['type'])); ?>
             </span>
           </td>
           <td style="font-size:.8125rem;color:var(--ps-text-muted);">
@@ -182,6 +184,9 @@
               <?php if ($pagesEnabled && !empty($availablePages)): ?>
               <option value="page">Page</option>
               <?php endif; ?>
+              <?php if (!empty($moduleRoutes)): ?>
+              <option value="module">Module Route</option>
+              <?php endif; ?>
             </select>
           </div>
 
@@ -202,6 +207,21 @@
               <option value="">- Select page -</option>
               <?php foreach ($availablePages as $pg): ?>
               <option value="<?php echo htmlspecialchars($pg['slug']); ?>"><?php echo htmlspecialchars($pg['title']); ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <?php endif; ?>
+
+          <?php if (!empty($moduleRoutes)): ?>
+          <div id="module-route-field" class="mb-3" style="display:none;">
+            <label class="form-label">Module Route <span class="text-danger">*</span></label>
+            <select class="form-select" id="item-module-route">
+              <option value="">- Select route -</option>
+              <?php foreach ($moduleRoutes as $mr): ?>
+              <option value="<?php echo htmlspecialchars($mr['path']); ?>"
+                      data-label="<?php echo htmlspecialchars($mr['label']); ?>">
+                <?php echo htmlspecialchars($mr['label']); ?> &mdash; <?php echo htmlspecialchars($mr['path']); ?>
+              </option>
               <?php endforeach; ?>
             </select>
           </div>
@@ -236,6 +256,19 @@ document.addEventListener('DOMContentLoaded', function() {
     toggleTypeFields(this.value);
   });
 
+  // Module route select - auto-fill label and url
+  var mrSel = document.getElementById('item-module-route');
+  if (mrSel) {
+    mrSel.addEventListener('change', function() {
+      var opt = this.options[this.selectedIndex];
+      if (opt && opt.value) {
+        document.getElementById('item-url').value   = opt.value;
+        var labelEl = document.getElementById('item-label');
+        if (!labelEl.value) labelEl.value = opt.dataset.label || '';
+      }
+    });
+  }
+
   // Add Item button
   document.getElementById('add-item-btn').addEventListener('click', function() {
     openItemModal();
@@ -255,6 +288,8 @@ function toggleTypeFields(type) {
   document.getElementById('custom-url-field').style.display = type === 'custom' ? '' : 'none';
   var pf = document.getElementById('page-select-field');
   if (pf) pf.style.display = type === 'page' ? '' : 'none';
+  var mf = document.getElementById('module-route-field');
+  if (mf) mf.style.display = type === 'module' ? '' : 'none';
 }
 
 function openItemModal(data) {
@@ -266,6 +301,8 @@ function openItemModal(data) {
   document.getElementById('item-url').value           = data ? data.url : '';
   var pslug = document.getElementById('item-page-slug');
   if (pslug) pslug.value = data ? (data.pageSlug || '') : '';
+  var mr = document.getElementById('item-module-route');
+  if (mr) mr.value = (data && data.type === 'module') ? (data.url || '') : '';
   document.getElementById('item-open-in-new').checked = data ? (data.openInNew === '1') : false;
   toggleTypeFields(data ? data.type : 'custom');
   if (data) {

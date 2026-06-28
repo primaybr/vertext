@@ -30,7 +30,7 @@
     </div>
     <?php else: ?>
     <?php foreach ($files as $f):
-          $isSelected = (int)$f['id'] === (int)($selectedId ?? 0);
+          $isSelected = (string)$f['id'] === (string)($selectedId ?? '');
     ?>
     <div class="vtx-picker-item <?php echo $isSelected ? 'selected' : ''; ?>"
          data-id="<?php echo $f['id']; ?>"

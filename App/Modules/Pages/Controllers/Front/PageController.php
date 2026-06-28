@@ -14,16 +14,35 @@ use App\Theme\ThemeEngine;
  */
 class PageController extends Controller
 {
+    private function ensurePagesSchema(): void
+    {
+        static $checked = false;
+        if ($checked) return;
+        $checked = true;
+        try {
+            $db = (new \Core\Model('pages'))->db;
+            foreach ([
+                "ALTER TABLE pages ADD COLUMN IF NOT EXISTS published_at TIMESTAMP",
+                "ALTER TABLE pages ADD COLUMN IF NOT EXISTS expire_at    TIMESTAMP",
+            ] as $ddl) {
+                $db->query($ddl);
+                $db->execute();
+            }
+        } catch (\Throwable) {}
+    }
+
     public function show(string $slug): void
     {
+        $this->ensurePagesSchema();
+
         $page = (new \Core\Model('pages'))
             ->where('slug', $slug)
-            ->where('status', 'published')
+            ->whereRaw("(status = 'published' OR (status = 'scheduled' AND published_at <= NOW())) AND (expire_at IS NULL OR expire_at > NOW())", [])
             ->get(1);
 
         if (!$page) {
             http_response_code(404);
-            $this->render('errors/404', ['baseUrl' => $this->baseUrl]);
+            $this->render('error/404', ['baseUrl' => $this->baseUrl]);
             return;
         }
 

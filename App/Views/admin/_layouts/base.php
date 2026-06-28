@@ -123,10 +123,10 @@
           <div class="vtx-avatar-name">{{currentUser.name}}</div>
           <div class="vtx-avatar-role">Administrator</div>
         </div>
-        <a href="{{baseUrl}}/admin/logout"
+        <a href="#"
            class="vtx-icon-btn"
            title="Logout"
-           onclick="return confirm('Log out of Vertext?')">
+           onclick="event.preventDefault();vtxConfirmModal({title:'Log out',message:'You will be returned to the login page.',confirmLabel:'Log out',confirmClass:'btn-danger',onConfirm:function(){window.location.href=window.VTX_BASE_URL+'/admin/logout';}})">
           <i class="pi pi-arrow-right"></i>
         </a>
       </div>
@@ -177,8 +177,8 @@
               <i class="pi pi-settings"></i> Settings
             </a>
             <div class="vtx-dropdown-divider"></div>
-            <a href="{{baseUrl}}/admin/logout" class="vtx-dropdown-item danger"
-               onclick="return confirm('Log out?')">
+            <a href="#" class="vtx-dropdown-item danger"
+               onclick="event.preventDefault();vtxConfirmModal({title:'Log out',message:'You will be returned to the login page.',confirmLabel:'Log out',confirmClass:'btn-danger',onConfirm:function(){window.location.href=window.VTX_BASE_URL+'/admin/logout';}})">
               <i class="pi pi-arrow-right"></i> Logout
             </a>
           </div>
@@ -192,7 +192,7 @@
     </main>
 
     <footer style="padding:.75rem 1.5rem;border-top:1px solid var(--ps-border);font-size:.75rem;color:var(--ps-text-muted);">
-      Vertext CMS &copy; <?php echo date('Y'); ?> &mdash; Built on Phuse Framework
+      Vertext CMS &copy; <?php echo date('Y'); ?> - Built on <a href="https://github.com/primaybr/phuse" target="_blank" rel="noopener" style="color:var(--ps-primary);text-decoration:none;">Phuse Framework</a>
     </footer>
 
   </div>

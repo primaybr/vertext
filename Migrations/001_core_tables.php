@@ -18,19 +18,7 @@ class Migration_001_CoreTables
     public function up(): void
     {
         $this->pdo->exec("
-            -- Settings (key-value global config)
-            CREATE TABLE IF NOT EXISTS settings (
-                id          UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
-                key         VARCHAR(120) UNIQUE NOT NULL,
-                value       TEXT,
-                type        VARCHAR(20)  DEFAULT 'string',
-                grp         VARCHAR(60)  DEFAULT 'general',
-                label       VARCHAR(160),
-                created_at  TIMESTAMP    DEFAULT NOW(),
-                updated_at  TIMESTAMP    DEFAULT NOW()
-            );
-
-            -- Users
+            -- Users (created first; audit FK constraints added after via ALTER)
             CREATE TABLE IF NOT EXISTS users (
                 id          UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
                 name        VARCHAR(120) NOT NULL,
@@ -40,7 +28,26 @@ class Migration_001_CoreTables
                 last_login  TIMESTAMP,
                 created_at  TIMESTAMP    DEFAULT NOW(),
                 updated_at  TIMESTAMP    DEFAULT NOW(),
-                deleted_at  TIMESTAMP
+                deleted_at  TIMESTAMP,
+                created_by  UUID,
+                updated_by  UUID,
+                deleted_by  UUID
+            );
+
+            -- Settings (key-value global config)
+            CREATE TABLE IF NOT EXISTS settings (
+                id          UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+                key         VARCHAR(120) UNIQUE NOT NULL,
+                value       TEXT,
+                type        VARCHAR(20)  DEFAULT 'string',
+                grp         VARCHAR(60)  DEFAULT 'general',
+                label       VARCHAR(160),
+                created_at  TIMESTAMP    DEFAULT NOW(),
+                updated_at  TIMESTAMP    DEFAULT NOW(),
+                deleted_at  TIMESTAMP,
+                created_by  UUID,
+                updated_by  UUID,
+                deleted_by  UUID
             );
 
             -- Roles
@@ -51,7 +58,11 @@ class Migration_001_CoreTables
                 description TEXT,
                 is_system   BOOLEAN      DEFAULT FALSE,
                 created_at  TIMESTAMP    DEFAULT NOW(),
-                updated_at  TIMESTAMP    DEFAULT NOW()
+                updated_at  TIMESTAMP    DEFAULT NOW(),
+                deleted_at  TIMESTAMP,
+                created_by  UUID,
+                updated_by  UUID,
+                deleted_by  UUID
             );
 
             -- Permissions
@@ -85,17 +96,21 @@ class Migration_001_CoreTables
 
             -- Modules
             CREATE TABLE IF NOT EXISTS modules (
-                id           UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
-                name         VARCHAR(120) UNIQUE NOT NULL,
-                slug         VARCHAR(120) UNIQUE NOT NULL,
-                version      VARCHAR(20),
-                description  TEXT,
-                author       VARCHAR(120),
-                is_core      BOOLEAN      DEFAULT FALSE,
-                status       VARCHAR(20)  DEFAULT 'enabled',
-                directory    VARCHAR(120) DEFAULT NULL,
-                installed_at TIMESTAMP    DEFAULT NOW(),
-                updated_at   TIMESTAMP    DEFAULT NOW()
+                id          UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+                name        VARCHAR(120) UNIQUE NOT NULL,
+                slug        VARCHAR(120) UNIQUE NOT NULL,
+                version     VARCHAR(20),
+                description TEXT,
+                author      VARCHAR(120),
+                is_core     BOOLEAN      DEFAULT FALSE,
+                status      VARCHAR(20)  DEFAULT 'enabled',
+                directory   VARCHAR(120) DEFAULT NULL,
+                created_at  TIMESTAMP    DEFAULT NOW(),
+                updated_at  TIMESTAMP    DEFAULT NOW(),
+                deleted_at  TIMESTAMP,
+                created_by  UUID,
+                updated_by  UUID,
+                deleted_by  UUID
             );
 
             -- Audit Logs
@@ -111,6 +126,30 @@ class Migration_001_CoreTables
                 created_at    TIMESTAMP    DEFAULT NOW()
             );
         ");
+
+        // Add FK constraints for audit columns after all tables exist
+        $auditFks = [
+            // users self-references (bootstrapping: no FK needed, just columns)
+            // settings
+            "ALTER TABLE settings ADD CONSTRAINT settings_created_by_fkey FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL",
+            "ALTER TABLE settings ADD CONSTRAINT settings_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL",
+            "ALTER TABLE settings ADD CONSTRAINT settings_deleted_by_fkey FOREIGN KEY (deleted_by) REFERENCES users(id) ON DELETE SET NULL",
+            // roles
+            "ALTER TABLE roles ADD CONSTRAINT roles_created_by_fkey FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL",
+            "ALTER TABLE roles ADD CONSTRAINT roles_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL",
+            "ALTER TABLE roles ADD CONSTRAINT roles_deleted_by_fkey FOREIGN KEY (deleted_by) REFERENCES users(id) ON DELETE SET NULL",
+            // modules
+            "ALTER TABLE modules ADD CONSTRAINT modules_created_by_fkey FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL",
+            "ALTER TABLE modules ADD CONSTRAINT modules_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL",
+            "ALTER TABLE modules ADD CONSTRAINT modules_deleted_by_fkey FOREIGN KEY (deleted_by) REFERENCES users(id) ON DELETE SET NULL",
+        ];
+        foreach ($auditFks as $sql) {
+            try {
+                $this->pdo->exec($sql);
+            } catch (\PDOException $e) {
+                // Constraint already exists - safe to ignore on re-run
+            }
+        }
     }
 
     public function seed(): void
@@ -198,15 +237,17 @@ class Migration_001_CoreTables
              ON CONFLICT DO NOTHING"
         );
 
+        $cmsVersion = \App\CMS\Version::APP;
+
         // Core modules
         $modules = [
-            ['Authentication',   'auth',           '1.0.0', 'Login, session and password handling', 'Vertext', 1],
-            ['Dashboard',        'dashboard',      '1.0.0', 'Admin dashboard overview',              'Vertext', 1],
-            ['Users',            'users',          '1.0.0', 'User management',                       'Vertext', 1],
-            ['Roles',            'roles',          '1.0.0', 'Role and permission management',        'Vertext', 1],
-            ['Module Manager',   'module-manager', '1.0.0', 'Install and manage modules',            'Vertext', 1],
-            ['CMS Settings',     'cms-settings',   '1.0.0', 'Global CMS configuration',             'Vertext', 1],
-            ['Theme Manager',    'theme-manager',  '1.0.0', 'Front-end theme selection',             'Vertext', 1],
+            ['Authentication',   'auth',           $cmsVersion, 'Login, session and password handling', 'Vertext', 1],
+            ['Dashboard',        'dashboard',      $cmsVersion, 'Admin dashboard overview',              'Vertext', 1],
+            ['Users',            'users',          $cmsVersion, 'User management',                       'Vertext', 1],
+            ['Roles',            'roles',          $cmsVersion, 'Role and permission management',        'Vertext', 1],
+            ['Module Manager',   'module-manager', $cmsVersion, 'Install and manage modules',            'Vertext', 1],
+            ['CMS Settings',     'cms-settings',   $cmsVersion, 'Global CMS configuration',             'Vertext', 1],
+            ['Theme Manager',    'theme-manager',  $cmsVersion, 'Front-end theme selection',             'Vertext', 1],
         ];
 
         $modStmt = $this->pdo->prepare(

@@ -1,0 +1,19 @@
+{
+    "name":        "Search",
+    "slug":        "search",
+    "version":     "0.0.1",
+    "description": "Full-text search across Pages and Blog posts with a public /search endpoint and admin reindex.",
+    "author":      "Vertext",
+    "category":    "Content",
+    "requires":    { "vertext": ">=0.0.5" },
+    "nav_routes": [
+        {"label": "Search", "path": "/search"}
+    ],
+    "nav": {
+        "label":      "Search",
+        "icon":       "pi-search",
+        "path":       "/admin/search",
+        "active":     "search",
+        "permission": "search.manage"
+    }
+}

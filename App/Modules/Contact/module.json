@@ -6,6 +6,9 @@
     "author":      "Vertext",
     "category":    "Communication",
     "requires":    { "vertext": ">=0.0.2" },
+    "nav_routes": [
+        {"label": "Contact", "path": "/contact"}
+    ],
     "nav": {
         "label":      "Contact",
         "icon":       "pi-mail",

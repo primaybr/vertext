@@ -6,6 +6,9 @@
     "author":      "Vertext",
     "category":    "Media",
     "requires":    { "vertext": ">=0.0.2" },
+    "nav_routes": [
+        {"label": "Videos", "path": "/videos"}
+    ],
     "nav": {
         "label":      "Videos",
         "icon":       "pi-video",

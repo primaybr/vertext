@@ -60,6 +60,31 @@ class Module implements ModuleInterface
              ON CONFLICT DO NOTHING"
         );
         $db->execute();
+
+        // Auto-insert into primary navigation if Navigation module is installed
+        try {
+            $db->query("SAVEPOINT sp_contact_nav"); $db->execute();
+            $pm = \Core\Model::on($db, 'nav_menus')->select('id')->where('slug', 'primary')->get(1);
+            if ($pm) {
+                $exists = \Core\Model::on($db, 'nav_items')
+                    ->where('menu_id', $pm['id'])->where('url', '/contact')->get(1);
+                if (!$exists) {
+                    $order = (int) (\Core\Model::on($db, 'nav_items')
+                        ->where('menu_id', $pm['id'])->whereRaw('parent_id IS NULL', [])->totalRows() ?: 0);
+                    \Core\Model::on($db, 'nav_items')->save([
+                        'menu_id'     => $pm['id'],
+                        'type'        => 'module',
+                        'label'       => 'Contact',
+                        'url'         => '/contact',
+                        'sort_order'  => $order,
+                        'open_in_new' => false,
+                    ]);
+                }
+            }
+            $db->query("RELEASE SAVEPOINT sp_contact_nav"); $db->execute();
+        } catch (\Exception) {
+            try { $db->query("ROLLBACK TO SAVEPOINT sp_contact_nav"); $db->execute(); } catch (\Exception) {}
+        }
     }
 
     public function uninstall(\Core\Database\Connection $db): void

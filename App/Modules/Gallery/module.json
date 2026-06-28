@@ -12,6 +12,9 @@
             "js":  ["js/gallery-admin.js"]
         }
     },
+    "nav_routes": [
+        {"label": "Gallery", "path": "/gallery"}
+    ],
     "nav": {
         "label":      "Gallery",
         "icon":       "pi-images",

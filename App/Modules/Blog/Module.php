@@ -18,7 +18,7 @@ class Module implements ModuleInterface
     public function install(\Core\Database\Connection $db): void
     {
         // ── Core post table ───────────────────────────────────────────────────
-        // Detect users.id type so author_id uses a compatible type for JOINs
+        // Detect users.id type so created_by/updated_by/deleted_by use a compatible type for JOINs
         $userIdType = 'UUID';
         try {
             $r = \Core\Model::on($db, 'information_schema.columns')
@@ -36,7 +36,7 @@ class Module implements ModuleInterface
             body              TEXT,
             excerpt           TEXT,
             status            VARCHAR(20)  DEFAULT 'draft',
-            author_id         {$userIdType},
+            created_by        {$userIdType},
             published_at      TIMESTAMP,
             featured_image_id UUID,
             featured_image_url VARCHAR(500),
@@ -45,36 +45,42 @@ class Module implements ModuleInterface
             reading_time      SMALLINT     DEFAULT 0,
             created_at        TIMESTAMP    DEFAULT NOW(),
             updated_at        TIMESTAMP    DEFAULT NOW(),
-            deleted_at        TIMESTAMP
+            updated_by        {$userIdType},
+            deleted_at        TIMESTAMP,
+            deleted_by        {$userIdType}
         )");
         $db->execute();
 
-        // FK added separately - survives when users.id type doesn't match UUID yet.
+        // FKs added separately - survives when users.id type doesn't match UUID yet.
         // SAVEPOINT/ROLLBACK TO clears the aborted-transaction state on failure.
         try {
-            $db->query("SAVEPOINT sp_posts_author_fk"); $db->execute();
-            $db->query("ALTER TABLE posts DROP CONSTRAINT IF EXISTS posts_author_id_fkey"); $db->execute();
-            $db->query("ALTER TABLE posts ADD CONSTRAINT posts_author_id_fkey FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE SET NULL"); $db->execute();
-            $db->query("RELEASE SAVEPOINT sp_posts_author_fk"); $db->execute();
+            $db->query("SAVEPOINT sp_posts_users_fk"); $db->execute();
+            $db->query("ALTER TABLE posts DROP CONSTRAINT IF EXISTS posts_created_by_fkey"); $db->execute();
+            $db->query("ALTER TABLE posts ADD CONSTRAINT posts_created_by_fkey FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL"); $db->execute();
+            $db->query("ALTER TABLE posts DROP CONSTRAINT IF EXISTS posts_updated_by_fkey"); $db->execute();
+            $db->query("ALTER TABLE posts ADD CONSTRAINT posts_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL"); $db->execute();
+            $db->query("ALTER TABLE posts DROP CONSTRAINT IF EXISTS posts_deleted_by_fkey"); $db->execute();
+            $db->query("ALTER TABLE posts ADD CONSTRAINT posts_deleted_by_fkey FOREIGN KEY (deleted_by) REFERENCES users(id) ON DELETE SET NULL"); $db->execute();
+            $db->query("RELEASE SAVEPOINT sp_posts_users_fk"); $db->execute();
         } catch (\Exception) {
-            try { $db->query("ROLLBACK TO SAVEPOINT sp_posts_author_fk"); $db->execute(); } catch (\Exception) {}
+            try { $db->query("ROLLBACK TO SAVEPOINT sp_posts_users_fk"); $db->execute(); } catch (\Exception) {}
         }
 
-        // Correct author_id type if the table was created before this detection was added
+        // Correct created_by type if the table was created before this detection was added
         // (safe: only runs when there is a type mismatch, which implies no valid data exists)
         if ($userIdType === 'BIGINT') {
             try {
-                $db->query("SAVEPOINT sp_fix_author_type"); $db->execute();
+                $db->query("SAVEPOINT sp_fix_created_by_type"); $db->execute();
                 $cr = \Core\Model::on($db, 'information_schema.columns')
                     ->select('data_type')->where('table_name', 'posts')
-                    ->where('column_name', 'author_id')->where('table_schema', 'public')->get(1);
+                    ->where('column_name', 'created_by')->where('table_schema', 'public')->get(1);
                 if ($cr && strtolower($cr['data_type'] ?? '') === 'uuid') {
-                    $db->query("ALTER TABLE posts DROP COLUMN IF EXISTS author_id"); $db->execute();
-                    $db->query("ALTER TABLE posts ADD COLUMN author_id BIGINT"); $db->execute();
+                    $db->query("ALTER TABLE posts DROP COLUMN IF EXISTS created_by"); $db->execute();
+                    $db->query("ALTER TABLE posts ADD COLUMN created_by BIGINT"); $db->execute();
                 }
-                $db->query("RELEASE SAVEPOINT sp_fix_author_type"); $db->execute();
+                $db->query("RELEASE SAVEPOINT sp_fix_created_by_type"); $db->execute();
             } catch (\Exception) {
-                try { $db->query("ROLLBACK TO SAVEPOINT sp_fix_author_type"); $db->execute(); } catch (\Exception) {}
+                try { $db->query("ROLLBACK TO SAVEPOINT sp_fix_created_by_type"); $db->execute(); } catch (\Exception) {}
             }
         }
 
@@ -85,6 +91,43 @@ class Module implements ModuleInterface
             "ALTER TABLE posts ADD COLUMN IF NOT EXISTS meta_title         VARCHAR(160)",
             "ALTER TABLE posts ADD COLUMN IF NOT EXISTS meta_description   VARCHAR(320)",
             "ALTER TABLE posts ADD COLUMN IF NOT EXISTS reading_time       SMALLINT DEFAULT 0",
+            "ALTER TABLE posts ADD COLUMN IF NOT EXISTS expire_at          TIMESTAMP",
+        ] as $ddl) {
+            $db->query($ddl);
+            $db->execute();
+        }
+
+        // ── Content revisions (shared with Pages module) ─────────────────────
+        $db->query("CREATE TABLE IF NOT EXISTS content_revisions (
+            id               UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+            content_type     VARCHAR(20)  NOT NULL,
+            content_id       UUID         NOT NULL,
+            revision_number  INT          NOT NULL DEFAULT 1,
+            title            VARCHAR(255),
+            body             TEXT,
+            status           VARCHAR(20),
+            slug             VARCHAR(255),
+            excerpt          TEXT,
+            meta_title       VARCHAR(255),
+            meta_description TEXT,
+            created_at       TIMESTAMP    DEFAULT NOW(),
+            updated_at       TIMESTAMP    DEFAULT NOW(),
+            created_by       UUID,
+            updated_by       UUID
+        )");
+        $db->execute();
+
+        $db->query("CREATE INDEX IF NOT EXISTS idx_content_revisions_content ON content_revisions (content_type, content_id)");
+        $db->execute();
+
+        // Add columns to tables created before this version
+        foreach ([
+            "ALTER TABLE content_revisions ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW()",
+            "ALTER TABLE content_revisions ADD COLUMN IF NOT EXISTS updated_by UUID",
+            "ALTER TABLE content_revisions ADD COLUMN IF NOT EXISTS slug VARCHAR(255)",
+            "ALTER TABLE content_revisions ADD COLUMN IF NOT EXISTS excerpt TEXT",
+            "ALTER TABLE content_revisions ADD COLUMN IF NOT EXISTS meta_title VARCHAR(255)",
+            "ALTER TABLE content_revisions ADD COLUMN IF NOT EXISTS meta_description TEXT",
         ] as $ddl) {
             $db->query($ddl);
             $db->execute();
@@ -96,10 +139,27 @@ class Module implements ModuleInterface
             name        VARCHAR(120) UNIQUE NOT NULL,
             slug        VARCHAR(120) UNIQUE NOT NULL,
             description TEXT,
-            created_at  TIMESTAMP DEFAULT NOW(),
-            updated_at  TIMESTAMP DEFAULT NOW()
+            created_at  TIMESTAMP    DEFAULT NOW(),
+            updated_at  TIMESTAMP    DEFAULT NOW(),
+            deleted_at  TIMESTAMP,
+            created_by  {$userIdType},
+            updated_by  {$userIdType},
+            deleted_by  {$userIdType}
         )");
         $db->execute();
+
+        try {
+            $db->query("SAVEPOINT sp_post_cat_users_fk"); $db->execute();
+            $db->query("ALTER TABLE post_categories DROP CONSTRAINT IF EXISTS post_categories_created_by_fkey"); $db->execute();
+            $db->query("ALTER TABLE post_categories ADD CONSTRAINT post_categories_created_by_fkey FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL"); $db->execute();
+            $db->query("ALTER TABLE post_categories DROP CONSTRAINT IF EXISTS post_categories_updated_by_fkey"); $db->execute();
+            $db->query("ALTER TABLE post_categories ADD CONSTRAINT post_categories_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL"); $db->execute();
+            $db->query("ALTER TABLE post_categories DROP CONSTRAINT IF EXISTS post_categories_deleted_by_fkey"); $db->execute();
+            $db->query("ALTER TABLE post_categories ADD CONSTRAINT post_categories_deleted_by_fkey FOREIGN KEY (deleted_by) REFERENCES users(id) ON DELETE SET NULL"); $db->execute();
+            $db->query("RELEASE SAVEPOINT sp_post_cat_users_fk"); $db->execute();
+        } catch (\Exception) {
+            try { $db->query("ROLLBACK TO SAVEPOINT sp_post_cat_users_fk"); $db->execute(); } catch (\Exception) {}
+        }
 
         $db->query("CREATE TABLE IF NOT EXISTS post_category_pivot (
             post_id     UUID NOT NULL,
@@ -113,15 +173,29 @@ class Module implements ModuleInterface
         // ── Tags ──────────────────────────────────────────────────────────────
         $db->query("CREATE TABLE IF NOT EXISTS post_tags (
             id         UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
-            name       VARCHAR(80) UNIQUE NOT NULL,
-            slug       VARCHAR(80) UNIQUE NOT NULL,
-            created_at TIMESTAMP DEFAULT NOW(),
-            updated_at TIMESTAMP DEFAULT NOW()
+            name       VARCHAR(80)  UNIQUE NOT NULL,
+            slug       VARCHAR(80)  UNIQUE NOT NULL,
+            created_at TIMESTAMP    DEFAULT NOW(),
+            updated_at TIMESTAMP    DEFAULT NOW(),
+            deleted_at TIMESTAMP,
+            created_by {$userIdType},
+            updated_by {$userIdType},
+            deleted_by {$userIdType}
         )");
         $db->execute();
 
-        $db->query("ALTER TABLE post_tags ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW()");
-        $db->execute();
+        try {
+            $db->query("SAVEPOINT sp_post_tags_users_fk"); $db->execute();
+            $db->query("ALTER TABLE post_tags DROP CONSTRAINT IF EXISTS post_tags_created_by_fkey"); $db->execute();
+            $db->query("ALTER TABLE post_tags ADD CONSTRAINT post_tags_created_by_fkey FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL"); $db->execute();
+            $db->query("ALTER TABLE post_tags DROP CONSTRAINT IF EXISTS post_tags_updated_by_fkey"); $db->execute();
+            $db->query("ALTER TABLE post_tags ADD CONSTRAINT post_tags_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL"); $db->execute();
+            $db->query("ALTER TABLE post_tags DROP CONSTRAINT IF EXISTS post_tags_deleted_by_fkey"); $db->execute();
+            $db->query("ALTER TABLE post_tags ADD CONSTRAINT post_tags_deleted_by_fkey FOREIGN KEY (deleted_by) REFERENCES users(id) ON DELETE SET NULL"); $db->execute();
+            $db->query("RELEASE SAVEPOINT sp_post_tags_users_fk"); $db->execute();
+        } catch (\Exception) {
+            try { $db->query("ROLLBACK TO SAVEPOINT sp_post_tags_users_fk"); $db->execute(); } catch (\Exception) {}
+        }
 
         $db->query("CREATE TABLE IF NOT EXISTS post_tag_pivot (
             post_id UUID NOT NULL,
@@ -211,6 +285,35 @@ class Module implements ModuleInterface
                 ]);
             }
         }
+
+        // Auto-insert into primary navigation if Navigation module is installed
+        // Uses the configured base path (defaults to /blog)
+        $pathRow = \Core\Model::on($db, 'settings')
+            ->select('value')->where('key', 'blog_base_path')->where('grp', 'blog')->get(1);
+        $blogPath = '/' . trim($pathRow['value'] ?? 'blog', '/');
+        try {
+            $db->query("SAVEPOINT sp_blog_nav"); $db->execute();
+            $pm = \Core\Model::on($db, 'nav_menus')->select('id')->where('slug', 'primary')->get(1);
+            if ($pm) {
+                $exists = \Core\Model::on($db, 'nav_items')
+                    ->where('menu_id', $pm['id'])->where('url', $blogPath)->get(1);
+                if (!$exists) {
+                    $order = (int) (\Core\Model::on($db, 'nav_items')
+                        ->where('menu_id', $pm['id'])->whereRaw('parent_id IS NULL', [])->totalRows() ?: 0);
+                    \Core\Model::on($db, 'nav_items')->save([
+                        'menu_id'     => $pm['id'],
+                        'type'        => 'module',
+                        'label'       => 'Blog',
+                        'url'         => $blogPath,
+                        'sort_order'  => $order,
+                        'open_in_new' => false,
+                    ]);
+                }
+            }
+            $db->query("RELEASE SAVEPOINT sp_blog_nav"); $db->execute();
+        } catch (\Exception) {
+            try { $db->query("ROLLBACK TO SAVEPOINT sp_blog_nav"); $db->execute(); } catch (\Exception) {}
+        }
     }
 
     public function uninstall(\Core\Database\Connection $db): void
@@ -253,6 +356,9 @@ class Module implements ModuleInterface
         $router->get('/admin/blog/posts/([a-zA-Z0-9\-]+)/form',        $c, 'editForm');
         $router->post('/admin/blog/posts/([a-zA-Z0-9\-]+)/update',     $c, 'update');
         $router->post('/admin/blog/posts/([a-zA-Z0-9\-]+)/delete',     $c, 'delete');
+        $router->get('/admin/blog/posts/([a-zA-Z0-9\-]+)/revisions',  $c, 'revisions');
+        $router->post('/admin/blog/posts/([a-zA-Z0-9\-]+)/revisions/([a-zA-Z0-9\-]+)/restore', $c, 'restoreRevision');
+        $router->get('/admin/blog/posts/([a-zA-Z0-9\-]+)/revisions/([a-zA-Z0-9\-]+)/diff',    $c, 'viewRevision');
         $router->post('/admin/blog/posts/bulk',             $c, 'bulk');
 
         // Categories

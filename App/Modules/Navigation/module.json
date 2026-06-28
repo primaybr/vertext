@@ -1,7 +1,7 @@
 {
     "name":        "Navigation",
     "slug":        "navigation",
-    "version":     "0.0.1",
+    "version":     "0.0.2",
     "description": "Manage front-end navigation menus",
     "author":      "Vertext",
     "category":    "Navigation",
