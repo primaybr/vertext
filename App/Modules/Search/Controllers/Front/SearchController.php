@@ -42,6 +42,11 @@ class SearchController extends Controller
             $total = (int) ((new \Core\Model('search_index'))
                 ->whereRaw('(title ILIKE :q1 OR body ILIKE :q2)', [':q1' => $like, ':q2' => $like])
                 ->totalRows() ?: 0);
+
+            // Track search query in Analytics if module is installed
+            if (class_exists('\App\Modules\Analytics\Tracker')) {
+                \App\Modules\Analytics\Tracker::recordSearch($q, $total);
+            }
         }
 
         ThemeEngine::render('modules/search/front/results', [

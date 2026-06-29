@@ -1,17 +1,19 @@
 <style>
 .contact-page { padding: 3rem 0; }
-.contact-form { background: #fff; border: 1px solid var(--clr-border, #e5e7eb); border-radius: 8px; padding: 2rem; }
+.contact-form { background: var(--clr-surface); border: 1px solid var(--clr-border); border-radius: 8px; padding: 2rem; }
 .contact-form label { display: block; font-size: .875rem; font-weight: 600; margin-bottom: .35rem; }
 .contact-form input,
-.contact-form textarea { width: 100%; padding: .6rem .85rem; border: 1px solid var(--clr-border, #e5e7eb); border-radius: 6px; font-size: 1rem; font-family: inherit; }
+.contact-form textarea { width: 100%; padding: .6rem .85rem; border: 1px solid var(--clr-border); border-radius: 6px; font-size: 1rem; font-family: inherit; background: var(--clr-bg); color: var(--clr-text); }
 .contact-form input:focus,
-.contact-form textarea:focus { outline: none; border-color: var(--clr-accent, #4f46e5); box-shadow: 0 0 0 3px rgba(79,70,229,.15); }
+.contact-form textarea:focus { outline: none; border-color: var(--clr-accent); box-shadow: 0 0 0 3px rgba(79,70,229,.15); }
 .contact-form .form-group { margin-bottom: 1.25rem; }
-.contact-form .btn-submit { background: var(--clr-accent, #4f46e5); color: #fff; border: none; border-radius: 6px; padding: .65rem 1.5rem; font-size: 1rem; font-weight: 600; cursor: pointer; }
-.contact-form .btn-submit:hover { opacity: .9; }
+.contact-form .btn-submit { background: var(--clr-accent); color: #fff; border: none; border-radius: 6px; padding: .65rem 1.5rem; font-size: 1rem; font-weight: 600; cursor: pointer; }
+.contact-form .btn-submit:hover { opacity: .85; }
 .alert { padding: .9rem 1.25rem; border-radius: 6px; margin-bottom: 1.5rem; font-size: .95rem; }
 .alert-success { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
 .alert-error   { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+[data-theme="dark"] .alert-success { background: rgba(16,185,129,.15); color: #6ee7b7; border-color: rgba(110,231,183,.3); }
+[data-theme="dark"] .alert-error   { background: rgba(239,68,68,.15);  color: #fca5a5; border-color: rgba(252,165,165,.3); }
 </style>
 
 <div class="container contact-page">
@@ -50,7 +52,7 @@
                 <div class="form-group">
                     <label for="cf-message">Message <span style="color:red">*</span></label>
                     <textarea id="cf-message" name="message" required rows="6" maxlength="3000"
-                              placeholder="Your message…"></textarea>
+                              placeholder="Your message&hellip;"></textarea>
                 </div>
 
                 <button type="submit" class="btn-submit">Send Message</button>

@@ -31,6 +31,19 @@ class Module implements ModuleInterface
         $db->query("CREATE INDEX IF NOT EXISTS idx_analytics_url_path ON analytics_pageviews(url_path)");
         $db->execute();
 
+        // v0.0.4: search query tracking table
+        $db->query("CREATE TABLE IF NOT EXISTS analytics_search_queries (
+            id           UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+            query        VARCHAR(500) NOT NULL,
+            result_count SMALLINT     DEFAULT 0,
+            ip_hash      VARCHAR(64),
+            searched_at  TIMESTAMP    DEFAULT NOW()
+        )");
+        $db->execute();
+
+        $db->query("CREATE INDEX IF NOT EXISTS idx_analytics_search_at ON analytics_search_queries(searched_at)");
+        $db->execute();
+
         // analytics_enabled setting (grp: analytics)
         $db->query("INSERT INTO settings (key, value, type, grp, label)
                     VALUES ('analytics_enabled', '1', 'bool', 'analytics', 'Enable Analytics Tracking')
@@ -62,6 +75,9 @@ class Module implements ModuleInterface
 
     public function uninstall(\Core\Database\Connection $db): void
     {
+        $db->query("DROP TABLE IF EXISTS analytics_search_queries CASCADE");
+        $db->execute();
+
         $db->query("DROP TABLE IF EXISTS analytics_pageviews CASCADE");
         $db->execute();
 
@@ -80,7 +96,8 @@ class Module implements ModuleInterface
         $c = 'App\Modules\Analytics\Controllers\Admin\AnalyticsDashboardController';
 
         $router->get('/admin/analytics',        $c, 'index');
-        $router->get('/admin/analytics/data',   $c, 'data');
-        $router->get('/admin/analytics/export', $c, 'export');
+        $router->get('/admin/analytics/data',         $c, 'data');
+        $router->get('/admin/analytics/export',       $c, 'export');
+        $router->get('/admin/analytics/search-terms', $c, 'searchTerms');
     }
 }

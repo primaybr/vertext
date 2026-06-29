@@ -1,7 +1,7 @@
 {
     "name":        "Blog",
     "slug":        "blog",
-    "version":     "0.0.4",
+    "version":     "0.0.6",
     "description": "Full-featured blog with posts, categories, tags, comments, analytics, and public frontend",
     "setup":       "/admin/blog/setup",
     "author":      "Vertext",
@@ -27,6 +27,7 @@
             { "label": "Posts",      "path": "/admin/blog/posts",      "icon": "pi-edit", "permission": "posts.view"      },
             { "label": "Categories", "path": "/admin/blog/categories", "icon": "pi-layers",    "permission": "categories.view" },
             { "label": "Tags",       "path": "/admin/blog/tags",       "icon": "pi-tag",       "permission": "tags.view"       },
+            { "label": "Series",     "path": "/admin/blog/series",     "icon": "pi-layers",    "permission": "posts.view"      },
             { "label": "Comments",   "path": "/admin/blog/comments",   "icon": "pi-message",   "permission": "comments.view"   },
             { "label": "Settings",   "path": "/admin/blog/settings",   "icon": "pi-settings",  "permission": "blog.settings"   }
         ]

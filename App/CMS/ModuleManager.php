@@ -22,6 +22,7 @@ namespace App\CMS;
 class ModuleManager
 {
     private const MODULES_DIR = ROOT . 'App'    . DS . 'Modules' . DS;
+    private const BUNDLES_DIR = ROOT . 'App'    . DS . 'Bundles' . DS;
     private const VIEWS_OUT   = ROOT . 'App'    . DS . 'Views'   . DS . 'modules' . DS;
     private const ASSETS_OUT  = ROOT . 'Public' . DS . 'assets'  . DS . 'modules' . DS;
     private const ROUTE_CACHE = ROOT . 'Cache'  . DS . 'routes.cache';
@@ -68,6 +69,155 @@ class ModuleManager
         }
 
         return $available;
+    }
+
+    // ── Bundles ────────────────────────────────────────────────────────────────
+
+    /**
+     * Return all bundle manifests from App/Bundles/, annotated with install status.
+     * Each entry includes 'modules' with per-entry 'installed' flag and overall
+     * 'status': 'installed' | 'partial' | 'none'.
+     */
+    public static function getBundles(): array
+    {
+        if (!is_dir(self::BUNDLES_DIR)) {
+            return [];
+        }
+
+        $installed = array_column(
+            (new \Core\Model('modules'))->select('slug')->where('status', 'enabled')->get() ?: [],
+            'slug'
+        );
+
+        $bundles = [];
+        foreach (glob(self::BUNDLES_DIR . '*', GLOB_ONLYDIR) as $bundleDir) {
+            $file = $bundleDir . DS . 'bundle.json';
+            if (!file_exists($file)) {
+                continue;
+            }
+
+            $manifest = json_decode((string) file_get_contents($file), true);
+            if (!is_array($manifest) || empty($manifest['slug']) || empty($manifest['modules'])) {
+                continue;
+            }
+
+            $requiredSlugs = array_column(
+                array_filter($manifest['modules'], fn($m) => !empty($m['required'])),
+                'slug'
+            );
+
+            $installedCount  = 0;
+            $totalCount      = count($manifest['modules']);
+            $allRequiredMet  = true;
+
+            foreach ($manifest['modules'] as &$mod) {
+                $mod['installed'] = in_array($mod['slug'], $installed, true);
+                if ($mod['installed']) {
+                    $installedCount++;
+                }
+                if (!empty($mod['required']) && !$mod['installed']) {
+                    $allRequiredMet = false;
+                }
+            }
+            unset($mod);
+
+            if ($installedCount === $totalCount) {
+                $status = 'installed';
+            } elseif ($installedCount > 0) {
+                $status = 'partial';
+            } else {
+                $status = 'none';
+            }
+
+            $manifest['status']          = $status;
+            $manifest['installed_count'] = $installedCount;
+            $manifest['total_count']     = $totalCount;
+            $manifest['all_required_met'] = $allRequiredMet;
+            $bundles[] = $manifest;
+        }
+
+        return $bundles;
+    }
+
+    /**
+     * Install multiple modules in dependency-safe order.
+     * Already-installed modules are skipped (not an error).
+     * Returns a per-slug result array: ['slug' => ['success' => bool, 'name' => str, 'message' => str, 'skipped' => bool]].
+     */
+    public static function installBatch(array $slugs): array
+    {
+        $ordered = self::topologicalSort($slugs);
+        $results = [];
+
+        foreach ($ordered as $slug) {
+            $existing = (new \Core\Model('modules'))->select('id, name')->where('slug', $slug)->get(1);
+            if ($existing) {
+                $results[$slug] = ['success' => true, 'skipped' => true, 'name' => $existing['name'] ?? $slug, 'message' => 'Already installed.'];
+                continue;
+            }
+
+            $result = self::install($slug);
+            $results[$slug] = array_merge(['skipped' => false], $result);
+        }
+
+        return $results;
+    }
+
+    /**
+     * Order slugs so that each module is installed after its requires.modules dependencies.
+     * Uses Kahn's topological sort. Slugs whose manifests cannot be found are placed at end.
+     * Does not include already-installed modules in the ordering (they are not re-installed).
+     */
+    private static function topologicalSort(array $slugs): array
+    {
+        $slugSet  = array_flip($slugs);
+        $manifests = [];
+        $inDegree  = [];
+        $adjList   = [];
+
+        foreach ($slugs as $slug) {
+            $inDegree[$slug] = 0;
+            $adjList[$slug]  = [];
+        }
+
+        foreach ($slugs as $slug) {
+            $info = self::findBySlug($slug);
+            if (!$info) {
+                $manifests[$slug] = null;
+                continue;
+            }
+            $manifests[$slug] = $info[0];
+            $deps = $info[0]['requires']['modules'] ?? [];
+            foreach ($deps as $dep) {
+                if (isset($slugSet[$dep])) {
+                    $adjList[$dep][] = $slug;
+                    $inDegree[$slug]++;
+                }
+            }
+        }
+
+        $queue  = [];
+        foreach ($slugs as $slug) {
+            if ($inDegree[$slug] === 0) {
+                $queue[] = $slug;
+            }
+        }
+
+        $sorted = [];
+        while (!empty($queue)) {
+            $current  = array_shift($queue);
+            $sorted[] = $current;
+            foreach ($adjList[$current] as $neighbor) {
+                $inDegree[$neighbor]--;
+                if ($inDegree[$neighbor] === 0) {
+                    $queue[] = $neighbor;
+                }
+            }
+        }
+
+        // Append any remaining (cycle or missing manifest) at end
+        $remaining = array_diff($slugs, $sorted);
+        return array_merge($sorted, array_values($remaining));
     }
 
     // ── Install ────────────────────────────────────────────────────────────────

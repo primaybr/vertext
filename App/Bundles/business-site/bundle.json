@@ -1,0 +1,15 @@
+{
+    "name": "Business Site",
+    "slug": "business-site",
+    "version": "1.0.0",
+    "description": "Professional business website with static pages, contact form, navigation, and analytics.",
+    "icon": "pi-briefcase",
+    "category": "Business",
+    "modules": [
+        { "slug": "pages",      "required": true  },
+        { "slug": "contact",    "required": true  },
+        { "slug": "navigation", "required": true  },
+        { "slug": "analytics",  "required": false },
+        { "slug": "sitemap",    "required": false }
+    ]
+}

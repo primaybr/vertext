@@ -1257,29 +1257,23 @@
 }
 .vtx-select-tag-rm:hover { color: var(--ps-danger, #EF4444); }
 
-/* Dropdown panel */
+/* Dropdown panel - rendered as a body portal (position:fixed via JS)
+ * so it is never clipped by ancestor overflow:hidden containers. */
 .vtx-select-dropdown {
-    position: absolute;
-    top: calc(100% + 4px);
-    left: 0;
-    right: 0;
+    position: fixed;
     background: var(--ps-bg-base, #fff);
     border: 1px solid var(--ps-border, #CBD5E1);
     border-radius: 8px;
     box-shadow: 0 4px 16px rgba(0,0,0,.10);
-    z-index: 1050;
+    z-index: 9999;
     overflow: hidden;
     display: none;
     max-height: 280px;
     flex-direction: column;
+    min-width: 120px;
 }
-.vtx-select.is-open .vtx-select-dropdown { display: flex; }
-
-/* Flip up when near bottom of viewport */
-.vtx-select-dropdown.is-above {
-    top: auto;
-    bottom: calc(100% + 4px);
-}
+/* Shown by JS adding this class directly on the dropdown element */
+.vtx-select-dropdown.vtx-select-dropdown--open { display: flex; }
 
 /* Search input inside dropdown */
 .vtx-select-search-wrap {

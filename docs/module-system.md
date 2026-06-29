@@ -280,3 +280,74 @@ return $this->adminRender('modules/my-module/admin/items/index', $data, 'Items',
 // Partial (no layout - for AJAX modal responses)
 return $this->renderPartial('modules/my-module/admin/items/_form', $data);
 ```
+
+---
+
+## Bundle Packages
+
+Bundles let you install a curated set of modules in one click from the Module Manager's **Packages** tab.
+
+### Bundle Directory
+
+```text
+App/Bundles/
+    content-portal/
+        bundle.json
+    media-showcase/
+        bundle.json
+    business-site/
+        bundle.json
+    full-stack/
+        bundle.json
+```
+
+### bundle.json Schema
+
+```json
+{
+  "name":        "Content Portal",
+  "slug":        "content-portal",
+  "version":     "1.0.0",
+  "description": "Full content publishing: blog, search, analytics, contact, navigation.",
+  "icon":        "pi-globe",
+  "category":    "Publishing",
+  "modules": [
+    { "slug": "blog",       "required": true  },
+    { "slug": "search",     "required": true  },
+    { "slug": "navigation", "required": true  },
+    { "slug": "analytics",  "required": false },
+    { "slug": "contact",    "required": false },
+    { "slug": "sitemap",    "required": false }
+  ]
+}
+```
+
+`required: true` - module is pre-checked and locked in the install modal.
+`required: false` - module is pre-checked but can be unchecked before installing.
+
+### Install API
+
+**`ModuleManager::getBundles(): array`**
+
+Scans `App/Bundles/*/bundle.json`. Annotates each module entry with `installed` (bool) and `enabled` (bool). Computes `installed_count`, `total_count`, and `status` (`installed` / `partial` / `none`) per bundle.
+
+**`ModuleManager::installBatch(array $slugs): array`**
+
+1. Resolves install order using Kahn's topological sort over `requires.modules` from each manifest.
+2. Installs each module in order; already-installed modules are skipped.
+3. Returns a per-slug map: `['slug' => ['success' => bool, 'name' => str, 'message' => str, 'skipped' => bool]]`.
+
+### Built-in Bundles
+
+| Bundle | Slug | Modules |
+| ------ | ---- | ------- |
+| Content Portal | `content-portal` | Blog, Search, Navigation (req); Analytics, Contact, Sitemap (opt) |
+| Media Showcase | `media-showcase` | Media, Gallery, Videos, Navigation (req); Analytics (opt) |
+| Business Site | `business-site` | Pages, Contact, Navigation (req); Analytics, Sitemap (opt) |
+| Full Stack | `full-stack` | All available add-on modules (all req) |
+
+### Creating a Custom Bundle
+
+1. Create `App/Bundles/my-bundle/bundle.json` following the schema above.
+2. The bundle appears automatically in the Packages tab on next page load (no cache clear needed - bundles are scanned at runtime).
+3. There is no CLI or API required to register a bundle.

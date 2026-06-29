@@ -72,6 +72,46 @@ class Module implements ModuleInterface
         $db->query("INSERT INTO nav_menus (name, slug) VALUES ('Primary Navigation', 'primary') ON CONFLICT (slug) DO NOTHING");
         $db->execute();
 
+        // Auto-seed nav items from all currently-enabled modules that declare nav_routes.
+        // This handles the case where other modules were installed before Navigation.
+        try {
+            $pm = \Core\Model::on($db, 'nav_menus')->select('id')->where('slug', 'primary')->get(1);
+            if ($pm) {
+                $modulesDir = __DIR__ . '/..'; // App/Modules/
+                $enabled = \Core\Model::on($db, 'modules')
+                    ->select('slug')->where('status', 'enabled')->get() ?: [];
+                foreach ($enabled as $mod) {
+                    $dirName  = str_replace(' ', '', ucwords(str_replace('-', ' ', $mod['slug'])));
+                    $manifestPath = $modulesDir . '/' . $dirName . '/module.json';
+                    if (!is_file($manifestPath)) {
+                        continue;
+                    }
+                    $manifest = json_decode(file_get_contents($manifestPath) ?: '{}', true) ?: [];
+                    foreach ($manifest['nav_routes'] ?? [] as $route) {
+                        if (empty($route['path'])) {
+                            continue;
+                        }
+                        $exists = \Core\Model::on($db, 'nav_items')
+                            ->where('menu_id', $pm['id'])->where('url', $route['path'])->get(1);
+                        if (!$exists) {
+                            $order = (int) (\Core\Model::on($db, 'nav_items')
+                                ->where('menu_id', $pm['id'])
+                                ->whereRaw('parent_id IS NULL', [])
+                                ->totalRows() ?: 0);
+                            \Core\Model::on($db, 'nav_items')->save([
+                                'menu_id'     => $pm['id'],
+                                'type'        => 'module',
+                                'label'       => $route['label'] ?? $mod['slug'],
+                                'url'         => $route['path'],
+                                'sort_order'  => $order,
+                                'open_in_new' => false,
+                            ]);
+                        }
+                    }
+                }
+            }
+        } catch (\Throwable) {}
+
         // Permissions
         $permSql = "INSERT INTO permissions (name, slug, description, module)
                     VALUES (:name, :slug, :desc, 'navigation')
@@ -118,6 +158,7 @@ class Module implements ModuleInterface
         $router->post('/admin/navigation/store',                                                       $c, 'store');
         $router->get('/admin/navigation/([a-zA-Z0-9\-]+)',                                             $c, 'builder');
         $router->post('/admin/navigation/([a-zA-Z0-9\-]+)/delete',                                    $c, 'delete');
+        $router->post('/admin/navigation/([a-zA-Z0-9\-]+)/sync-modules',                               $c, 'syncModules');
         $router->post('/admin/navigation/([a-zA-Z0-9\-]+)/items/store',                               $c, 'storeItem');
         $router->post('/admin/navigation/([a-zA-Z0-9\-]+)/items/reorder',                             $c, 'reorderItems');
         $router->post('/admin/navigation/([a-zA-Z0-9\-]+)/items/([a-zA-Z0-9\-]+)/update',             $c, 'updateItem');

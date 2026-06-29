@@ -74,11 +74,14 @@ class ModulesController extends BaseController
         }
         ksort($categories);
 
+        $bundles = ModuleManager::getBundles();
+
         $this->adminRender('admin/modules/index', [
             'modules'     => $modules,
             'available'   => $available,
             'coreModules' => $coreModules,
             'categories'  => $categories,
+            'bundles'     => $bundles,
         ], 'Module Manager', 'modules');
     }
 
@@ -202,6 +205,38 @@ class ModulesController extends BaseController
             $this->flash('error', 'Could not redeploy views.');
         }
         $this->redirect($this->baseUrl . '/admin/modules');
+    }
+
+    // ── Install Bundle ────────────────────────────────────────────────────────
+
+    /** POST /admin/modules/install-bundle */
+    public function installBundle(): void
+    {
+        $this->requirePermission('modules.install');
+        $this->validateCsrf();
+
+        $slugs = $this->input->post('modules') ?? [];
+        if (!is_array($slugs) || empty($slugs)) {
+            $this->json(['success' => false, 'message' => 'No modules selected.']);
+        }
+
+        // Sanitize: keep only valid slugs
+        $slugs = array_values(array_filter($slugs, fn($s) => is_string($s) && preg_match('/^[a-z][a-z0-9\-_]*$/', $s)));
+        if (empty($slugs)) {
+            $this->json(['success' => false, 'message' => 'No valid module slugs provided.']);
+        }
+
+        $results = ModuleManager::installBatch($slugs);
+
+        $anySuccess = false;
+        foreach ($results as $slug => $r) {
+            if ($r['success'] && empty($r['skipped'])) {
+                Auth::audit('module.install', 'modules', '', ['slug' => $slug, 'via' => 'bundle']);
+                $anySuccess = true;
+            }
+        }
+
+        $this->json(['success' => true, 'results' => $results, 'any_installed' => $anySuccess]);
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────────

@@ -1,0 +1,22 @@
+{
+    "name": "Full Stack",
+    "slug": "full-stack",
+    "version": "1.0.0",
+    "description": "Everything installed - all available add-on modules for a fully-featured Vertext site.",
+    "icon": "pi-layers",
+    "category": "Complete",
+    "modules": [
+        { "slug": "blog",             "required": true },
+        { "slug": "pages",            "required": true },
+        { "slug": "media",            "required": true },
+        { "slug": "gallery",          "required": true },
+        { "slug": "videos",           "required": true },
+        { "slug": "contact",          "required": true },
+        { "slug": "navigation",       "required": true },
+        { "slug": "analytics",        "required": true },
+        { "slug": "search",           "required": true },
+        { "slug": "sitemap",          "required": true },
+        { "slug": "webhooks",         "required": true },
+        { "slug": "theme-customizer", "required": true }
+    ]
+}

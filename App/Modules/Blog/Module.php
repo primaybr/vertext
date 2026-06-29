@@ -224,6 +224,44 @@ class Module implements ModuleInterface
         $db->query("ALTER TABLE blog_comments ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW()");
         $db->execute();
 
+        // ── Threaded comments ─────────────────────────────────────────────────
+        $db->query("ALTER TABLE blog_comments ADD COLUMN IF NOT EXISTS parent_comment_id UUID");
+        $db->execute();
+
+        try {
+            $db->query("SAVEPOINT sp_blog_comments_parent_fk"); $db->execute();
+            $db->query("ALTER TABLE blog_comments DROP CONSTRAINT IF EXISTS blog_comments_parent_comment_id_fkey"); $db->execute();
+            $db->query("ALTER TABLE blog_comments ADD CONSTRAINT blog_comments_parent_comment_id_fkey FOREIGN KEY (parent_comment_id) REFERENCES blog_comments(id) ON DELETE CASCADE"); $db->execute();
+            $db->query("RELEASE SAVEPOINT sp_blog_comments_parent_fk"); $db->execute();
+        } catch (\Exception) {
+            try { $db->query("ROLLBACK TO SAVEPOINT sp_blog_comments_parent_fk"); $db->execute(); } catch (\Exception) {}
+        }
+
+        // ── Post Series ───────────────────────────────────────────────────────
+        $db->query("CREATE TABLE IF NOT EXISTS post_series (
+            id          UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+            title       VARCHAR(255) NOT NULL,
+            slug        VARCHAR(255) UNIQUE NOT NULL,
+            description TEXT,
+            created_at  TIMESTAMP    DEFAULT NOW(),
+            updated_at  TIMESTAMP    DEFAULT NOW(),
+            deleted_at  TIMESTAMP,
+            created_by  {$userIdType},
+            updated_by  {$userIdType},
+            deleted_by  {$userIdType}
+        )");
+        $db->execute();
+
+        $db->query("CREATE TABLE IF NOT EXISTS post_series_posts (
+            series_id   UUID     NOT NULL,
+            post_id     UUID     NOT NULL,
+            sort_order  SMALLINT DEFAULT 0,
+            PRIMARY KEY (series_id, post_id),
+            FOREIGN KEY (series_id) REFERENCES post_series(id)  ON DELETE CASCADE,
+            FOREIGN KEY (post_id)   REFERENCES posts(id)        ON DELETE CASCADE
+        )");
+        $db->execute();
+
         // ── Permissions ───────────────────────────────────────────────────────
         $permSql = "INSERT INTO permissions (name, slug, description, module)
                     VALUES (:name, :slug, :desc, 'blog')
@@ -319,6 +357,8 @@ class Module implements ModuleInterface
     public function uninstall(\Core\Database\Connection $db): void
     {
         foreach ([
+            'post_series_posts',
+            'post_series',
             'post_tag_pivot',
             'post_tags',
             'post_category_pivot',
@@ -379,6 +419,15 @@ class Module implements ModuleInterface
         $router->post('/admin/blog/tags/([a-zA-Z0-9\-]+)/update',      $tag, 'update');
         $router->post('/admin/blog/tags/([a-zA-Z0-9\-]+)/delete',      $tag, 'delete');
         $router->get('/admin/blog/tags/search',             $tag, 'search');
+
+        // Series
+        $ser = $ns . 'SeriesController';
+        $router->get('/admin/blog/series',                             $ser, 'index');
+        $router->get('/admin/blog/series/form',                        $ser, 'createForm');
+        $router->post('/admin/blog/series/store',                      $ser, 'store');
+        $router->get('/admin/blog/series/([a-zA-Z0-9\-]+)/form',      $ser, 'editForm');
+        $router->post('/admin/blog/series/([a-zA-Z0-9\-]+)/update',   $ser, 'update');
+        $router->post('/admin/blog/series/([a-zA-Z0-9\-]+)/delete',   $ser, 'delete');
 
         // Comments
         $cmt = $ns . 'CommentsController';

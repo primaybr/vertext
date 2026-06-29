@@ -42,15 +42,19 @@ $router->get('/admin/users/form',                   'Admin\UsersController', 'cr
 $router->get('/admin/users/([a-zA-Z0-9\-]+)/form',             'Admin\UsersController', 'editForm');
 
 // ── Roles ─────────────────────────────────────────────────────────────────────
-$router->get('/admin/roles',                        'Admin\RolesController', 'index');
-$router->post('/admin/roles/store',                 'Admin\RolesController', 'store');
-$router->post('/admin/roles/([a-zA-Z0-9\-]+)/update',          'Admin\RolesController', 'update');
-$router->post('/admin/roles/([a-zA-Z0-9\-]+)/delete',          'Admin\RolesController', 'delete');
-$router->get('/admin/roles/form',                   'Admin\RolesController', 'createForm');
-$router->get('/admin/roles/([a-zA-Z0-9\-]+)/form',             'Admin\RolesController', 'editForm');
+$router->get('/admin/roles',                                         'Admin\RolesController', 'index');
+$router->post('/admin/roles/store',                                  'Admin\RolesController', 'store');
+$router->post('/admin/roles/([a-zA-Z0-9\-]+)/update',               'Admin\RolesController', 'update');
+$router->post('/admin/roles/([a-zA-Z0-9\-]+)/delete',               'Admin\RolesController', 'delete');
+$router->get('/admin/roles/form',                                    'Admin\RolesController', 'createForm');
+$router->get('/admin/roles/([a-zA-Z0-9\-]+)/form',                  'Admin\RolesController', 'editForm');
+$router->get('/admin/roles/permissions',                             'Admin\RolesController', 'permissions');
+$router->post('/admin/roles/permissions/store',                      'Admin\RolesController', 'storePermission');
+$router->post('/admin/roles/permissions/([a-zA-Z0-9\-]+)/delete',   'Admin\RolesController', 'deletePermission');
 
 // ── Modules ───────────────────────────────────────────────────────────────────
 $router->get('/admin/modules',                                   'Admin\ModulesController', 'index');
+$router->post('/admin/modules/install-bundle',                   'Admin\ModulesController', 'installBundle');
 $router->post('/admin/modules/([a-z0-9\-\_]+)/toggle',            'Admin\ModulesController', 'toggle');
 $router->post('/admin/modules/([a-z0-9\-\_]+)/install',           'Admin\ModulesController', 'install');
 $router->post('/admin/modules/([a-z0-9\-\_]+)/uninstall',         'Admin\ModulesController', 'uninstall');
@@ -63,6 +67,9 @@ $router->post('/admin/themes/set-theme',     'Admin\ThemesController', 'setTheme
 // ── Profile ───────────────────────────────────────────────────────────────────
 $router->get('/admin/profile',               'Admin\ProfileController', 'index');
 $router->post('/admin/profile/update',       'Admin\ProfileController', 'update');
+
+// ── Audit Log ─────────────────────────────────────────────────────────────────
+$router->get('/admin/audit-log',             'Admin\AuditController', 'index');
 
 // ── Settings ──────────────────────────────────────────────────────────────────
 $router->get('/admin/settings',              'Admin\SettingsController', 'index');

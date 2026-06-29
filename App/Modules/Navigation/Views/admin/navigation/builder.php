@@ -11,9 +11,19 @@
     </p>
   </div>
   <?php if (\App\CMS\Auth::can('navigation.manage')): ?>
-  <button type="button" class="btn btn-primary" id="add-item-btn">
-    <i class="pi pi-plus me-1"></i> Add Item
-  </button>
+  <div style="display:flex;gap:.5rem;align-items:center;">
+    <?php if (!empty($moduleRoutes)): ?>
+    <button type="button" class="btn btn-outline-secondary" id="sync-modules-btn" title="Insert any module nav routes not yet in this menu">
+      <i class="pi pi-refresh me-1"></i> Sync module routes
+    </button>
+    <form id="sync-modules-form" method="POST" action="{{baseUrl}}/admin/navigation/<?php echo $menu['id']; ?>/sync-modules" style="display:none;">
+      <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+    </form>
+    <?php endif; ?>
+    <button type="button" class="btn btn-primary" id="add-item-btn">
+      <i class="pi pi-plus me-1"></i> Add Item
+    </button>
+  </div>
   <?php endif; ?>
 </div>
 
@@ -266,6 +276,22 @@ document.addEventListener('DOMContentLoaded', function() {
         var labelEl = document.getElementById('item-label');
         if (!labelEl.value) labelEl.value = opt.dataset.label || '';
       }
+    });
+  }
+
+  // Sync module routes button
+  var syncBtn  = document.getElementById('sync-modules-btn');
+  var syncForm = document.getElementById('sync-modules-form');
+  if (syncBtn && syncForm) {
+    syncBtn.addEventListener('click', function() {
+      syncBtn.disabled = true;
+      window.VtxAjax.postForm(syncForm.action, syncForm, function(ok, res) {
+        syncBtn.disabled = false;
+        window.Phuse.toast((res && res.message) || (ok ? 'Synced.' : 'Sync failed.'), (ok && res && res.success) ? 'success' : 'error');
+        if (ok && res && res.success && res.added > 0) {
+          setTimeout(function() { location.reload(); }, 600);
+        }
+      });
     });
   }
 

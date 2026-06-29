@@ -1,7 +1,7 @@
 {
     "name":        "Analytics",
     "slug":        "analytics",
-    "version":     "0.0.3",
+    "version":     "0.0.4",
     "description": "Privacy-friendly page view analytics for your front-end",
     "author":      "Vertext",
     "category":    "Analytics",

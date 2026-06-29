@@ -4,12 +4,17 @@
     <h1 class="vtx-page-title"><i class="pi pi-shield me-2 text-primary"></i>Roles</h1>
     <p class="vtx-page-desc">Manage roles and their permission sets.</p>
   </div>
-  <button type="button" class="btn btn-primary"
-          data-form-url="{{baseUrl}}/admin/roles/form"
-          data-form-title="Add Role"
-          data-form-size="modal-lg">
-    <i class="pi pi-plus me-1"></i> Add Role
-  </button>
+  <div style="display:flex;gap:.5rem;">
+    <a href="{{baseUrl}}/admin/roles/permissions" class="btn btn-outline-secondary btn-sm">
+      <i class="pi pi-shield me-1"></i> Permissions
+    </a>
+    <button type="button" class="btn btn-primary btn-sm"
+            data-form-url="{{baseUrl}}/admin/roles/form"
+            data-form-title="Add Role"
+            data-form-size="modal-lg">
+      <i class="pi pi-plus me-1"></i> Add Role
+    </button>
+  </div>
 </div>
 
 <div class="vtx-panel">

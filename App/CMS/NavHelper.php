@@ -12,15 +12,16 @@ namespace App\CMS;
  *
  * Each item in the returned array:
  *   [
- *     'id'          => string (UUID),
+ *     'id'          => string,
  *     'label'       => string,
  *     'url'         => string (resolved),
  *     'open_in_new' => bool,
- *     'type'        => 'custom'|'page',
+ *     'type'        => 'custom'|'page'|'module',
  *     'children'    => array (same shape, one level deep),
  *   ]
  *
- * Returns empty array if the Navigation module is not installed.
+ * If the Navigation module is not installed, falls back to auto-generating
+ * items from every enabled module's nav_routes in module.json.
  */
 class NavHelper
 {
@@ -29,7 +30,7 @@ class NavHelper
 
     /**
      * Return the nested menu items for a menu identified by its slug.
-     * Falls back to [] if the module is not installed or the menu does not exist.
+     * Falls back to module nav_routes if the Navigation module is not installed.
      */
     public static function getMenu(string $slug): array
     {
@@ -38,7 +39,7 @@ class NavHelper
         }
 
         if (!ModuleLoader::isEnabled('navigation')) {
-            return self::$cache[$slug] = [];
+            return self::$cache[$slug] = self::buildFromModuleRoutes();
         }
 
         try {
@@ -48,7 +49,7 @@ class NavHelper
                 ->get(1);
 
             if (!$menu) {
-                return self::$cache[$slug] = [];
+                return self::$cache[$slug] = self::buildFromModuleRoutes();
             }
 
             $rows = (new \Core\Model('nav_items'))
@@ -56,14 +57,7 @@ class NavHelper
                 ->orderBy('sort_order', 'ASC')
                 ->get() ?: [];
 
-            if (empty($rows)) {
-                return self::$cache[$slug] = [];
-            }
-
-            $baseUrl = rtrim(
-                (new \Core\Model('settings'))->select('value')->where('key', 'site_url')->get(1)['value'] ?? '',
-                '/'
-            );
+            $baseUrl = self::siteUrl();
 
             $parents  = [];
             $children = [];
@@ -76,11 +70,19 @@ class NavHelper
                 }
             }
 
-            // Attach children to parents
             foreach ($parents as &$parent) {
                 $parent['children'] = $children[$parent['id']] ?? [];
             }
             unset($parent);
+
+            // Append module nav_routes whose URLs are not already in the DB menu.
+            // This handles modules installed before Navigation (nav item was never seeded).
+            $existingUrls = array_column($parents, 'url');
+            foreach (self::buildFromModuleRoutes() as $auto) {
+                if (!in_array($auto['url'], $existingUrls, true)) {
+                    $parents[] = $auto;
+                }
+            }
 
         } catch (\Throwable) {
             return self::$cache[$slug] = [];
@@ -95,11 +97,72 @@ class NavHelper
         self::$cache = [];
     }
 
+    /**
+     * Build navigation items from enabled modules' nav_routes in module.json.
+     * Used when the Navigation module is not installed or the primary menu is empty.
+     */
+    private static function buildFromModuleRoutes(): array
+    {
+        try {
+            $baseUrl    = self::siteUrl();
+            $modulesDir = dirname(__DIR__) . '/Modules';
+
+            $enabled = (new \Core\Model('modules'))
+                ->select('slug')
+                ->where('status', 'enabled')
+                ->orderBy('slug', 'ASC')
+                ->get() ?: [];
+
+            $items = [];
+            foreach ($enabled as $mod) {
+                $dirName  = str_replace(' ', '', ucwords(str_replace('-', ' ', $mod['slug'])));
+                $manifestPath = $modulesDir . '/' . $dirName . '/module.json';
+                if (!is_file($manifestPath)) {
+                    continue;
+                }
+                $manifest = json_decode(file_get_contents($manifestPath) ?: '{}', true) ?: [];
+
+                foreach ($manifest['nav_routes'] ?? [] as $route) {
+                    if (empty($route['path'])) {
+                        continue;
+                    }
+                    $items[] = [
+                        'id'          => 'auto_' . md5($route['path']),
+                        'label'       => $route['label'] ?? $mod['slug'],
+                        'url'         => $baseUrl . $route['path'],
+                        'open_in_new' => false,
+                        'type'        => 'module',
+                        'children'    => [],
+                    ];
+                }
+            }
+
+            return $items;
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
     private static function resolveUrl(array $item, string $baseUrl): string
     {
         if ($item['type'] === 'page' && !empty($item['page_slug'])) {
             return $baseUrl . '/' . ltrim($item['page_slug'], '/');
         }
+        if ($item['type'] === 'module' && !empty($item['url'])) {
+            return rtrim($baseUrl, '/') . '/' . ltrim($item['url'], '/');
+        }
         return $item['url'] ?? '#';
+    }
+
+    private static function siteUrl(): string
+    {
+        try {
+            return rtrim(
+                (new \Core\Model('settings'))->select('value')->where('key', 'site_url')->get(1)['value'] ?? '',
+                '/'
+            );
+        } catch (\Throwable) {
+            return '';
+        }
     }
 }

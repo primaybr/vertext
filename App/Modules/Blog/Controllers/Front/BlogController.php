@@ -50,6 +50,7 @@ class BlogController extends Controller
                 "ALTER TABLE posts ADD COLUMN IF NOT EXISTS featured_image_id  UUID",
                 "ALTER TABLE posts ADD COLUMN IF NOT EXISTS reading_time       SMALLINT DEFAULT 0",
                 "ALTER TABLE posts ADD COLUMN IF NOT EXISTS deleted_at         TIMESTAMP",
+                "ALTER TABLE blog_comments ADD COLUMN IF NOT EXISTS parent_comment_id UUID",
             ] as $ddl) {
                 $db->query($ddl);
                 $db->execute();
@@ -119,15 +120,26 @@ class BlogController extends Controller
         $post['categories'] = $this->postCategories($post['id']);
         $post['tags']       = $this->postTags($post['id']);
 
+        // Series navigation
+        $series = $this->postSeries($post['id']);
+
+        // Related posts (shared tags/categories, max 4)
+        $relatedPosts = $this->relatedPosts(
+            $post['id'],
+            array_column($post['tags'], 'id'),
+            array_column($post['categories'], 'id')
+        );
+
         // Comments enabled?
         $commentsEnabled = $this->settingBool('comments_enabled', true);
-        $comments        = [];
+        $threadedComments = [];
         if ($commentsEnabled) {
-            $comments = (new \Core\Model('blog_comments'))
+            $flat = (new \Core\Model('blog_comments'))
                 ->where('post_id', $post['id'])
                 ->where('status', 'approved')
                 ->orderBy('created_at', 'ASC')
                 ->get() ?: [];
+            $threadedComments = $this->threadComments($flat);
         }
 
         $commentFlash = $this->session->flash('blog_comment_flash') ?: [];
@@ -137,9 +149,11 @@ class BlogController extends Controller
 
         ThemeEngine::render('modules/blog/front/post', [
             'post'             => $post,
-            'comments'         => $comments,
+            'threadedComments' => $threadedComments,
             'commentsEnabled'  => $commentsEnabled,
             'commentFlash'     => is_array($commentFlash) ? $commentFlash : [],
+            'series'           => $series,
+            'relatedPosts'     => $relatedPosts,
             'settings'         => $this->settings,
             'csrf_token'       => $this->csrf->getToken(),
             'baseUrl'          => $this->baseUrl,
@@ -232,10 +246,22 @@ class BlogController extends Controller
         $authorName  = substr(trim($this->input->post('author_name',  false) ?? ''), 0, 120);
         $authorEmail = substr(trim($this->input->post('author_email', false) ?? ''), 0, 180);
         $body        = substr(trim($this->input->post('body',         false) ?? ''), 0, 2000);
+        $rawParentId = trim($this->input->post('parent_comment_id', false) ?? '');
 
         if (!$authorName || !$body) {
             $this->session->set('blog_comment_flash', ['type' => 'error', 'message' => 'Name and comment are required.']);
             $this->redirect($this->baseUrl . $blogBase . '/' . $slug);
+        }
+
+        // Validate parent comment belongs to same post and is approved
+        $parentId = null;
+        if ($rawParentId !== '') {
+            $parentRow = (new \Core\Model('blog_comments'))
+                ->where('id', $rawParentId)
+                ->where('post_id', (string) $post['id'])
+                ->where('status', 'approved')
+                ->get(1);
+            if ($parentRow) $parentId = $rawParentId;
         }
 
         $requireApproval = $this->settingBool('comments_require_approval', true);
@@ -245,12 +271,13 @@ class BlogController extends Controller
             ?? '';
 
         (new \Core\Model('blog_comments'))->save([
-            'post_id'      => (string) $post['id'],
-            'author_name'  => $authorName,
-            'author_email' => $authorEmail ?: null,
-            'body'         => $body,
-            'status'       => $requireApproval ? 'pending' : 'approved',
-            'ip_address'   => substr($ip, 0, 45),
+            'post_id'           => (string) $post['id'],
+            'parent_comment_id' => $parentId,
+            'author_name'       => $authorName,
+            'author_email'      => $authorEmail ?: null,
+            'body'              => $body,
+            'status'            => $requireApproval ? 'pending' : 'approved',
+            'ip_address'        => substr($ip, 0, 45),
         ]);
 
         $msg = $requireApproval
@@ -381,6 +408,105 @@ class BlogController extends Controller
             \App\Mail\Mailer::make()->send($message);
         } catch (\Throwable) {
             // Email failure must not break comment submission
+        }
+    }
+
+    private function threadComments(array $flat): array
+    {
+        $byId = [];
+        foreach ($flat as &$c) {
+            $c['replies'] = [];
+            $byId[$c['id']] = &$c;
+        }
+        unset($c);
+        $tree = [];
+        foreach ($byId as &$c) {
+            $pid = $c['parent_comment_id'] ?? null;
+            if ($pid && isset($byId[$pid])) {
+                $byId[$pid]['replies'][] = &$c;
+            } else {
+                $tree[] = &$c;
+            }
+        }
+        return $tree;
+    }
+
+    private function postSeries(string $postId): array
+    {
+        try {
+            $row = (new \Core\Model('post_series_posts'))
+                ->select('post_series_posts.series_id, post_series_posts.sort_order, post_series.title, post_series.slug AS series_slug, post_series.description')
+                ->join('post_series', 'post_series.id = post_series_posts.series_id', 'INNER')
+                ->where('post_series_posts.post_id', $postId)
+                ->whereNull('post_series.deleted_at')
+                ->get(1);
+
+            if (!$row) return [];
+
+            $all = (new \Core\Model('post_series_posts'))
+                ->select('post_series_posts.post_id, post_series_posts.sort_order, posts.title, posts.slug')
+                ->join('posts', 'posts.id = post_series_posts.post_id', 'INNER')
+                ->where('post_series_posts.series_id', $row['series_id'])
+                ->whereNull('posts.deleted_at')
+                ->whereRaw("(posts.status = 'published' OR (posts.status = 'scheduled' AND posts.published_at <= NOW()))", [])
+                ->orderBy('post_series_posts.sort_order', 'ASC')
+                ->get() ?: [];
+
+            $cur = (int) $row['sort_order'];
+            $prev = $next = null;
+            foreach ($all as $sp) {
+                $o = (int) $sp['sort_order'];
+                if ($o < $cur && (!$prev || $o > (int) $prev['sort_order'])) $prev = $sp;
+                if ($o > $cur && (!$next || $o < (int) $next['sort_order'])) $next = $sp;
+            }
+
+            return [
+                'title'         => $row['title'],
+                'slug'          => $row['series_slug'],
+                'posts'         => $all,
+                'current_order' => $cur,
+                'prev'          => $prev,
+                'next'          => $next,
+            ];
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    private function relatedPosts(string $postId, array $tagIds, array $catIds, int $limit = 4): array
+    {
+        if (empty($tagIds) && empty($catIds)) return [];
+        try {
+            $binds      = [':postId' => $postId];
+            $conditions = [];
+
+            if (!empty($tagIds)) {
+                $ph = implode(',', array_map(fn($i) => ":tid{$i}", array_keys($tagIds)));
+                $conditions[] = "EXISTS (SELECT 1 FROM post_tag_pivot tp WHERE tp.post_id = p.id AND tp.tag_id IN ({$ph}))";
+                foreach ($tagIds as $i => $id) { $binds[":tid{$i}"] = (string) $id; }
+            }
+            if (!empty($catIds)) {
+                $ph = implode(',', array_map(fn($i) => ":cid{$i}", array_keys($catIds)));
+                $conditions[] = "EXISTS (SELECT 1 FROM post_category_pivot cp WHERE cp.post_id = p.id AND cp.category_id IN ({$ph}))";
+                foreach ($catIds as $i => $id) { $binds[":cid{$i}"] = (string) $id; }
+            }
+
+            $whereOr = implode(' OR ', $conditions);
+            $visible = "(p.status = 'published' OR (p.status = 'scheduled' AND p.published_at <= NOW())) AND (p.expire_at IS NULL OR p.expire_at > NOW())";
+
+            $sql = "SELECT DISTINCT p.id, p.title, p.slug, p.excerpt, p.published_at, p.featured_image_url, u.name AS author_name
+                    FROM posts p
+                    LEFT JOIN users u ON u.id = p.created_by
+                    WHERE p.id != :postId AND p.deleted_at IS NULL AND {$visible} AND ({$whereOr})
+                    LIMIT {$limit}";
+
+            $db = (new \Core\Model('posts'))->db;
+            $db->query($sql);
+            $db->arrayBind($binds);
+            $db->execute();
+            return $db->resultset() ?: [];
+        } catch (\Throwable) {
+            return [];
         }
     }
 

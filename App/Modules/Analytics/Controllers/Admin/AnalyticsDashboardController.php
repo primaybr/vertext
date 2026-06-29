@@ -126,6 +126,20 @@ class AnalyticsDashboardController extends BaseController
             $cursor       += 86400;
         }
 
+        // v0.0.4: top search terms for selected period
+        $topSearchTerms = [];
+        try {
+            $topSearchTerms = $this->db('analytics_search_queries')
+                ->select('query, COUNT(*) AS searches, AVG(result_count)::int AS avg_results')
+                ->whereRaw('DATE(searched_at) >= :f AND DATE(searched_at) <= :t', [':f' => $from, ':t' => $to])
+                ->groupBy('query')
+                ->orderBy('searches', 'DESC')
+                ->limitOffset(20, 0)
+                ->get() ?: [];
+        } catch (\Throwable) {
+            // Table may not exist on existing installations; handled gracefully in view
+        }
+
         $this->adminRender('modules/analytics/admin/analytics/index', [
             'from'            => $from,
             'to'              => $to,
@@ -143,6 +157,7 @@ class AnalyticsDashboardController extends BaseController
             'deviceBreakdown' => $deviceBreakdown,
             'topPages'        => $topPages,
             'topReferrers'    => $topReferrers,
+            'topSearchTerms'  => $topSearchTerms,
             'chartLabels'     => $chartLabels,
             'chartValues'     => $chartValues,
         ], 'Analytics', 'analytics');
@@ -176,17 +191,59 @@ class AnalyticsDashboardController extends BaseController
         $this->json(['success' => true, 'labels' => $labels, 'values' => $values]);
     }
 
+    public function searchTerms(): void
+    {
+        $this->requirePermission('analytics.view');
+
+        [$from, $to] = $this->parseDateRange();
+
+        $topTerms = $this->db('analytics_search_queries')
+            ->select('query, COUNT(*) AS searches, AVG(result_count)::int AS avg_results')
+            ->whereRaw('DATE(searched_at) >= :f AND DATE(searched_at) <= :t', [':f' => $from, ':t' => $to])
+            ->groupBy('query')
+            ->orderBy('searches', 'DESC')
+            ->limitOffset(50, 0)
+            ->get() ?: [];
+
+        $zeroResultTerms = $this->db('analytics_search_queries')
+            ->select('query, COUNT(*) AS searches')
+            ->whereRaw('DATE(searched_at) >= :f AND DATE(searched_at) <= :t', [':f' => $from, ':t' => $to])
+            ->where('result_count', '0')
+            ->groupBy('query')
+            ->orderBy('searches', 'DESC')
+            ->limitOffset(20, 0)
+            ->get() ?: [];
+
+        $this->json([
+            'success'         => true,
+            'from'            => $from,
+            'to'              => $to,
+            'top_terms'       => $topTerms,
+            'zero_result_terms' => $zeroResultTerms,
+        ]);
+    }
+
     public function export(): void
     {
         $this->requirePermission('analytics.view');
 
         [$from, $to] = $this->parseDateRange();
+        $format = trim($this->input->get('format') ?? 'csv');
 
         $rows = $this->db('analytics_pageviews')
             ->select('url_path, page_title, referrer_host, viewed_at')
             ->whereRaw('DATE(viewed_at) >= :f AND DATE(viewed_at) <= :t', [':f' => $from, ':t' => $to])
             ->orderBy('viewed_at', 'DESC')
             ->get() ?: [];
+
+        if ($format === 'json') {
+            $filename = 'analytics_' . $from . '_to_' . $to . '.json';
+            header('Content-Type: application/json; charset=utf-8');
+            header('Content-Disposition: attachment; filename="' . $filename . '"');
+            header('Cache-Control: no-cache, no-store');
+            echo json_encode(['from' => $from, 'to' => $to, 'rows' => $rows], JSON_PRETTY_PRINT);
+            exit;
+        }
 
         $filename = 'analytics_' . $from . '_to_' . $to . '.csv';
 

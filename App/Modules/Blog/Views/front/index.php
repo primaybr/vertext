@@ -1,21 +1,21 @@
 <style>
-  .blog-page-header { margin-bottom: 2.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid #e5e7eb; }
+  .blog-page-header { margin-bottom: 2.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--clr-border); }
   .blog-page-header h1 { font-size: 1.5rem; font-weight: 700; margin: 0 0 .25rem; }
-  .blog-page-header p { margin: 0; color: #6b7280; font-size: .9375rem; }
+  .blog-page-header p { margin: 0; color: var(--clr-muted); font-size: .9375rem; }
   .post-list { list-style: none; padding: 0; margin: 0; }
-  .post-item { padding: 1.75rem 0; border-bottom: 1px solid #f3f4f6; }
+  .post-item { padding: 1.75rem 0; border-bottom: 1px solid var(--clr-border); }
   .post-item:last-child { border-bottom: none; }
   .post-title { font-size: 1.375rem; font-weight: 700; margin: 0 0 .5rem; line-height: 1.3; }
-  .post-meta { font-size: .8125rem; color: #9ca3af; margin-bottom: .75rem; display: flex; gap: 1rem; flex-wrap: wrap; }
-  .post-excerpt { color: #4b5563; margin: 0 0 .875rem; }
+  .post-meta { font-size: .8125rem; color: var(--clr-faint); margin-bottom: .75rem; display: flex; gap: 1rem; flex-wrap: wrap; }
+  .post-excerpt { color: var(--clr-muted); margin: 0 0 .875rem; }
   .post-cats { display: flex; gap: .5rem; flex-wrap: wrap; }
-  .post-cat { font-size: .75rem; background: #f3f4f6; color: #6b7280; padding: .125rem .5rem; border-radius: 999px; }
+  .post-cat { font-size: .75rem; background: var(--clr-surface); color: var(--clr-muted); padding: .125rem .5rem; border-radius: 999px; }
   .read-more { font-size: .875rem; font-weight: 600; }
   .pagination { display: flex; gap: .5rem; justify-content: center; padding: 2.5rem 0; }
   .pagination a, .pagination span { display: inline-flex; align-items: center; justify-content: center;
-    width: 36px; height: 36px; border-radius: 6px; font-size: .875rem; border: 1px solid #e5e7eb; }
-  .pagination .current { background: #4f46e5; color: #fff; border-color: #4f46e5; }
-  .empty { text-align: center; padding: 4rem 1rem; color: #9ca3af; }
+    width: 36px; height: 36px; border-radius: 6px; font-size: .875rem; border: 1px solid var(--clr-border); }
+  .pagination .current { background: var(--clr-accent); color: #fff; border-color: var(--clr-accent); }
+  .empty { text-align: center; padding: 4rem 1rem; color: var(--clr-faint); }
 </style>
 
 <div class="container">
@@ -61,7 +61,7 @@
         <?php endforeach; ?>
       </div>
       <?php endif; ?>
-      <p><a href="<?php echo $baseUrl; ?>/blog/<?php echo htmlspecialchars($post['slug']); ?>" class="read-more">Read more →</a></p>
+      <p><a href="<?php echo $baseUrl; ?>/blog/<?php echo htmlspecialchars($post['slug']); ?>" class="read-more">Read more &rarr;</a></p>
     </li>
     <?php endforeach; ?>
   </ul>

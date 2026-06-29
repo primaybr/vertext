@@ -1,0 +1,15 @@
+{
+    "name": "Media Showcase",
+    "slug": "media-showcase",
+    "version": "1.0.0",
+    "description": "Portfolio or media-heavy site with photo galleries, video library, and navigation.",
+    "icon": "pi-images",
+    "category": "Media",
+    "modules": [
+        { "slug": "media",      "required": true  },
+        { "slug": "gallery",    "required": true  },
+        { "slug": "videos",     "required": true  },
+        { "slug": "navigation", "required": true  },
+        { "slug": "analytics",  "required": false }
+    ]
+}

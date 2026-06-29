@@ -1,11 +1,11 @@
 <style>
   .album-back { font-size: .875rem; margin-bottom: 2rem; }
-  .album-back a { color: #6b7280; }
+  .album-back a { color: var(--clr-muted); }
   .album-header { margin-bottom: 2rem; }
   .album-header h1 { font-size: 1.75rem; font-weight: 800; margin: 0 0 .375rem; }
-  .album-header p { margin: 0; color: #6b7280; }
+  .album-header p { margin: 0; color: var(--clr-muted); }
   .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: .75rem; }
-  .photo-item { aspect-ratio: 1; overflow: hidden; border-radius: 6px; background: #f3f4f6; cursor: pointer; position: relative; }
+  .photo-item { aspect-ratio: 1; overflow: hidden; border-radius: 6px; background: var(--clr-surface); cursor: pointer; position: relative; }
   .photo-item img { width: 100%; height: 100%; object-fit: cover; transition: transform .2s; display: block; }
   .photo-item:hover img { transform: scale(1.05); }
   .photo-item .photo-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0); transition: background .2s; display: flex; align-items: flex-end; padding: .5rem; }
@@ -13,7 +13,7 @@
   .photo-caption { font-size: .75rem; color: #fff; display: none; }
   .photo-item:hover .photo-caption { display: block; }
 
-  /* Lightbox */
+  /* Lightbox - intentionally always dark */
   .vtx-lightbox { display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,.92); align-items: center; justify-content: center; }
   .vtx-lightbox.is-open { display: flex; }
   .vtx-lightbox img { max-width: 90vw; max-height: 85vh; object-fit: contain; border-radius: 4px; }
@@ -29,7 +29,7 @@
 
 <div class="container">
   <div class="album-back">
-    <a href="<?php echo $baseUrl; ?>/gallery">← Gallery</a>
+    <a href="<?php echo $baseUrl; ?>/gallery">&larr; Gallery</a>
   </div>
 
   <div class="album-header">
@@ -40,7 +40,7 @@
   </div>
 
   <?php if (empty($items)): ?>
-  <p style="color:#9ca3af;text-align:center;padding:3rem 0;">No photos in this album yet.</p>
+  <p style="color:var(--clr-faint);text-align:center;padding:3rem 0;">No photos in this album yet.</p>
   <?php else: ?>
   <div class="photo-grid" id="vtx-photo-grid">
     <?php foreach ($items as $i => $item): ?>

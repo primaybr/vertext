@@ -72,6 +72,39 @@ class Tracker
         }
     }
 
+    /**
+     * Record a search query from the Search module.
+     * Silently skipped if the analytics_search_queries table does not yet exist.
+     */
+    public static function recordSearch(string $query, int $resultCount): void
+    {
+        if (strlen(trim($query)) < 2) {
+            return;
+        }
+        try {
+            $ua = strtolower($_SERVER['HTTP_USER_AGENT'] ?? '');
+            if ($ua) {
+                foreach (self::BOT_PATTERNS as $pattern) {
+                    if (str_contains($ua, $pattern)) {
+                        return;
+                    }
+                }
+            }
+
+            $ip = explode(',', $_SERVER['REMOTE_ADDR'] ?? '')[0];
+            $ipHash = $ip ? hash('sha256', trim($ip) . date('Y-m-d')) : null;
+
+            (new \Core\Model('analytics_search_queries'))->withoutTimestamps()->save([
+                'query'        => substr(trim($query), 0, 500),
+                'result_count' => $resultCount,
+                'ip_hash'      => $ipHash,
+                'searched_at'  => date('Y-m-d H:i:s'),
+            ]);
+        } catch (\Throwable) {
+            // Never surface analytics errors
+        }
+    }
+
     /** Extract hostname from an HTTP_REFERER value. Returns null on failure. */
     public static function referrerHost(): ?string
     {

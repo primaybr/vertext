@@ -47,7 +47,7 @@
           <th>Status</th>
           <th>Order</th>
           <th>Created</th>
-          <th style="width:80px;"></th>
+          <th style="width:110px;"></th>
         </tr>
       </thead>
       <tbody>
@@ -74,6 +74,12 @@
           </td>
           <td>
             <div style="display:flex;gap:.25rem;justify-content:flex-end;">
+              <?php if ($p['status'] === 'published'): ?>
+              <a href="{{baseUrl}}/<?php echo htmlspecialchars($p['slug']); ?>"
+                 target="_blank" rel="noopener" class="vtx-icon-btn" title="View page">
+                <i class="pi pi-external-link"></i>
+              </a>
+              <?php endif; ?>
               <?php if (\App\CMS\Auth::can('pages.edit')): ?>
               <button type="button" class="vtx-icon-btn" title="Edit"
                       data-form-url="{{baseUrl}}/admin/pages/<?php echo $p['id']; ?>/form"

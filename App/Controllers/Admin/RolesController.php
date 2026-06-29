@@ -172,6 +172,79 @@ class RolesController extends BaseController
         $this->redirect($this->baseUrl . '/admin/roles');
     }
 
+    /** GET /admin/roles/permissions */
+    public function permissions(): void
+    {
+        $this->requirePermission('permissions.manage');
+
+        $perms = $this->db('permissions')
+            ->orderBy('module', 'ASC')
+            ->orderBy('name', 'ASC')
+            ->get() ?: [];
+
+        $grouped = [];
+        foreach ($perms as $p) {
+            $grouped[$p['module'] ?? 'core'][] = $p;
+        }
+
+        $this->adminRender('admin/roles/permissions', [
+            'perms'   => $perms,
+            'grouped' => $grouped,
+        ], 'Permissions', 'roles');
+    }
+
+    /** POST /admin/roles/permissions/store */
+    public function storePermission(): void
+    {
+        $this->requirePermission('permissions.manage');
+        $this->validateCsrf();
+
+        $name   = trim($this->input->post('name', false) ?? '');
+        $slug   = trim(strtolower($this->input->post('slug', false) ?? ''));
+        $desc   = trim($this->input->post('description', false) ?? '');
+        $module = trim(strtolower($this->input->post('module', false) ?? 'custom'));
+
+        if (!$name || !$slug) {
+            $this->json(['success' => false, 'message' => 'Name and slug are required.']);
+        }
+        if (!preg_match('/^[a-z][a-z0-9\.\-_]*$/', $slug)) {
+            $this->json(['success' => false, 'message' => 'Slug must be lowercase alphanumeric with dots, hyphens, or underscores.']);
+        }
+
+        $existing = $this->db('permissions')->where('slug', $slug)->get(1);
+        if ($existing) {
+            $this->json(['success' => false, 'message' => "Permission \"{$slug}\" already exists."]);
+        }
+
+        $this->db('permissions')->save([
+            'name'        => $name,
+            'slug'        => $slug,
+            'description' => $desc,
+            'module'      => $module ?: 'custom',
+        ]);
+
+        Auth::audit('permission.create', 'permissions', '', ['slug' => $slug, 'module' => $module]);
+        $this->json(['success' => true, 'message' => "Permission \"{$slug}\" created."]);
+    }
+
+    /** POST /admin/roles/permissions/([a-zA-Z0-9\-]+)/delete */
+    public function deletePermission(string $id): void
+    {
+        $this->requirePermission('permissions.manage');
+        $this->validateCsrf();
+
+        $perm = $this->db('permissions')->where('id', $id)->get(1);
+        if (!$perm) {
+            $this->json(['success' => false, 'message' => 'Permission not found.'], 404);
+        }
+
+        $this->db('role_permissions')->where('permission_id', $id)->delete();
+        $this->db('permissions')->where('id', $id)->delete();
+
+        Auth::audit('permission.delete', 'permissions', $id, ['slug' => $perm['slug']]);
+        $this->json(['success' => true, 'message' => "Permission \"{$perm['slug']}\" deleted."]);
+    }
+
     private function groupedPermissions(): array
     {
         $rows = $this->db('permissions')->orderBy('module', 'ASC')->orderBy('name', 'ASC')->get() ?: [];

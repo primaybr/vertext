@@ -1,9 +1,11 @@
-/* Vertext CMS - VtxSelect Component v1.0.0
+/* Vertext CMS - VtxSelect Component v1.1.0
  *
  * Declarative:  <select data-vtx-select data-searchable data-placeholder="Choose…">
  * Imperative:   new Vtx.Select({ el: selectEl, searchable: true, placeholder: 'Choose…' })
  *
  * The native <select> stays in the DOM (hidden) so form serialization works unchanged.
+ * The dropdown is rendered as a body-level portal (position:fixed) so it is never
+ * clipped by ancestor overflow:hidden containers or fixed-height panels.
  */
 (function () {
     'use strict';
@@ -55,6 +57,8 @@
         chevron.className = 'pi pi-chevron-down vtx-select-chevron';
         trigger.appendChild(chevron);
 
+        // Dropdown is a body-level portal — NOT inside container.
+        // This means no ancestor overflow:hidden can clip it.
         var dropdown = document.createElement('div');
         dropdown.className = 'vtx-select-dropdown';
         dropdown.setAttribute('aria-hidden', 'true');
@@ -82,19 +86,40 @@
         dropdown.appendChild(listEl);
 
         container.appendChild(trigger);
-        container.appendChild(dropdown);
 
-        // Hide native select and insert widget before it
+        // Hide native select, insert widget, keep native inside container for form association
         selectEl.style.display = 'none';
         selectEl.setAttribute('aria-hidden', 'true');
         selectEl.parentNode.insertBefore(container, selectEl);
-        container.appendChild(selectEl); // keep inside container for form association
+        container.appendChild(selectEl);
+
+        // Mount dropdown at body level (portal) so it is never clipped
+        document.body.appendChild(dropdown);
+
+        /* ── Position dropdown via trigger's bounding rect ───── */
+        function positionDropdown() {
+            var rect  = trigger.getBoundingClientRect();
+            var below = window.innerHeight - rect.bottom;
+            var flipUp = below < 240 && rect.top > 240;
+
+            dropdown.style.left  = rect.left + 'px';
+            dropdown.style.width = rect.width + 'px';
+
+            if (flipUp) {
+                dropdown.style.top    = 'auto';
+                dropdown.style.bottom = (window.innerHeight - rect.top + 4) + 'px';
+                dropdown.classList.add('is-above');
+            } else {
+                dropdown.style.top    = (rect.bottom + 4) + 'px';
+                dropdown.style.bottom = 'auto';
+                dropdown.classList.remove('is-above');
+            }
+        }
 
         /* ── Read native state ────────────────────────────────── */
         function readNativeOptions() {
             options = [];
             Array.from(selectEl.options).forEach(function (opt) {
-                // Skip blank placeholder option from the list
                 if (opt.value === '') return;
                 options.push({ value: opt.value, label: opt.text.trim(), disabled: opt.disabled });
             });
@@ -229,7 +254,7 @@
         function open() {
             if (isOpen || trigger.disabled) return;
 
-            // Close other open selects
+            // Close any other open vtx-selects
             document.querySelectorAll('.vtx-select.is-open').forEach(function (el) {
                 if (el !== container && el._vtxSelectInst) el._vtxSelectInst.close();
             });
@@ -244,14 +269,11 @@
         function openDropdown() {
             isOpen = true;
             container.classList.add('is-open');
+            dropdown.classList.add('vtx-select-dropdown--open');
             dropdown.setAttribute('aria-hidden', 'false');
             trigger.setAttribute('aria-expanded', 'true');
             renderList('');
-
-            // Flip up if near the bottom of the viewport
-            var rect = container.getBoundingClientRect();
-            var below = window.innerHeight - rect.bottom;
-            dropdown.classList.toggle('is-above', below < 240 && rect.top > 240);
+            positionDropdown();
 
             if (searchInput) {
                 searchInput.value = '';
@@ -263,10 +285,20 @@
             if (!isOpen) return;
             isOpen = false;
             container.classList.remove('is-open');
+            dropdown.classList.remove('vtx-select-dropdown--open');
+            dropdown.classList.remove('is-above');
             dropdown.setAttribute('aria-hidden', 'true');
             trigger.setAttribute('aria-expanded', 'false');
             if (searchInput) searchInput.value = '';
         }
+
+        /* ── Reposition on scroll / resize ───────────────────── */
+        function onScrollOrResize() {
+            if (isOpen) positionDropdown();
+        }
+        // Capture phase catches scrolls inside any ancestor container
+        window.addEventListener('scroll', onScrollOrResize, true);
+        window.addEventListener('resize', onScrollOrResize);
 
         /* ── AJAX option loading ──────────────────────────────── */
         function loadAjaxOptions() {
@@ -344,9 +376,10 @@
             li.scrollIntoView({ block: 'nearest' });
         }
 
-        // Close on outside click
+        // Close on outside click — must check both container and dropdown
+        // since dropdown is no longer a descendant of container
         document.addEventListener('click', function (e) {
-            if (!container.contains(e.target)) close();
+            if (!container.contains(e.target) && !dropdown.contains(e.target)) close();
         });
 
         /* ── Initial render ───────────────────────────────────── */
@@ -379,7 +412,6 @@
                 options = newOpts.map(function (o) {
                     return { value: String(o.value), label: String(o.label), disabled: !!o.disabled };
                 });
-                // Rebuild native <option> elements
                 var keep = selected.slice();
                 selectEl.innerHTML = '';
                 options.forEach(function (o) {
@@ -395,6 +427,9 @@
             },
 
             destroy: function () {
+                window.removeEventListener('scroll', onScrollOrResize, true);
+                window.removeEventListener('resize', onScrollOrResize);
+                if (dropdown.parentNode) dropdown.parentNode.removeChild(dropdown);
                 if (container.parentNode) container.parentNode.removeChild(container);
                 selectEl.style.display = '';
                 selectEl.removeAttribute('aria-hidden');
@@ -408,7 +443,7 @@
         return self;
     }
 
-    VtxSelect.version = '1.0.0';
+    VtxSelect.version = '1.1.0';
     window.Vtx.Select = VtxSelect;
 
     function autoInit() {

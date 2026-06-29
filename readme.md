@@ -1,6 +1,6 @@
 # Vertext CMS
 
-![Version](https://img.shields.io/badge/version-0.0.5--alpha-blue)
+![Version](https://img.shields.io/badge/version-0.0.6--alpha-blue)
 ![PHP](https://img.shields.io/badge/PHP-8.2%2B-777BB4)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -117,14 +117,14 @@ Install a module: **Admin → Module Manager → Install**
 
 | Module | Version | Category | Description |
 | ------ | ------- | -------- | ----------- |
-| Blog | 0.0.5 | Content | Posts, categories, tags, comments, dynamic URL routing, RSS feed, scheduled/expired publishing, content revisions |
+| Blog | 0.0.6 | Content | Posts, categories, tags, threaded comments, post series with prev/next nav, related posts, reading list (localStorage), dynamic URL routing, RSS feed, scheduled/expired publishing, content revisions |
 | Pages | 0.0.2 | Content | Static page CRUD with public rendering, scheduled/expired publishing, content revisions |
 | Media | 0.0.3 | Media | File uploads with image resizing, thumbnail generation, bulk delete |
 | Gallery | 0.0.1 | Media | Photo albums with lightbox, backed by Media library |
 | Videos | 0.0.1 | Media | YouTube/Vimeo embed management with poster thumbnails |
 | Contact | 0.0.1 | Communication | Public contact form with admin inbox and email notifications |
 | Navigation | 0.0.2 | Navigation | Front-end menu builder; Module Route type; auto-registration of module nav routes on install |
-| Analytics | 0.0.3 | Analytics | Privacy-friendly page-view tracking; unique visitors; device breakdown; date range filter; CSV export |
+| Analytics | 0.0.4 | Analytics | Privacy-friendly page-view tracking; unique visitors; device breakdown; date range filter; search term tracking; CSV + JSON export |
 | Search | 0.0.1 | Content | Full-text search across pages and posts; `GET /search`; admin reindex button |
 | Theme Customizer | 0.0.1 | Design | Accent color, font, logo, and custom CSS overrides for the public theme |
 | Sitemap | 0.0.1 | SEO | Automatic `/sitemap.xml` from published pages and blog posts |

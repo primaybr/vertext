@@ -131,6 +131,59 @@ class NavigationController extends BaseController
         ], 'Edit: ' . $menu['name'], 'navigation');
     }
 
+    public function syncModules(string $menuId): void
+    {
+        $this->requirePermission('navigation.manage');
+        $this->validateCsrf();
+
+        $menu = $this->db('nav_menus')->where('id', $menuId)->get(1);
+        if (!$menu) {
+            $this->json(['success' => false, 'message' => 'Menu not found.']);
+        }
+
+        $modulesDir = dirname(__DIR__, 3); // App/Modules/
+        $enabled    = ModuleLoader::getEnabled();
+        $added      = 0;
+
+        foreach ($enabled as $slug) {
+            $dirName      = str_replace(' ', '', ucwords(str_replace('-', ' ', $slug)));
+            $manifestPath = $modulesDir . '/' . $dirName . '/module.json';
+            if (!is_file($manifestPath)) {
+                continue;
+            }
+            $manifest = json_decode(file_get_contents($manifestPath) ?: '{}', true) ?: [];
+            foreach ($manifest['nav_routes'] ?? [] as $route) {
+                if (empty($route['path'])) {
+                    continue;
+                }
+                $exists = $this->db('nav_items')
+                    ->where('menu_id', $menuId)
+                    ->where('url', $route['path'])
+                    ->get(1);
+                if (!$exists) {
+                    $order = (int) ($this->db('nav_items')
+                        ->where('menu_id', $menuId)
+                        ->whereRaw('parent_id IS NULL', [])
+                        ->totalRows() ?: 0);
+                    $this->db('nav_items')->save([
+                        'menu_id'     => $menuId,
+                        'type'        => 'module',
+                        'label'       => $route['label'] ?? $slug,
+                        'url'         => $route['path'],
+                        'sort_order'  => $order,
+                        'open_in_new' => false,
+                    ]);
+                    $added++;
+                }
+            }
+        }
+
+        $msg = $added > 0
+            ? "Synced {$added} module route(s) into this menu."
+            : 'All module routes are already in this menu.';
+        $this->json(['success' => true, 'message' => $msg, 'added' => $added]);
+    }
+
     public function delete(string $id): void
     {
         $this->requirePermission('navigation.manage');

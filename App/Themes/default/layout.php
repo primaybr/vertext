@@ -62,11 +62,6 @@
       <?php
           endif;
           endforeach;
-      else:
-          $blogBase = trim($site['blog_base_path'] ?? 'blog', '/');
-          if ($blogBase): ?>
-      <a href="<?php echo htmlspecialchars($baseUrl . '/' . $blogBase); ?>">Blog</a>
-      <?php endif;
       endif; ?>
     </nav>
     <div class="header-actions">

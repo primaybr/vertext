@@ -67,6 +67,11 @@
         <i class="pi pi-settings"></i> Settings
       </a>
 
+      <a href="{{baseUrl}}/admin/audit-log"
+         class="vtx-nav-link {% if activeMenu == 'audit-log' %}active{% endif %}">
+        <i class="pi pi-clock"></i> Audit Log
+      </a>
+
       <?php $__moduleNav = \App\CMS\ModuleLoader::navItems(); ?>
       <?php if (!empty($__moduleNav)): ?>
       <div class="vtx-nav-section">Modules</div>
