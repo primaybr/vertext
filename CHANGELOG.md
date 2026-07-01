@@ -5,6 +5,41 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.0.7b-alpha] - 2026-07-01
+
+### Phuse Framework Sync (1.2.5 -> 1.2.6)
+
+- **Icon system split** - `.pi` / `.pi-*` rules moved out of `styles.css` into a dedicated `Public/assets/css/icons.css`, matching upstream Phuse 1.2.6; `styles.css` now pulls it in with `@import url("icons.css?v=1")` placed before all other rules (a mid-file `@import` is silently ignored by browsers per the CSS spec - verified in-browser after the fix)
+- **25 new icons** available: `pi-clipboard`, `pi-spinner`, `pi-circle`, `pi-map`, `pi-verified`, `pi-shopping-cart`, `pi-print`, `pi-play-circle`, `pi-minus-circle`, `pi-key`, `pi-puzzle`, `pi-package`, `pi-languages`, `pi-send`, `pi-log-in`, `pi-log-out`, `pi-help-circle`, `pi-rss`, `pi-share-2`, `pi-thumbs-up`, `pi-flag`, `pi-server`, `pi-cloud`, `pi-wrench`, `pi-building` - fixes several icons that were already referenced in admin views (Forms, ModuleLoader fallback, webhook logs) but rendered blank because the icon didn't exist yet
+- Vertext's own manually-added `pi-clipboard` (added locally as a stopgap before upstream had one) is now superseded by upstream's - same shape, no visual change
+- `Version::PHUSE` bumped to `1.2.6`; `styles.css?v=` cache-bust query bumped to `142` across all views
+
+---
+
+## Upcoming
+
+### [0.0.8-alpha]
+
+#### User Authentication (Front-end)
+
+- Public registration, login, and profile pages for site visitors (`site_users` table separate from admin `users`)
+- Email verification; session-based auth for front-end modules (Forms pre-fill, RSVP owner tracking)
+
+#### Module Enhancements
+
+- **Forms Builder v2** - conditional field logic; file upload field type; reCAPTCHA v3 integration
+- **Newsletter v2** - subscriber segments; scheduled campaigns; basic welcome-series automation
+- **Events v2** - ticket types (free, paid); waiting list when capacity reached; iCal export (`.ics`)
+- **REST API** - JSON API endpoints for Pages, Blog Posts, and Events; API key authentication; rate limiting
+
+#### DX / Infrastructure
+
+- **Media folders** - organize the media library into named folders; folder picker in the upload dialog and media picker modal
+- **Performance** - query result caching for public page/post renders; asset fingerprinting for HTTP cache-busting
+- **i18n v2** - translation management UI in admin; URL path-prefix routing (`/id/...`); `lang` column filtering on public page/post queries
+
+---
+
 ## [0.0.7-alpha] - 2026-07-01
 
 ### Core
@@ -58,30 +93,6 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **One-use session token** - hash stored in session at fetch time; `POST /admin/modules/install-from-url` verifies hash before extracting; path traversal protection on all entries; GitHub archive top-level prefix stripping
 - **ZipArchive guard** - both endpoints return a clear user-facing error if `php_zip` is not loaded
 - `ModuleManager::removeExtractedDir()` - cleanup on failed installs
-
----
-
-## Upcoming
-
-### [0.0.8-alpha]
-
-#### User Authentication (Front-end)
-
-- Public registration, login, and profile pages for site visitors (`site_users` table separate from admin `users`)
-- Email verification; session-based auth for front-end modules (Forms pre-fill, RSVP owner tracking)
-
-#### Module Enhancements
-
-- **Forms Builder v2** - conditional field logic; file upload field type; reCAPTCHA v3 integration
-- **Newsletter v2** - subscriber segments; scheduled campaigns; basic welcome-series automation
-- **Events v2** - ticket types (free, paid); waiting list when capacity reached; iCal export (`.ics`)
-- **REST API** - JSON API endpoints for Pages, Blog Posts, and Events; API key authentication; rate limiting
-
-#### DX / Infrastructure
-
-- **Media folders** - organize the media library into named folders; folder picker in the upload dialog and media picker modal
-- **Performance** - query result caching for public page/post renders; asset fingerprinting for HTTP cache-busting
-- **i18n v2** - translation management UI in admin; URL path-prefix routing (`/id/...`); `lang` column filtering on public page/post queries
 
 ---
 
@@ -153,51 +164,3 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Docs
 
 - **Module dependency system** - `docs/module-system.md` updated to document `requires.modules` in `module.json`, install guards (`checkModuleDeps()`), and uninstall protection (`checkDependents()`) - fully implemented since v0.0.3 but previously undocumented
-
----
-
-## [0.0.4-alpha] - 2026-06-25
-
-### Core
-
-- **Admin profile page** - `GET /admin/profile` + `POST /admin/profile/update`: any logged-in user can update their own display name, email address, and password without needing the Users management permission; email uniqueness validated against other users; passwords hashed with bcrypt cost 12; change logged to audit trail
-
-### Blog (v0.0.3 -> v0.0.4)
-
-- **RSS feed** - `GET /{blog_base}/feed.rss`: RSS 2.0 feed of the 20 most recent published posts; includes `atom:link`, `content:encoded` (full post body via CDATA), and `<enclosure>` for featured images; auto-linked via `<link rel="alternate" type="application/rss+xml">` in both theme `<head>` elements when Blog is enabled; `feedUrl` computed centrally in `ThemeEngine` to avoid modifying every render call
-
-### Media (v0.0.2 -> v0.0.3)
-
-- **Bulk actions** - checkbox overlay on every media card (shown to users with `media.delete`); select-all toggle in the bulk action bar; bulk delete sends `POST /admin/media/bulk` with CSRF; physical files and thumbnails deleted from disk before DB rows removed; batch uses `whereRaw("id IN (...)")` for efficient single-query deletion; `Auth::audit('media.bulk_delete')` records count
-- **Bulk action bar** - slides in when >=1 card is selected; shows selection count; `vtxConfirmModal` confirms before delete; `VtxAjax.postForm` submits and reloads grid on success
-
-### Analytics (v0.0.1 -> v0.0.2)
-
-- **Date range filter** - from/to date pickers in the dashboard header; quick presets (Today, 7 Days, 30 Days, 90 Days); all stats, chart, top pages, and top referrers now reflect the selected period instead of being hardcoded to 30 days
-- **Period comparison** - "Selected Period" KPI card shows delta vs the immediately preceding equivalent period; "Today" card shows delta vs yesterday; computed as `round((current - prev) / prev * 100, 1)%`; "no prior data" shown when previous period is zero
-- **Daily average** - third KPI card shows `total / days` for the selected range
-- **CSV export** - `GET /admin/analytics/export?from=...&to=...` streams a CSV of all `url_path`, `page_title`, `referrer_host`, `viewed_at` rows for the selected period with proper `Content-Disposition: attachment` header
-
-### New Modules
-
-#### Sitemap (v0.0.1)
-
-- `GET /sitemap.xml` - generates an XML sitemap from published pages (priority 0.8, changefreq monthly) and Blog posts (priority 0.7, changefreq weekly) when Blog is enabled; home page included at priority 1.0; blog index at priority 0.9
-- `SitemapProvider` interface - any module can implement `getSitemapUrls(string $siteUrl): array` to contribute URLs in future releases
-- Site URL resolved from `settings.site_url`, falls back to request `HTTP_HOST` + `baseUrl`
-- Settings: `sitemap_include_pages` and `sitemap_include_blog` (both default enabled)
-- 1-hour `Cache-Control` header; wraps all DB calls in try-catch so a missing Pages or Blog table never returns a 500
-
-#### Webhooks (v0.0.1)
-
-- `webhook_endpoints` table: name, payload URL, HMAC secret, JSON events array, enabled flag; `webhook_logs` table: endpoint_id FK (cascade delete), event, payload, HTTP response code, response body (truncated 500 chars), duration ms, success flag
-- `WebhookDispatcher::dispatch(event, payload)` - static method called by any module; finds enabled endpoints subscribed to the event; fires signed HTTP POST via cURL (10s timeout); logs result; fails silently so delivery never breaks a request
-- Payload signing: `X-Vertext-Signature: sha256={HMAC-SHA256}`, `X-Vertext-Event`, `X-Vertext-Delivery` headers on every request
-- Admin UI: endpoint list with last-delivery status badge; create/edit form with event checkboxes and secret regeneration; delivery log table (last 50 per endpoint); test ping button fires a `ping` event immediately
-- Available events: `post.published`, `post.deleted`, `page.published`, `page.deleted`, `media.uploaded`, `media.deleted`, `ping`
-- Permissions: `webhooks.view`, `webhooks.manage`; both auto-granted to Administrator on install
-
-### Added
-
-- **Maintenance Mode** - `App\CMS\Maintenance::check()` called from `Config/Routes.php` before routing; bypasses `/admin`, `/setup`, and logged-in admin sessions automatically; serves `App/Views/maintenance.php` - standalone 503 page with inline CSS and dark mode support; settings panel shows a pill toggle wired to `POST /admin/settings/toggle-maintenance`
-- **`App\CMS\Version`** - canonical version constant (`Version::APP`); admin sidebar reads from it instead of a hardcoded string

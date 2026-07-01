@@ -130,7 +130,7 @@ This outputs a hidden `<input type="hidden" name="_token" value="...">`.
 Reference assets with the configured asset base URL:
 
 ```html
-<link rel="stylesheet" href="/assets/css/styles.css?v=141">
+<link rel="stylesheet" href="/assets/css/styles.css?v=142">
 <script src="/assets/js/admin.js?v=1"></script>
 ```
 
