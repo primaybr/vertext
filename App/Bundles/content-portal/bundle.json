@@ -2,15 +2,18 @@
     "name": "Content Portal",
     "slug": "content-portal",
     "version": "1.0.0",
-    "description": "Full content publishing site with blog, search, navigation, analytics, contact form, and XML sitemap.",
+    "description": "Full content publishing site with blog, forms, newsletter, search, navigation, analytics, contact form, and XML sitemap.",
     "icon": "pi-globe",
     "category": "Publishing",
+    "builtin": true,
     "modules": [
-        { "slug": "blog",       "required": true  },
-        { "slug": "search",     "required": true  },
-        { "slug": "navigation", "required": true  },
-        { "slug": "analytics",  "required": false },
-        { "slug": "contact",    "required": false },
-        { "slug": "sitemap",    "required": false }
+        { "slug": "blog",         "required": true  },
+        { "slug": "search",       "required": true  },
+        { "slug": "navigation",   "required": true  },
+        { "slug": "forms",        "required": false },
+        { "slug": "newsletter",   "required": false },
+        { "slug": "analytics",    "required": false },
+        { "slug": "contact",      "required": false },
+        { "slug": "sitemap",      "required": false }
     ]
 }

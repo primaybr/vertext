@@ -78,6 +78,32 @@
 
     </form>
 
+    <!-- Two-Factor Authentication card -->
+    <div class="vtx-panel mt-4">
+      <div class="vtx-panel-body" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:.75rem;">
+          <span style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+                       background:<?php echo ($twofa_enabled ?? false) ? 'var(--ps-success-bg,#d1fae5)' : 'var(--ps-warning-bg,#fef3c7)'; ?>;">
+            <i class="pi pi-shield" style="font-size:1rem;color:<?php echo ($twofa_enabled ?? false) ? 'var(--ps-success,#059669)' : 'var(--ps-warning,#d97706)'; ?>;"></i>
+          </span>
+          <div>
+            <div style="font-weight:600;font-size:.9rem;">Two-Factor Authentication</div>
+            <div style="font-size:.8rem;color:var(--ps-text-muted);">
+              <?php if ($twofa_enabled ?? false): ?>
+                Your account has an extra layer of protection.
+              <?php else: ?>
+                Not enabled - your account relies on password only.
+              <?php endif; ?>
+            </div>
+          </div>
+        </div>
+        <a href="{{baseUrl}}/admin/profile/2fa"
+           class="btn btn-sm <?php echo ($twofa_enabled ?? false) ? 'btn-outline-secondary' : 'btn-outline-primary'; ?>">
+          <?php echo ($twofa_enabled ?? false) ? 'Manage 2FA' : 'Enable 2FA'; ?>
+        </a>
+      </div>
+    </div>
+
   </div>
 
   <!-- Account info sidebar -->

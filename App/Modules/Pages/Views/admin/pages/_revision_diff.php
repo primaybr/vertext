@@ -150,7 +150,7 @@ $bodyChanged = $bodyDiff !== '';
     <?php if (!$bodyChanged): ?>
     <p style="font-size:.8125rem;color:var(--ps-text-muted);">No changes in body content.</p>
     <?php else: ?>
-    <div style="white-space:pre-wrap;font-size:.8125rem;line-height:1.6;max-height:280px;overflow-y:auto;border:1px solid var(--ps-border);border-radius:var(--ps-radius);padding:.75rem;background:var(--ps-bg);"><?php echo $bodyDiff; ?></div>
+    <div style="white-space:pre-wrap;font-size:.8125rem;line-height:1.6;max-height:280px;overflow-y:auto;border:1px solid var(--ps-border);border-radius:var(--ps-radius);padding:.75rem;background:var(--ps-bg-base);"><?php echo $bodyDiff; ?></div>
     <div style="font-size:.75rem;color:var(--ps-text-muted);margin-top:.375rem;">
       <span style="background:rgba(34,197,94,.22);border-radius:2px;padding:0 2px;">Added</span>
       &nbsp;

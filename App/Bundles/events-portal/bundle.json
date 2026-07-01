@@ -1,0 +1,16 @@
+{
+    "name": "Events Portal",
+    "slug": "events-portal",
+    "version": "1.0.0",
+    "description": "A community events hub with listings, RSVP, contact form, navigation, analytics, and XML sitemap.",
+    "icon": "pi-calendar",
+    "category": "Community",
+    "builtin": true,
+    "modules": [
+        { "slug": "events",     "required": true  },
+        { "slug": "navigation", "required": true  },
+        { "slug": "contact",    "required": false },
+        { "slug": "analytics",  "required": false },
+        { "slug": "sitemap",    "required": false }
+    ]
+}

@@ -1,0 +1,16 @@
+{
+    "name": "Marketing Suite",
+    "slug": "marketing-suite",
+    "version": "1.0.0",
+    "description": "Capture leads and run email campaigns - includes forms, newsletter, analytics, webhooks, and a contact form.",
+    "icon": "pi-mail",
+    "category": "Marketing",
+    "builtin": true,
+    "modules": [
+        { "slug": "forms",       "required": true  },
+        { "slug": "newsletter",  "required": true  },
+        { "slug": "analytics",   "required": false },
+        { "slug": "webhooks",    "required": false },
+        { "slug": "contact",     "required": false }
+    ]
+}

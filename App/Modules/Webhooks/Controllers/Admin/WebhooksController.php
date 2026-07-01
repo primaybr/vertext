@@ -54,12 +54,18 @@ class WebhooksController extends BaseController
     {
         $this->requirePermission('webhooks.manage');
 
-        $this->adminRender('modules/webhooks/admin/webhooks/form', [
-            'endpoint'       => null,
-            'action'         => '{{baseUrl}}/admin/webhooks/store',
+        $vars = [
+            'endpoint'        => null,
+            'action'          => '{{baseUrl}}/admin/webhooks/store',
             'availableEvents' => WebhookDispatcher::EVENTS,
             'generatedSecret' => bin2hex(random_bytes(20)),
-        ], 'New Webhook', 'webhooks');
+            'isModal'         => $this->input->isAjax(),
+        ];
+        if ($this->input->isAjax()) {
+            $this->renderPartial('modules/webhooks/admin/webhooks/form', $vars);
+            return;
+        }
+        $this->adminRender('modules/webhooks/admin/webhooks/form', $vars, 'New Webhook', 'webhooks');
     }
 
     public function store(): void
@@ -68,6 +74,10 @@ class WebhooksController extends BaseController
 
         $token = $this->input->post('csrf_token') ?? '';
         if (!$this->csrf->validateToken($token)) {
+            if ($this->input->isAjax()) {
+                $this->json(['success' => false, 'message' => 'Invalid security token. Please try again.'], 403);
+                return;
+            }
             $this->flash('error', 'Invalid security token. Please try again.');
             $this->redirect('/admin/webhooks/create');
             return;
@@ -75,6 +85,10 @@ class WebhooksController extends BaseController
 
         $errors = $this->validateInput();
         if ($errors) {
+            if ($this->input->isAjax()) {
+                $this->json(['success' => false, 'message' => implode(' ', $errors)]);
+                return;
+            }
             $this->flash('error', implode(' ', $errors));
             $this->redirect('/admin/webhooks/create');
             return;
@@ -89,6 +103,11 @@ class WebhooksController extends BaseController
         ]);
 
         Auth::audit('webhook.create', 'webhook_endpoints', $id);
+
+        if ($this->input->isAjax()) {
+            $this->json(['success' => true, 'message' => 'Webhook endpoint created.']);
+            return;
+        }
         $this->flash('success', 'Webhook endpoint created.');
         $this->redirect('/admin/webhooks');
     }
@@ -99,17 +118,27 @@ class WebhooksController extends BaseController
 
         $endpoint = $this->db('webhook_endpoints')->where('id', $id)->get(1);
         if (!$endpoint) {
+            if ($this->input->isAjax()) {
+                $this->json(['success' => false, 'message' => 'Endpoint not found.'], 404);
+                return;
+            }
             $this->flash('error', 'Endpoint not found.');
             $this->redirect('/admin/webhooks');
             return;
         }
 
-        $this->adminRender('modules/webhooks/admin/webhooks/form', [
+        $vars = [
             'endpoint'        => $endpoint,
             'action'          => '{{baseUrl}}/admin/webhooks/' . $id . '/update',
             'availableEvents' => WebhookDispatcher::EVENTS,
             'generatedSecret' => null,
-        ], 'Edit Webhook', 'webhooks');
+            'isModal'         => $this->input->isAjax(),
+        ];
+        if ($this->input->isAjax()) {
+            $this->renderPartial('modules/webhooks/admin/webhooks/form', $vars);
+            return;
+        }
+        $this->adminRender('modules/webhooks/admin/webhooks/form', $vars, 'Edit Webhook', 'webhooks');
     }
 
     public function update(string $id): void
@@ -118,6 +147,10 @@ class WebhooksController extends BaseController
 
         $token = $this->input->post('csrf_token') ?? '';
         if (!$this->csrf->validateToken($token)) {
+            if ($this->input->isAjax()) {
+                $this->json(['success' => false, 'message' => 'Invalid security token. Please try again.'], 403);
+                return;
+            }
             $this->flash('error', 'Invalid security token. Please try again.');
             $this->redirect('/admin/webhooks/' . $id . '/edit');
             return;
@@ -125,6 +158,10 @@ class WebhooksController extends BaseController
 
         $endpoint = $this->db('webhook_endpoints')->where('id', $id)->get(1);
         if (!$endpoint) {
+            if ($this->input->isAjax()) {
+                $this->json(['success' => false, 'message' => 'Endpoint not found.'], 404);
+                return;
+            }
             $this->flash('error', 'Endpoint not found.');
             $this->redirect('/admin/webhooks');
             return;
@@ -132,6 +169,10 @@ class WebhooksController extends BaseController
 
         $errors = $this->validateInput();
         if ($errors) {
+            if ($this->input->isAjax()) {
+                $this->json(['success' => false, 'message' => implode(' ', $errors)]);
+                return;
+            }
             $this->flash('error', implode(' ', $errors));
             $this->redirect('/admin/webhooks/' . $id . '/edit');
             return;
@@ -146,6 +187,11 @@ class WebhooksController extends BaseController
         ]);
 
         Auth::audit('webhook.update', 'webhook_endpoints', $id);
+
+        if ($this->input->isAjax()) {
+            $this->json(['success' => true, 'message' => 'Webhook endpoint updated.']);
+            return;
+        }
         $this->flash('success', 'Webhook endpoint updated.');
         $this->redirect('/admin/webhooks');
     }

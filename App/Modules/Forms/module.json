@@ -1,0 +1,25 @@
+{
+    "name": "Forms Builder",
+    "slug": "forms",
+    "version": "0.0.1",
+    "description": "Drag-and-drop form builder with submission inbox and CSV export",
+    "author": "Vertext",
+    "category": "Communication",
+    "requires": { "vertext": ">=0.0.7" },
+    "nav_routes": [],
+    "nav": {
+        "label":      "Forms",
+        "icon":       "pi-clipboard",
+        "path":       "/admin/forms",
+        "active":     "forms",
+        "permission": "forms.view",
+        "subnav": [
+            { "label": "All Forms",   "path": "/admin/forms",                  "icon": "pi-clipboard", "permission": "forms.view" },
+            { "label": "Submissions", "path": "/admin/forms/all-submissions",  "icon": "pi-inbox",     "permission": "forms.view" }
+        ]
+    },
+    "assets": {
+        "css": ["Assets/forms.css"],
+        "js":  ["Assets/forms.js"]
+    }
+}

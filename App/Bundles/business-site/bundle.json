@@ -5,10 +5,12 @@
     "description": "Professional business website with static pages, contact form, navigation, and analytics.",
     "icon": "pi-briefcase",
     "category": "Business",
+    "builtin": true,
     "modules": [
         { "slug": "pages",      "required": true  },
         { "slug": "contact",    "required": true  },
         { "slug": "navigation", "required": true  },
+        { "slug": "forms",      "required": false },
         { "slug": "analytics",  "required": false },
         { "slug": "sitemap",    "required": false }
     ]

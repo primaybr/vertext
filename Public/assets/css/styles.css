@@ -3223,6 +3223,10 @@ kbd {
   -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z'/%3E%3C/svg%3E");
   mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z'/%3E%3C/svg%3E");
 }
+.pi-clipboard {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='8' height='4' x='8' y='2' rx='1' ry='1'/%3E%3Cpath d='M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='8' height='4' x='8' y='2' rx='1' ry='1'/%3E%3Cpath d='M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2'/%3E%3C/svg%3E");
+}
 
 /* ============================================================
    § 37  RESPONSIVE BREAKPOINTS
@@ -3752,3 +3756,31 @@ kbd {
 /* ============================================================
    END - PHUSE CSS Framework v1.2.5
    ============================================================ */
+
+/* ── Admin locale switcher ───────────────────────────────────────────────── */
+.vtx-locale-select {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--ps-border);
+  border-radius: var(--ps-radius-sm);
+  color: var(--ps-text);
+  cursor: pointer;
+  font-size: .6875rem;
+  font-weight: 600;
+  letter-spacing: .06em;
+  padding: .25rem .5rem;
+  text-transform: uppercase;
+  line-height: 1.4;
+  transition: background .15s, border-color .15s;
+}
+.vtx-locale-select:hover,
+.vtx-locale-select:focus {
+  background: var(--ps-bg-hover);
+  border-color: var(--ps-primary);
+  outline: none;
+}
+.vtx-locale-select option {
+  background: var(--ps-bg);
+  color: var(--ps-text);
+}

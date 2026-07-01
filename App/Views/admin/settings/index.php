@@ -143,7 +143,7 @@ function vtxToggleSmtp(val) {
 document.getElementById('vtx-test-mail-btn').addEventListener('click', function () {
   var res = document.getElementById('vtx-test-mail-result');
   res.style.display = 'block';
-  res.style.background = 'var(--ps-bg-secondary)';
+  res.style.background = 'var(--ps-bg-subtle)';
   res.textContent = 'Sending…';
   fetch('{{baseUrl}}/admin/settings/test-mail', {
     method: 'POST',

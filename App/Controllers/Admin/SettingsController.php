@@ -152,11 +152,39 @@ class SettingsController extends BaseController
             require_once ROOT . 'Migrations' . DS . '002_uuid_migration.php';
             (new \Migration_002_UuidMigration($pdo))->up();
 
+            \App\CMS\I18n::migrate();
+
             Auth::audit('settings.run_migration', 'settings');
-            $this->json(['success' => true, 'message' => 'UUID migration completed. All primary keys are now UUIDs.']);
+            $this->json(['success' => true, 'message' => 'Migrations completed: UUID upgrade and i18n schema updates applied.']);
         } catch (\Throwable $e) {
             $this->json(['success' => false, 'message' => 'Migration failed: ' . $e->getMessage()]);
         }
+    }
+
+    /** POST /admin/settings/set-locale */
+    public function setLocale(): void
+    {
+        $token = $this->input->post('csrf_token') ?? '';
+        if (!$this->csrf->validateToken($token)) {
+            if ($this->isAjax()) {
+                $this->json(['success' => false, 'message' => 'Security token invalid.'], 403);
+            }
+            $this->flash('error', 'Security token invalid.');
+            $this->redirect($this->baseUrl . '/admin/settings');
+        }
+
+        $locale = $this->input->post('locale') ?? 'en';
+        \App\CMS\I18n::setLocale($locale);
+
+        if ($this->isAjax()) {
+            $this->json(['success' => true, 'locale' => \App\CMS\I18n::getLocale()]);
+        }
+
+        $back = $_SERVER['HTTP_REFERER'] ?? '';
+        if (!$back || !str_starts_with($back, $this->baseUrl)) {
+            $back = $this->baseUrl . '/admin/dashboard';
+        }
+        $this->redirect($back);
     }
 
     /** POST /admin/settings/toggle-maintenance */

@@ -5,6 +5,86 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.0.7-alpha] - 2026-07-01
+
+### Core
+
+- **Two-factor authentication (2FA)** - TOTP (RFC 6238) via the `TwoFactor` module; `AuthController` adds a second step after successful credentials; `TotpHelper` handles key generation, QR code URL, and 30-second window validation; backup codes (8 one-time codes, bcrypt-stored); cookie-based trusted-device option (30 days); enable/disable flow in My Profile at `/admin/profile/2fa`; install setting for TOTP issuer name
+- **i18n Foundation** - `App\CMS\I18n`: `setLocale()`, `getLocale()` (session then `default_locale` settings fallback), `get(key, replacements[])` with dot-notation file groups (`admin.save` loads `App/Lang/{locale}/admin.php` key `save`), `date(timestamp, format)` using `IntlDateFormatter` when `ext/intl` is available; `App/Lang/{locale}/{file}.php` file structure; English (`en`) and Indonesian (`id`) stubs included; global `__()` helper loaded by `Core/Boot.php`; locale switcher `<select>` in admin topbar; `POST /admin/settings/set-locale`; `GET /?lang={locale}` sets session for front-end visitors; `lang VARCHAR(10) NOT NULL DEFAULT 'en'` added to `posts` and `pages` CREATE TABLE; `I18n::migrate()` wired into Settings > Run Migration for existing installs
+- **Module scaffold CLI** - `php vertext make:module Foo` generates `App/Modules/Foo/` with `Module.php`, `module.json`, stub controller, and stub views; `php vertext make:bundle Foo` generates `App/Bundles/foo/bundle.json` skeleton; binary at `vertext` in the project root; see [docs/cli.md](docs/cli.md)
+
+### New Modules
+
+#### Forms Builder (v0.0.1)
+
+- `form_definitions` table (id, name, slug, description, fields JSON, notification_email, success_message, status) and `form_submissions` table (id, form_id, data JSON, ip, user_agent, submitted_at)
+- Admin CRUD: field builder with drag-to-reorder; field types: text, textarea, email, select, checkbox, radio; CSV export of all submissions per form
+- Front-end public form at `/forms/{slug}` with honeypot field and per-form rate limiting (3 attempts per 60-second window per IP)
+- Webhook dispatch: `form.submitted` event with full submission payload after each accepted entry
+- Permissions: `forms.view`, `forms.manage`, `forms.export`
+
+#### Newsletter (v0.0.1)
+
+- `newsletter_subscribers` (email, name, confirmed, token, subscribed_at, unsubscribed_at) and `newsletter_campaigns` (subject, html_body, sent_at, recipient_count)
+- Double opt-in: subscription inserts a pending record; confirmation link in the verification email sets `confirmed = true`
+- Admin: subscriber list with status filters; CSV import/export; campaign creation with Quill HTML editor; test-send to admin email before blast; unsubscribe link injected into every sent email
+- `install_settings` for `newsletter_from_name` and `newsletter_from_email` shown during install wizard
+- Webhook dispatch: `newsletter.subscribed` and `newsletter.unsubscribed` events
+- Permissions: `newsletter.view`, `newsletter.manage`, `newsletter.send`
+
+#### Events (v0.0.1)
+
+- `events` table (title, slug, description, location, start_at, end_at, max_attendees, status, featured_image_url + 6 audit columns) and `event_rsvps` table (event_id, name, email, notes, attended, rsvped_at)
+- Admin CRUD with date/time pickers, location field, max attendees cap; RSVP list per event with attended toggle and CSV export
+- Public listings: upcoming and past tabs; Canvas calendar sidebar (accent dots on event days, retina-aware with `devicePixelRatio`, `vtx:themeChanged` listener); click a date scrolls to that day's cards
+- Public detail page: two-column layout (collapses at 720 px); RSVP form with cookie-based duplicate prevention per browser; RSVP automatically closed when at capacity or event is in the past; flash messages from session
+- Webhook dispatch: `event.rsvp` event after each accepted RSVP
+- All CSS uses `--clr-*` variables; dark-mode overrides for semantic alert colors
+- Permissions: `events.view`, `events.manage`, `events.rsvp`
+
+### Bundle System Extensions
+
+- **Two new built-in bundles** - Marketing Suite (Forms + Newsletter + Analytics + Webhooks + Contact) and Events Portal (Events + Navigation + Contact + Analytics + Sitemap)
+- **Updated bundles** - Content Portal (added Forms + Newsletter); Full Stack (all 15 modules); Business Site (added Forms); all four original bundles gain `"builtin": true`
+- **Custom bundle builder** - `GET /admin/modules/bundles/create` / edit / update / delete for non-builtin bundles; bundle stored as `App/Bundles/{slug}/bundle.json` with `"custom": true`; icon picker, category selector, module checklist with per-module "Required" toggle; live preview card in sidebar
+- **Configure step in bundle install modal** - checklist (step 1) - configure settings (step 2) - progress (step 3); step 2 only shown when a selected, non-installed module declares `install_settings`; per-module values stored to `settings` table after install
+- **A-la-carte configure overlay** - individual module install button opens a configure modal when the module has `install_settings`; values stored after install
+
+### Module Marketplace
+
+- **Install from URL** - "Install from URL" button in Module Manager toolbar opens a two-step modal
+- `POST /admin/modules/fetch-url`: downloads a ZIP from any HTTPS URL (50 MB max), validates via magic bytes, reads `module.json` from root or GitHub archive nested directory, returns metadata preview and SHA-256 hash for review
+- **SSRF prevention** - hostname resolved to IP with `gethostbyname()`; `FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE` blocks private and reserved ranges; HTTPS-only enforcement
+- **One-use session token** - hash stored in session at fetch time; `POST /admin/modules/install-from-url` verifies hash before extracting; path traversal protection on all entries; GitHub archive top-level prefix stripping
+- **ZipArchive guard** - both endpoints return a clear user-facing error if `php_zip` is not loaded
+- `ModuleManager::removeExtractedDir()` - cleanup on failed installs
+
+---
+
+## Upcoming
+
+### [0.0.8-alpha]
+
+#### User Authentication (Front-end)
+
+- Public registration, login, and profile pages for site visitors (`site_users` table separate from admin `users`)
+- Email verification; session-based auth for front-end modules (Forms pre-fill, RSVP owner tracking)
+
+#### Module Enhancements
+
+- **Forms Builder v2** - conditional field logic; file upload field type; reCAPTCHA v3 integration
+- **Newsletter v2** - subscriber segments; scheduled campaigns; basic welcome-series automation
+- **Events v2** - ticket types (free, paid); waiting list when capacity reached; iCal export (`.ics`)
+- **REST API** - JSON API endpoints for Pages, Blog Posts, and Events; API key authentication; rate limiting
+
+#### DX / Infrastructure
+
+- **Media folders** - organize the media library into named folders; folder picker in the upload dialog and media picker modal
+- **Performance** - query result caching for public page/post renders; asset fingerprinting for HTTP cache-busting
+- **i18n v2** - translation management UI in admin; URL path-prefix routing (`/id/...`); `lang` column filtering on public page/post queries
+
+---
+
 ## [0.0.6-alpha] - 2026-06-29
 
 ### Core
@@ -37,35 +117,6 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Four built-in bundles**: Content Portal (Blog + Search + Navigation + Analytics + Contact + Sitemap), Media Showcase (Media + Gallery + Videos + Navigation + Analytics), Business Site (Pages + Contact + Navigation + Analytics + Sitemap), Full Stack (all available add-on modules)
 - **`pi-briefcase`** icon added to `styles.css` for the Business Site bundle
 - **`POST /admin/modules/install-bundle`** - new AJAX endpoint consumed by the bundle install modal
-
----
-
-## Upcoming
-
-### [0.0.7-alpha]
-
-#### Core
-
-- **Multi-language / i18n** - language switcher, translatable content fields, locale-aware date/number formatting
-- **Two-factor authentication (2FA)** - TOTP (RFC 6238) authenticator app support for admin users; no external dependencies; hook in `AuthController::processLogin()` after `Auth::attempt()` succeeds
-
-#### New Modules
-
-- **Forms Builder** - drag-and-drop custom form creation; extends Contact module patterns; stores submissions in DB; email notification on submission
-- **Newsletter** - subscriber list management + email blast; integrates with Webhooks for delivery events; unsubscribe link in every email
-- **Events** - event listings with date, location, RSVP count; front-end calendar view
-
-#### Extended Bundle System
-
-- **Bundle customizer** - configure module settings (e.g. `blog_base_path`) inline during bundle install before committing
-- **Custom bundle builder** - admin UI to compose and save a named bundle from installed modules
-- **New bundles**: Marketing Suite (Newsletter + Forms Builder + Analytics + Webhooks + Contact), Events Portal (Events + Contact + Navigation + Analytics + Sitemap)
-
-#### DX / Infrastructure
-
-- **Module scaffold CLI** - `php vertext make:module Foo` generates boilerplate module files (Module.php, module.json, controller, views)
-- **Module marketplace** - install a module directly from a URL via the Module Manager UI
-- **`php vertext make:bundle Foo`** - generates `App/Bundles/foo/bundle.json` skeleton
 
 ---
 
@@ -146,89 +197,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Available events: `post.published`, `post.deleted`, `page.published`, `page.deleted`, `media.uploaded`, `media.deleted`, `ping`
 - Permissions: `webhooks.view`, `webhooks.manage`; both auto-granted to Administrator on install
 
-### JavaScript Component UI/UX Overhaul
-
-All `vtx-*` components that used inline `cssText` or inline `style` attributes injected from JavaScript have been refactored to use CSS classes only.
-
-- **`vtx-slug`** - removed hardcoded `style="color:..."` from reset link; added `.vtx-slug-hint` and `.vtx-slug-reset` classes to `admin.css`
-- **`vtx-upload`** - removed `element.style.cssText` from overlay and progress bar; `.vtx-upload-overlay`, `.vtx-upload-bar` moved to `admin.css`
-- **`vtx-tags`** - removed all inline style assignments; `.vtx-tags-wrap`, `.vtx-tags-dropdown`, `.vtx-tag-chip-remove` moved to `blog.css`
-- **`vtx-media-picker`** - removed modal CSS injected via `panel.style.cssText`; all classes moved to `media.css`
-
 ### Added
 
 - **Maintenance Mode** - `App\CMS\Maintenance::check()` called from `Config/Routes.php` before routing; bypasses `/admin`, `/setup`, and logged-in admin sessions automatically; serves `App/Views/maintenance.php` - standalone 503 page with inline CSS and dark mode support; settings panel shows a pill toggle wired to `POST /admin/settings/toggle-maintenance`
 - **`App\CMS\Version`** - canonical version constant (`Version::APP`); admin sidebar reads from it instead of a hardcoded string
-
-### Fixed
-
-- **Clean theme visual overhaul** - `--clr-border` changed from near-black to soft gray; all `2px solid` borders reduced to `1px solid`; `--radius-sm` and `--radius-md` CSS variables added
-- **Media thumbnail generation** - replaced Phuse `Image` wrapper (silently short-circuits on validation errors) with raw GD functions; `loadGdImage()` and `saveGdImage()` helpers; cover-crop math unchanged
-- **UUID router** - `Core/Router.php` was casting numeric-looking route captures to `int`; caused `TypeError` when UUID segments (e.g. `"1"`) reached `string $id` parameters; fixed with `array_map('strval', $matches)`
-- **`alert()` replaced with `Phuse.toast()`** - all module views used `vtxToast()` which does not exist; replaced with `Phuse.toast(message, type)` in Media, Contact, Webhooks, and Gallery
-- **Blog featured image UUID cast** - `(int)` cast on a UUID string produced a leading-digit integer which failed PostgreSQL's uuid type check; fixed
-
----
-
-## [0.0.3-alpha] - 2026-06-24
-
-### New Modules
-
-#### Navigation (v0.0.1)
-
-- Admin menu builder: create named menus, add items (custom URL, page slug, or module link), single-level parent/child nesting, drag-to-reorder
-- Tables: `nav_menus` (UUID, name, slug) and `nav_items` (UUID, menu_id, parent_id, type, label, url, page_slug, sort_order, open_in_new)
-- Seeds "Primary Navigation" (slug: `primary`) on install
-- `NavHelper::getMenu(string $slug)` - static helper called from theme layouts; returns nested items array with per-request caching
-- Both default and clean themes automatically render the primary menu via NavHelper, with dropdown support for nested items
-- Permissions: `navigation.view`, `navigation.manage`
-
-#### Analytics (v0.0.1)
-
-- Privacy-friendly page-view tracking: `url_path`, `page_title`, `referrer_host` (hostname only), `ip_hash` (SHA-256 with daily salt - not reversible), `viewed_at`
-- Bot filter: 18 user-agent patterns (Googlebot, Bingbot, Slurp, and others)
-- `Tracker::record()` called automatically from `ThemeEngine::render()` when module is enabled; wrapped in try-catch
-- Admin dashboard: today/week/month view counts, top 10 pages, top 10 referrers, 30-day daily chart (pure Canvas, no external library)
-- Permissions: `analytics.view`, `analytics.manage`
-
-### New Theme
-
-#### Clean (v0.0.1)
-
-- Typographic, editorial theme: Georgia/serif body font, black borders, uppercase nav, 2-px thick accents
-- Full dark/light mode support (same CSS layer pattern as default theme)
-- NavHelper integration - renders Primary Navigation menu same as default theme
-
-### Front-End Theme Improvements
-
-- **Dark/light mode** on both `default` and `clean` themes: three CSS layers (`:root`, OS preference, explicit override), FOUC-prevention inline script, theme toggle button, `localStorage` persistence
-- **styles.css as base layer** - both theme layouts load `Public/assets/css/styles.css` before `theme.css`
-
-### Admin - Theme Manager
-
-- **Promoted to a system module** - Theme Manager is now a core admin section at `GET /admin/themes` with its own sidebar nav entry
-- **`ThemesController`** - new controller with `index()` (theme card grid) and `setTheme()` (POST handler)
-- **Removed from Settings** - the Themes tab is gone from Admin - Settings
-
-### Admin - Module Manager Overhaul
-
-- **Categorized card layout** replaces the previous two-table layout
-- **System section** (collapsible) - core modules shown as compact read-only rows; collapsed by default
-- **Category sections** - add-on modules grouped by category with card grids; each card shows icon, name, version badge, description, status badge, and action buttons
-- **`category` field** added to all `module.json` files
-
-### Module Dependency System
-
-- `module.json` `requires.modules` array: declare which other modules must be installed first
-- `ModuleManager::checkModuleDeps()` - blocks install if required modules are missing
-- `ModuleManager::checkDependents()` - blocks uninstall if other installed modules depend on this one
-- `ModuleManager::getDependencyInfo()` - public method returning per-slug install status for Module Manager UI
-
-### Icons
-
-- `pi-bars` and `pi-chart-bar` added to `Public/assets/css/styles.css` following the existing `mask-image` + URL-encoded SVG data URI pattern
-
-### Mail
-
-- **Comment notification to post author** - when a visitor submits a comment and `comments_require_approval` is enabled, the post author receives an email notification via `comment_pending` template
-- **New user welcome email** - welcome email sent automatically on user creation via `welcome` template

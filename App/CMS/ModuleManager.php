@@ -620,6 +620,19 @@ class ModuleManager
     }
 
     /**
+     * Remove an extracted module directory left behind after a failed install.
+     * Only accepts absolute paths that start with MODULES_DIR to prevent mishaps.
+     */
+    public static function removeExtractedDir(string $absPath): void
+    {
+        $real = realpath($absPath);
+        $base = realpath(self::MODULES_DIR);
+        if ($real && $base && str_starts_with($real . DS, $base . DS)) {
+            self::removeDir($real . DS);
+        }
+    }
+
+    /**
      * Re-deploy views and assets for an already-installed module.
      * Use this when source views or assets change without a full reinstall.
      */

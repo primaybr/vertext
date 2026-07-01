@@ -32,6 +32,7 @@ class Module implements ModuleInterface
             meta_title       VARCHAR(255),
             meta_description TEXT,
             sort_order       INT          NOT NULL DEFAULT 0,
+            lang             VARCHAR(10)  NOT NULL DEFAULT 'en',
             created_at       TIMESTAMP    DEFAULT NOW(),
             updated_at       TIMESTAMP    DEFAULT NOW(),
             deleted_at       TIMESTAMP,
@@ -166,7 +167,8 @@ class Module implements ModuleInterface
         $router->post('/admin/pages/([a-zA-Z0-9\-]+)/revisions/([a-zA-Z0-9\-]+)/restore', $ca, 'restoreRevision');
         $router->get('/admin/pages/([a-zA-Z0-9\-]+)/revisions/([a-zA-Z0-9\-]+)/diff',    $ca, 'viewRevision');
 
-        // Front-end - registered last so it doesn't shadow admin routes
-        $router->get('/([a-z0-9][a-z0-9\-]*)',                   $cf, 'show');
+        // Front-end catch-all is intentionally NOT registered here.
+        // It is registered in Config/Routes.php AFTER all module routes so that
+        // specific routes like /search and /videos are matched first.
     }
 }

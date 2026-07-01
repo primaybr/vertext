@@ -1,0 +1,22 @@
+{
+    "name": "Events",
+    "slug": "events",
+    "version": "0.0.1",
+    "description": "Event listings with calendar view and RSVP counter",
+    "author": "Vertext",
+    "category": "Content",
+    "requires": { "vertext": ">=0.0.7" },
+    "nav_routes": [
+        { "label": "Events", "path": "/events", "icon": "pi-calendar" }
+    ],
+    "nav": {
+        "label":      "Events",
+        "icon":       "pi-calendar",
+        "path":       "/admin/events",
+        "active":     "events",
+        "permission": "events.view"
+    },
+    "assets": {
+        "css": ["Assets/events.css"]
+    }
+}

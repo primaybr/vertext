@@ -5,6 +5,7 @@
     "description": "Everything installed - all available add-on modules for a fully-featured Vertext site.",
     "icon": "pi-layers",
     "category": "Complete",
+    "builtin": true,
     "modules": [
         { "slug": "blog",             "required": true },
         { "slug": "pages",            "required": true },
@@ -17,6 +18,9 @@
         { "slug": "search",           "required": true },
         { "slug": "sitemap",          "required": true },
         { "slug": "webhooks",         "required": true },
-        { "slug": "theme-customizer", "required": true }
+        { "slug": "theme-customizer", "required": true },
+        { "slug": "forms",            "required": true },
+        { "slug": "newsletter",       "required": true },
+        { "slug": "events",           "required": true }
     ]
 }

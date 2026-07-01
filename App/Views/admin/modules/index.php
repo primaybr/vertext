@@ -6,13 +6,27 @@
   </div>
 </div>
 
+<?php if (!empty($flash['message'])): ?>
+<div class="vtx-alert vtx-alert-<?php echo htmlspecialchars($flash['type'] ?? 'info'); ?> mb-3">
+  <?php echo htmlspecialchars($flash['message']); ?>
+</div>
+<?php endif; ?>
+
 <!-- ── Tab Navigation ────────────────────────────────────────────────────── -->
-<div class="vtx-mod-tabs mb-4">
-  <button type="button" class="vtx-mod-tab active" data-tab="packages">
-    <i class="pi pi-layers me-1"></i>Packages
-  </button>
-  <button type="button" class="vtx-mod-tab" data-tab="modules">
-    <i class="pi pi-grid me-1"></i>Modules
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem;">
+  <div class="vtx-mod-tabs">
+    <button type="button" class="vtx-mod-tab active" data-tab="packages">
+      <i class="pi pi-layers me-1"></i>Packages
+    </button>
+    <button type="button" class="vtx-mod-tab" data-tab="modules">
+      <i class="pi pi-grid me-1"></i>Modules
+    </button>
+  </div>
+  <a href="{{baseUrl}}/admin/modules/bundles/create" class="btn btn-sm btn-outline-secondary" id="create-bundle-btn" style="display:none;">
+    <i class="pi pi-plus me-1"></i>Create Bundle
+  </a>
+  <button type="button" class="btn btn-sm btn-outline-secondary" id="url-install-btn" style="display:none;">
+    <i class="pi pi-link me-1"></i>Install from URL
   </button>
 </div>
 
@@ -88,6 +102,20 @@
       <?php echo $bStatus === 'partial' ? 'Complete Bundle' : 'Install Bundle'; ?>
     </button>
     <?php endif; ?>
+    <?php if (empty($bundle['builtin'])): ?>
+    <a href="{{baseUrl}}/admin/modules/bundles/<?php echo $bSlug; ?>/edit"
+       class="btn btn-sm btn-outline-secondary" title="Edit bundle">
+      <i class="pi pi-edit"></i>
+    </a>
+    <form class="bundle-delete-form" method="POST"
+          action="{{baseUrl}}/admin/modules/bundles/<?php echo $bSlug; ?>/delete" style="display:inline;">
+      <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+      <button type="button" class="btn btn-sm btn-outline-danger bundle-delete-btn"
+              data-name="<?php echo $bName; ?>">
+        <i class="pi pi-trash"></i>
+      </button>
+    </form>
+    <?php endif; ?>
   </div>
 </div>
 <?php endforeach; ?>
@@ -114,7 +142,7 @@
     <div style="padding:.75rem 1.25rem;display:flex;flex-direction:column;gap:0;">
       <?php foreach ($coreModules as $mod): ?>
       <div style="display:flex;align-items:center;gap:.75rem;padding:.625rem 0;border-bottom:1px solid var(--ps-border);">
-        <div style="width:32px;height:32px;border-radius:8px;background:var(--ps-bg-secondary);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <div style="width:32px;height:32px;border-radius:8px;background:var(--ps-bg-subtle);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           <i class="pi pi-cpu" style="font-size:.875rem;color:var(--ps-text-muted);"></i>
         </div>
         <div style="flex:1;min-width:0;">
@@ -248,7 +276,8 @@
           <button type="button" class="btn btn-sm btn-primary module-install-btn"
                   data-slug="<?php echo $slug; ?>"
                   data-form="install-<?php echo $slug; ?>"
-                  data-name="<?php echo $name; ?>">
+                  data-name="<?php echo $name; ?>"
+                  data-settings='<?php echo htmlspecialchars(json_encode($avail['install_settings'] ?? []), ENT_QUOTES); ?>'>
             <i class="pi pi-download me-1"></i>Install
           </button>
           <?php else: ?>
@@ -275,7 +304,7 @@
 <!-- BUNDLE INSTALL MODAL                                                    -->
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
 <div id="bundle-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1050;align-items:center;justify-content:center;">
-  <div id="bundle-modal" style="background:var(--ps-bg);border-radius:12px;padding:1.5rem;width:100%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,.3);max-height:90vh;overflow-y:auto;">
+  <div id="bundle-modal" style="background:var(--ps-bg-base);border-radius:12px;padding:1.5rem;width:100%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,.3);max-height:90vh;overflow-y:auto;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
       <h3 id="bundle-modal-title" style="font-size:1rem;font-weight:700;margin:0;">Install Bundle</h3>
       <button type="button" id="bundle-modal-close" class="btn btn-sm btn-outline-secondary" style="padding:.25rem .5rem;">
@@ -283,28 +312,135 @@
       </button>
     </div>
 
-    <!-- Module checklist -->
+    <!-- Step 1: Module checklist -->
     <div id="bundle-modal-checklist">
-      <p style="font-size:.8125rem;color:var(--ps-text-secondary);margin-bottom:.75rem;">
+      <p style="font-size:.8125rem;color:var(--ps-text);margin-bottom:.75rem;">
         Select the modules to install. Required modules cannot be deselected.
       </p>
       <div id="bundle-module-list" style="display:flex;flex-direction:column;gap:.5rem;margin-bottom:1rem;"></div>
       <div style="display:flex;gap:.5rem;justify-content:flex-end;">
         <button type="button" id="bundle-modal-cancel" class="btn btn-sm btn-outline-secondary">Cancel</button>
         <button type="button" id="bundle-modal-confirm" class="btn btn-sm btn-primary">
+          <i class="pi pi-arrow-right me-1"></i>Next
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 2: Configure (shown only when modules have install_settings) -->
+    <div id="bundle-modal-configure" style="display:none;">
+      <p style="font-size:.8125rem;color:var(--ps-text);margin-bottom:.75rem;">
+        Configure the modules before installing.
+      </p>
+      <div id="bundle-config-fields" style="display:flex;flex-direction:column;gap:1rem;margin-bottom:1rem;"></div>
+      <div style="display:flex;gap:.5rem;justify-content:flex-end;">
+        <button type="button" id="bundle-config-back" class="btn btn-sm btn-outline-secondary">
+          <i class="pi pi-arrow-left me-1"></i>Back
+        </button>
+        <button type="button" id="bundle-config-confirm" class="btn btn-sm btn-primary">
           <i class="pi pi-download me-1"></i>Install
         </button>
       </div>
     </div>
 
-    <!-- Progress view -->
+    <!-- Step 3: Progress view -->
     <div id="bundle-modal-progress" style="display:none;">
-      <p style="font-size:.8125rem;color:var(--ps-text-secondary);margin-bottom:.75rem;">Installing modules...</p>
+      <p style="font-size:.8125rem;color:var(--ps-text);margin-bottom:.75rem;">Installing modules...</p>
       <div id="bundle-progress-list" style="display:flex;flex-direction:column;gap:.5rem;margin-bottom:1rem;"></div>
       <div id="bundle-progress-done" style="display:none;text-align:right;margin-top:.5rem;">
         <button type="button" id="bundle-modal-reload" class="btn btn-sm btn-primary">Done</button>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- Configure modal for individual a-la-carte install -->
+<div id="mod-config-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1060;align-items:center;justify-content:center;">
+  <div id="mod-config-modal" style="background:var(--ps-bg-base);border-radius:12px;padding:1.5rem;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.3);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+      <h3 id="mod-config-title" style="font-size:1rem;font-weight:700;margin:0;">Configure Module</h3>
+      <button type="button" id="mod-config-close" class="btn btn-sm btn-outline-secondary" style="padding:.25rem .5rem;">
+        <i class="pi pi-x"></i>
+      </button>
+    </div>
+    <p style="font-size:.8125rem;color:var(--ps-text);margin-bottom:.875rem;">
+      Set initial configuration. You can change these later in module settings.
+    </p>
+    <div id="mod-config-fields" style="display:flex;flex-direction:column;gap:.75rem;margin-bottom:1.25rem;"></div>
+    <div style="display:flex;gap:.5rem;justify-content:flex-end;">
+      <button type="button" id="mod-config-cancel" class="btn btn-sm btn-outline-secondary">Cancel</button>
+      <button type="button" id="mod-config-confirm" class="btn btn-sm btn-primary">
+        <i class="pi pi-download me-1"></i>Install
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- MARKETPLACE: INSTALL FROM URL MODAL                                    -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div id="url-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1070;align-items:center;justify-content:center;">
+  <div id="url-modal" style="background:var(--ps-bg-base);border-radius:12px;padding:1.5rem;width:100%;max-width:500px;box-shadow:0 20px 60px rgba(0,0,0,.3);max-height:90vh;overflow-y:auto;">
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+      <h3 style="font-size:1rem;font-weight:700;margin:0;"><i class="pi pi-link me-2 text-primary"></i>Install Module from URL</h3>
+      <button type="button" id="url-modal-close" class="btn btn-sm btn-outline-secondary" style="padding:.25rem .5rem;">
+        <i class="pi pi-x"></i>
+      </button>
+    </div>
+
+    <!-- Step 1: URL input -->
+    <div id="url-step-input">
+      <p style="font-size:.8125rem;color:var(--ps-text-secondary);margin-bottom:.875rem;">
+        Enter the direct HTTPS URL to a Vertext module ZIP archive. Only trusted sources.
+      </p>
+      <div style="margin-bottom:.875rem;">
+        <label style="display:block;font-size:.8125rem;font-weight:600;margin-bottom:.3rem;" for="url-input">Module ZIP URL</label>
+        <input class="form-control" type="url" id="url-input" placeholder="https://example.com/my-module-v1.0.0.zip"
+               style="font-size:.875rem;">
+      </div>
+      <div id="url-fetch-error" style="display:none;font-size:.8125rem;padding:.5rem .75rem;border-radius:5px;background:#fee2e2;color:#991b1b;border:1px solid #fecaca;margin-bottom:.75rem;"></div>
+      <div style="display:flex;gap:.5rem;justify-content:flex-end;">
+        <button type="button" id="url-modal-cancel1" class="btn btn-sm btn-outline-secondary">Cancel</button>
+        <button type="button" id="url-fetch-btn" class="btn btn-sm btn-primary">
+          <i class="pi pi-download me-1"></i>Download &amp; Verify
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 2: Verification -->
+    <div id="url-step-verify" style="display:none;">
+      <div style="margin-bottom:1rem;">
+        <div style="display:flex;align-items:center;gap:.625rem;margin-bottom:.875rem;">
+          <div style="width:38px;height:38px;border-radius:8px;background:rgba(34,197,94,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="pi pi-check-circle" style="color:#16a34a;font-size:1.125rem;"></i>
+          </div>
+          <div>
+            <div id="url-mod-name" style="font-size:.9375rem;font-weight:700;"></div>
+            <div style="display:flex;gap:.375rem;margin-top:.15rem;">
+              <span id="url-mod-slug" class="vtx-tag" style="font-size:.6875rem;"></span>
+              <span id="url-mod-version" class="vtx-tag info" style="font-size:.6875rem;"></span>
+            </div>
+          </div>
+        </div>
+        <div id="url-mod-desc" style="font-size:.8125rem;color:var(--ps-text-secondary);margin-bottom:.875rem;"></div>
+        <div style="background:var(--ps-bg-subtle);border:1px solid var(--ps-border);border-radius:6px;padding:.625rem .75rem;">
+          <div style="font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--ps-text-muted);margin-bottom:.25rem;">
+            SHA-256 Hash — compare with publisher&rsquo;s checksum
+          </div>
+          <code id="url-mod-hash" style="font-size:.75rem;word-break:break-all;display:block;line-height:1.5;"></code>
+        </div>
+      </div>
+      <div id="url-install-error" style="display:none;font-size:.8125rem;padding:.5rem .75rem;border-radius:5px;background:#fee2e2;color:#991b1b;border:1px solid #fecaca;margin-bottom:.75rem;"></div>
+      <div style="display:flex;gap:.5rem;justify-content:flex-end;">
+        <button type="button" id="url-verify-back" class="btn btn-sm btn-outline-secondary">
+          <i class="pi pi-arrow-left me-1"></i>Back
+        </button>
+        <button type="button" id="url-install-confirm" class="btn btn-sm btn-primary">
+          <i class="pi pi-download me-1"></i>Install Module
+        </button>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -346,7 +482,7 @@
   display: flex;
   flex-direction: column;
   gap: .75rem;
-  background: var(--ps-bg);
+  background: var(--ps-bg-base);
 }
 .vtx-bundle-card-head {
   display: flex;
@@ -396,7 +532,7 @@
   font-size: .6875rem;
   padding: .15rem .45rem;
   border-radius: 4px;
-  background: var(--ps-bg-secondary);
+  background: var(--ps-bg-subtle);
   color: var(--ps-text-secondary);
   border: 1px solid var(--ps-border);
 }
@@ -419,7 +555,7 @@
   display: flex;
   flex-direction: column;
   gap: .625rem;
-  background: var(--ps-bg);
+  background: var(--ps-bg-base);
 }
 .vtx-module-card--available {
   opacity: .85;
@@ -445,7 +581,7 @@
   color: var(--ps-primary);
 }
 .vtx-module-icon--muted {
-  background: var(--ps-bg-secondary);
+  background: var(--ps-bg-subtle);
 }
 .vtx-module-icon--muted .pi {
   color: var(--ps-text-muted);
@@ -477,7 +613,7 @@
   padding: .5rem .625rem;
   border-radius: 6px;
   border: 1px solid var(--ps-border);
-  background: var(--ps-bg-secondary);
+  background: var(--ps-bg-subtle);
 }
 .vtx-bundle-check-item input[type="checkbox"] {
   width: 16px;
@@ -488,6 +624,7 @@
 .vtx-bundle-check-item label {
   flex: 1;
   font-size: .8125rem;
+  color: var(--ps-text);
   cursor: pointer;
 }
 .vtx-bundle-check-item .vtx-bundle-check-badges {
@@ -527,10 +664,14 @@
   var tabs    = document.querySelectorAll('.vtx-mod-tab');
   var panes   = {'packages': document.getElementById('tab-packages'), 'modules': document.getElementById('tab-modules')};
   var stored  = localStorage.getItem('vtx-mod-tab') || 'packages';
+  var createBtn = document.getElementById('create-bundle-btn');
+  var urlBtn    = document.getElementById('url-install-btn');
 
   function activateTab(key) {
     tabs.forEach(function(t) { t.classList.toggle('active', t.dataset.tab === key); });
     Object.keys(panes).forEach(function(k) { panes[k].style.display = k === key ? '' : 'none'; });
+    if (createBtn) createBtn.style.display = key === 'packages' ? '' : 'none';
+    if (urlBtn)    urlBtn.style.display    = key === 'modules'  ? '' : 'none';
     localStorage.setItem('vtx-mod-tab', key);
   }
 
@@ -543,20 +684,30 @@
 
 // ── Bundle install modal ────────────────────────────────────────────────
 (function() {
-  var overlay   = document.getElementById('bundle-modal-overlay');
-  var modalEl   = document.getElementById('bundle-modal');
-  var titleEl   = document.getElementById('bundle-modal-title');
-  var checkList = document.getElementById('bundle-module-list');
-  var checkPane = document.getElementById('bundle-modal-checklist');
-  var progPane  = document.getElementById('bundle-modal-progress');
-  var progList  = document.getElementById('bundle-progress-list');
-  var doneDiv   = document.getElementById('bundle-progress-done');
-  var confirmBtn= document.getElementById('bundle-modal-confirm');
-  var cancelBtn = document.getElementById('bundle-modal-cancel');
-  var closeBtn  = document.getElementById('bundle-modal-close');
-  var reloadBtn = document.getElementById('bundle-modal-reload');
+  var overlay    = document.getElementById('bundle-modal-overlay');
+  var titleEl    = document.getElementById('bundle-modal-title');
+  var checkList  = document.getElementById('bundle-module-list');
+  var checkPane  = document.getElementById('bundle-modal-checklist');
+  var configPane = document.getElementById('bundle-modal-configure');
+  var configFlds = document.getElementById('bundle-config-fields');
+  var progPane   = document.getElementById('bundle-modal-progress');
+  var progList   = document.getElementById('bundle-progress-list');
+  var doneDiv    = document.getElementById('bundle-progress-done');
+  var confirmBtn = document.getElementById('bundle-modal-confirm');
+  var configBack = document.getElementById('bundle-config-back');
+  var configConf = document.getElementById('bundle-config-confirm');
+  var cancelBtn  = document.getElementById('bundle-modal-cancel');
+  var closeBtn   = document.getElementById('bundle-modal-close');
+  var reloadBtn  = document.getElementById('bundle-modal-reload');
 
-  var currentModules = [];
+  var currentModules   = [];
+  var pendingConfigMods = [];  // modules that have install_settings
+
+  function showPane(which) {
+    checkPane.style.display  = which === 'check'    ? '' : 'none';
+    configPane.style.display = which === 'configure' ? '' : 'none';
+    progPane.style.display   = which === 'progress' ? '' : 'none';
+  }
 
   function openModal(bundleName, modules) {
     currentModules = modules;
@@ -564,7 +715,7 @@
 
     checkList.innerHTML = '';
     modules.forEach(function(mod, i) {
-      var isRequired = !!mod.required;
+      var isRequired  = !!mod.required;
       var isInstalled = !!mod.installed;
 
       var item = document.createElement('div');
@@ -605,10 +756,53 @@
       checkList.appendChild(item);
     });
 
-    checkPane.style.display = '';
-    progPane.style.display  = 'none';
-    doneDiv.style.display   = 'none';
-    overlay.style.display   = 'flex';
+    showPane('check');
+    doneDiv.style.display = 'none';
+    overlay.style.display = 'flex';
+  }
+
+  function buildConfigPane(selected) {
+    pendingConfigMods = [];
+    configFlds.innerHTML = '';
+
+    currentModules.forEach(function(mod) {
+      if (!selected.includes(mod.slug)) return;
+      if (!mod.install_settings || !mod.install_settings.length) return;
+      pendingConfigMods.push(mod);
+
+      var section = document.createElement('div');
+      section.style.cssText = 'border:1px solid var(--ps-border);border-radius:7px;padding:.875rem;';
+
+      var heading = document.createElement('div');
+      heading.style.cssText = 'font-size:.8125rem;font-weight:600;margin-bottom:.625rem;color:var(--ps-text-secondary);text-transform:uppercase;letter-spacing:.04em;';
+      heading.textContent = mod.slug;
+      section.appendChild(heading);
+
+      mod.install_settings.forEach(function(field) {
+        var grp = document.createElement('div');
+        grp.style.cssText = 'margin-bottom:.5rem;';
+
+        var lbl = document.createElement('label');
+        lbl.style.cssText = 'display:block;font-size:.8125rem;margin-bottom:.25rem;font-weight:500;';
+        lbl.textContent = field.label + (field.required ? ' *' : '');
+
+        var inp = document.createElement('input');
+        inp.className    = 'form-control form-control-sm';
+        inp.type         = field.type || 'text';
+        inp.name         = 'install_config[' + mod.slug + '][' + field.name + ']';
+        inp.placeholder  = field.placeholder || field.default || '';
+        inp.value        = field.default || '';
+        inp.required     = !!field.required;
+
+        grp.appendChild(lbl);
+        grp.appendChild(inp);
+        section.appendChild(grp);
+      });
+
+      configFlds.appendChild(section);
+    });
+
+    return pendingConfigMods.length > 0;
   }
 
   function closeModal() {
@@ -618,6 +812,7 @@
   closeBtn.addEventListener('click', closeModal);
   cancelBtn.addEventListener('click', closeModal);
   reloadBtn.addEventListener('click', function() { location.reload(); });
+  configBack.addEventListener('click', function() { showPane('check'); });
 
   overlay.addEventListener('click', function(e) {
     if (e.target === overlay) closeModal();
@@ -632,14 +827,36 @@
       window.Phuse.toast('No modules selected.', 'error');
       return;
     }
-    runBundleInstall(selected);
+    var hasConfig = buildConfigPane(selected);
+    if (hasConfig) {
+      showPane('configure');
+    } else {
+      runBundleInstall(selected, {});
+    }
   });
 
-  function runBundleInstall(slugs) {
-    checkPane.style.display = 'none';
-    progPane.style.display  = '';
-    progList.innerHTML = '';
-    doneDiv.style.display   = 'none';
+  configConf.addEventListener('click', function() {
+    var selected = [];
+    checkList.querySelectorAll('input[type="checkbox"]').forEach(function(cb) {
+      if (cb.checked) selected.push(cb.value);
+    });
+    // Collect config values from config pane inputs
+    var config = {};
+    configFlds.querySelectorAll('input[name^="install_config"]').forEach(function(inp) {
+      // Parse install_config[slug][key]
+      var m = inp.name.match(/^install_config\[([^\]]+)\]\[([^\]]+)\]$/);
+      if (m) {
+        if (!config[m[1]]) config[m[1]] = {};
+        config[m[1]][m[2]] = inp.value;
+      }
+    });
+    runBundleInstall(selected, config);
+  });
+
+  function runBundleInstall(slugs, config) {
+    showPane('progress');
+    progList.innerHTML  = '';
+    doneDiv.style.display = 'none';
 
     var items = {};
     slugs.forEach(function(slug) {
@@ -654,6 +871,15 @@
     var formData = new FormData();
     formData.append('csrf_token', '{{csrf_token}}');
     slugs.forEach(function(s) { formData.append('modules[]', s); });
+
+    // Append per-module install_config
+    if (config && typeof config === 'object') {
+      Object.keys(config).forEach(function(slug) {
+        Object.keys(config[slug]).forEach(function(key) {
+          formData.append('install_config[' + slug + '][' + key + ']', config[slug][key]);
+        });
+      });
+    }
 
     var xhr = new XMLHttpRequest();
     xhr.open('POST', (window.VTX_BASE_URL || '') + '/admin/modules/install-bundle');
@@ -711,13 +937,104 @@ function refreshPanels(onDone) {
   if (onDone) onDone();
 }
 
+// ── A-la-carte configure modal ──────────────────────────────────────────
+(function() {
+  var overlay    = document.getElementById('mod-config-overlay');
+  var titleEl    = document.getElementById('mod-config-title');
+  var fieldsEl   = document.getElementById('mod-config-fields');
+  var closeBtn   = document.getElementById('mod-config-close');
+  var cancelBtn  = document.getElementById('mod-config-cancel');
+  var confirmBtn = document.getElementById('mod-config-confirm');
+
+  var pendingForm     = null;
+  var pendingBtn      = null;
+  var pendingSettings = [];
+
+  window._openModConfigModal = function(name, settings, form, btn) {
+    pendingForm     = form;
+    pendingBtn      = btn;
+    pendingSettings = settings;
+    titleEl.textContent = 'Configure "' + name + '"';
+
+    fieldsEl.innerHTML = '';
+    settings.forEach(function(field) {
+      var grp = document.createElement('div');
+      var lbl = document.createElement('label');
+      lbl.style.cssText = 'display:block;font-size:.8125rem;margin-bottom:.3rem;font-weight:500;';
+      lbl.textContent = field.label + (field.required ? ' *' : '');
+      var inp = document.createElement('input');
+      inp.className   = 'form-control form-control-sm';
+      inp.type        = field.type || 'text';
+      inp.name        = 'install_config[' + field.name + ']';
+      inp.placeholder = field.placeholder || field.default || '';
+      inp.value       = field.default || '';
+      inp.required    = !!field.required;
+      grp.appendChild(lbl);
+      grp.appendChild(inp);
+      fieldsEl.appendChild(grp);
+    });
+
+    overlay.style.display = 'flex';
+  };
+
+  function closeConfigModal() { overlay.style.display = 'none'; }
+
+  closeBtn.addEventListener('click', closeConfigModal);
+  cancelBtn.addEventListener('click', closeConfigModal);
+  overlay.addEventListener('click', function(e) { if (e.target === overlay) closeConfigModal(); });
+
+  confirmBtn.addEventListener('click', function() {
+    // Inject config as hidden inputs into the install form
+    fieldsEl.querySelectorAll('input').forEach(function(inp) {
+      var hidden = pendingForm.querySelector('input[name="' + inp.name + '"]');
+      if (hidden) {
+        hidden.value = inp.value;
+      } else {
+        hidden = document.createElement('input');
+        hidden.type  = 'hidden';
+        hidden.name  = inp.name;
+        hidden.value = inp.value;
+        pendingForm.appendChild(hidden);
+      }
+    });
+    closeConfigModal();
+
+    // Proceed with install
+    pendingBtn.disabled  = true;
+    pendingBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span>Installing...';
+    window.VtxAjax.postForm(pendingForm.action, pendingForm, function(ok, res) {
+      var msg     = (res && res.message) ? res.message : (ok ? 'Module installed.' : 'Installation failed.');
+      var success = ok && res && res.success;
+      if (success && res.setup_url) {
+        window.Phuse.toast('Module installed! Opening setup wizard...', 'success');
+        setTimeout(function() { window.location.href = (window.VTX_BASE_URL || '') + res.setup_url; }, 700);
+      } else {
+        window.Phuse.toast(msg, success ? 'success' : 'error');
+        if (success) { refreshPanels(); }
+        else {
+          pendingBtn.disabled  = false;
+          pendingBtn.innerHTML = '<i class="pi pi-download me-1"></i>Install';
+        }
+      }
+    });
+  });
+}());
+
 function attachInstallListeners() {
   document.querySelectorAll('.module-install-btn:not([data-wired])').forEach(function(btn) {
     btn.dataset.wired = '1';
     btn.addEventListener('click', function() {
-      var name = this.dataset.name;
-      var form = document.getElementById(this.dataset.form);
-      var me   = this;
+      var name     = this.dataset.name;
+      var form     = document.getElementById(this.dataset.form);
+      var me       = this;
+      var settings = [];
+      try { settings = JSON.parse(this.dataset.settings || '[]'); } catch(e) {}
+
+      // If module has install_settings, show configure modal first
+      if (settings && settings.length) {
+        window._openModConfigModal(name, settings, form, me);
+        return;
+      }
 
       window.vtxConfirmModal({
         title:        'Install Module',
@@ -840,6 +1157,27 @@ attachUninstallListeners();
 attachToggleListeners();
 attachSyncListeners();
 
+// ── Bundle delete ────────────────────────────────────────────────────────
+document.querySelectorAll('.bundle-delete-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    var name = this.dataset.name;
+    var form = this.closest('.bundle-delete-form');
+    window.vtxConfirmModal({
+      title:        'Delete Bundle',
+      message:      'Delete "' + name + '"? The bundle.json file will be removed. Installed modules are not affected.',
+      confirmLabel: 'Delete',
+      confirmClass: 'btn-danger',
+      onConfirm: function() {
+        window.VtxAjax.postForm(form.action, form, function(ok, res) {
+          var msg = (res && res.message) ? res.message : (ok ? 'Bundle deleted.' : 'Delete failed.');
+          window.Phuse.toast(msg, (ok && res && res.success) ? 'success' : 'error');
+          if (ok && res && res.success) { location.reload(); }
+        });
+      }
+    });
+  });
+});
+
 // System section collapse
 (function() {
   var toggle  = document.getElementById('system-section-toggle');
@@ -850,6 +1188,128 @@ attachSyncListeners();
     var open = body.style.display === 'none';
     body.style.display = open ? '' : 'none';
     chevron.style.transform = open ? 'rotate(180deg)' : '';
+  });
+}());
+
+// ── Marketplace: Install from URL ────────────────────────────────────────
+(function() {
+  var overlay     = document.getElementById('url-modal-overlay');
+  var stepInput   = document.getElementById('url-step-input');
+  var stepVerify  = document.getElementById('url-step-verify');
+  var urlInput    = document.getElementById('url-input');
+  var fetchBtn    = document.getElementById('url-fetch-btn');
+  var fetchErr    = document.getElementById('url-fetch-error');
+  var installErr  = document.getElementById('url-install-error');
+  var installBtn  = document.getElementById('url-install-confirm');
+  var backBtn     = document.getElementById('url-verify-back');
+  var trigBtn     = document.getElementById('url-install-btn');
+  var csrfToken   = '{{csrf_token}}';
+
+  function openModal() {
+    urlInput.value           = '';
+    fetchErr.style.display   = 'none';
+    installErr.style.display = 'none';
+    stepInput.style.display  = '';
+    stepVerify.style.display = 'none';
+    overlay.style.display    = 'flex';
+    setTimeout(function() { urlInput.focus(); }, 50);
+  }
+
+  function closeModal() {
+    overlay.style.display = 'none';
+  }
+
+  function showFetchError(msg) {
+    fetchErr.textContent   = msg;
+    fetchErr.style.display = '';
+  }
+
+  function showInstallError(msg) {
+    installErr.textContent   = msg;
+    installErr.style.display = '';
+  }
+
+  if (trigBtn) {
+    trigBtn.addEventListener('click', openModal);
+  }
+  document.getElementById('url-modal-close').addEventListener('click', closeModal);
+  document.getElementById('url-modal-cancel1').addEventListener('click', closeModal);
+  backBtn.addEventListener('click', function() {
+    stepVerify.style.display = 'none';
+    stepInput.style.display  = '';
+    installErr.style.display = 'none';
+  });
+  overlay.addEventListener('click', function(e) { if (e.target === overlay) closeModal(); });
+
+  // Step 1: Download & Verify
+  fetchBtn.addEventListener('click', function() {
+    var url = urlInput.value.trim();
+    if (!url) { showFetchError('Please enter a URL.'); return; }
+
+    fetchErr.style.display = 'none';
+    fetchBtn.disabled      = true;
+    fetchBtn.innerHTML     = '<span class="spinner-border spinner-border-sm me-1"></span>Downloading...';
+
+    var fd = new FormData();
+    fd.append('csrf_token', csrfToken);
+    fd.append('url', url);
+
+    fetch((window.VTX_BASE_URL || '') + '/admin/modules/fetch-url', { method: 'POST', body: fd })
+      .then(function(r) { return r.json(); })
+      .then(function(res) {
+        fetchBtn.disabled  = false;
+        fetchBtn.innerHTML = '<i class="pi pi-download me-1"></i>Download &amp; Verify';
+
+        if (!res.success) {
+          showFetchError(res.message || 'Download failed.');
+          return;
+        }
+
+        // Populate verification step
+        document.getElementById('url-mod-name').textContent    = res.name;
+        document.getElementById('url-mod-slug').textContent    = res.slug;
+        document.getElementById('url-mod-version').textContent = 'v' + res.version;
+        document.getElementById('url-mod-desc').textContent    = res.description || '';
+        document.getElementById('url-mod-hash').textContent    = res.hash;
+
+        stepInput.style.display  = 'none';
+        stepVerify.style.display = '';
+      })
+      .catch(function() {
+        fetchBtn.disabled  = false;
+        fetchBtn.innerHTML = '<i class="pi pi-download me-1"></i>Download &amp; Verify';
+        showFetchError('Network error. Please try again.');
+      });
+  });
+
+  // Step 2: Confirm Install
+  installBtn.addEventListener('click', function() {
+    installErr.style.display = 'none';
+    installBtn.disabled      = true;
+    installBtn.innerHTML     = '<span class="spinner-border spinner-border-sm me-1"></span>Installing...';
+
+    var fd = new FormData();
+    fd.append('csrf_token', csrfToken);
+
+    fetch((window.VTX_BASE_URL || '') + '/admin/modules/install-from-url', { method: 'POST', body: fd })
+      .then(function(r) { return r.json(); })
+      .then(function(res) {
+        installBtn.disabled  = false;
+        installBtn.innerHTML = '<i class="pi pi-download me-1"></i>Install Module';
+
+        if (res.success) {
+          window.Phuse.toast(res.message || 'Module installed.', 'success');
+          closeModal();
+          setTimeout(function() { location.reload(); }, 800);
+        } else {
+          showInstallError(res.message || 'Installation failed.');
+        }
+      })
+      .catch(function() {
+        installBtn.disabled  = false;
+        installBtn.innerHTML = '<i class="pi pi-download me-1"></i>Install Module';
+        showInstallError('Network error. Please try again.');
+      });
   });
 }());
 </script>

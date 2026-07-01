@@ -359,6 +359,7 @@
                     window.vtxFormModalClose();
                     Phuse.toast(msg, 'success');
                     document.dispatchEvent(new CustomEvent('vtx:crud:success', { detail: { action: 'save' } }));
+                    if (res.redirect) { window.location.href = res.redirect; return; }
                     // Prefer VtxDataTable.reload() when a table is registered; else DOMParser fallback
                     var dt = Vtx.getInstance('table');
                     if (dt) {

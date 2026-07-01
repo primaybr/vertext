@@ -1,6 +1,6 @@
 # Vertext CMS
 
-![Version](https://img.shields.io/badge/version-0.0.6--alpha-blue)
+![Version](https://img.shields.io/badge/version-0.0.7--alpha-blue)
 ![PHP](https://img.shields.io/badge/PHP-8.2%2B-777BB4)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -38,13 +38,21 @@ Vertext is a lightweight, extensible content management system written in PHP 8.
 - **Security** - CSRF protection, bcrypt passwords, session hardening, login rate limiting, audit logs
 - **PostgreSQL** - full native support via PDO with connection pooling and query caching
 - **vtx-* component library** - chart, datatable, rich-text editor, media picker, tag input, upload, slug, and more
+- **Two-factor authentication (2FA)** - TOTP (RFC 6238) via the TwoFactor module; QR code setup; backup codes; trusted-device cookie (30 days)
+- **Forms Builder module** - drag-to-reorder field builder; submissions stored in DB; CSV export; honeypot + rate-limit anti-spam
+- **Newsletter module** - subscriber list with double opt-in; HTML campaigns with Quill editor; test-send; CSV import/export
+- **Events module** - event listings with RSVP, Canvas calendar sidebar (dots on event days, click-to-scroll), and detail page
+- **Bundle packages** - install groups of related modules in one click; custom bundle builder in the Module Manager
+- **Module Marketplace** - install a module from any HTTPS URL via the Module Manager; SSRF-safe, SHA-256 verified
+- **Module scaffold CLI** - `php vertext make:module Foo` and `php vertext make:bundle Foo` generate boilerplate files
+- **i18n Foundation** - `__()` translation helper; `App/Lang/{locale}/{file}.php` file structure; admin locale switcher; `I18n::date()` with `IntlDateFormatter` support
 
 ---
 
 ## Requirements
 
 | Requirement | Version |
-|-------------|---------|
+| ----------- | ------- |
 | PHP | 8.2 or higher |
 | PostgreSQL | 13 or higher |
 | PHP extensions | PDO, pdo_pgsql, json, mbstring, fileinfo |
@@ -73,11 +81,12 @@ cd vertext
 
 ## Directory Structure
 
-```
+```text
 vertext/
 ├── App/                  # Application code (your work lives here)
-│   ├── CMS/              # Auth, Installer, ModuleManager, NavHelper
+│   ├── CMS/              # Auth, Installer, ModuleManager, NavHelper, I18n
 │   ├── Controllers/      # Admin, Setup, Web controllers
+│   ├── Lang/             # Translation files (App/Lang/{locale}/{file}.php)
 │   ├── Mail/             # Mailer, MailMessage, MailTemplate + Templates/
 │   ├── Models/           # Database models
 │   ├── Modules/          # Installable modules (Blog, Media, Pages, ...)
@@ -102,7 +111,7 @@ vertext/
 
 Vertext modules are self-contained units that own their database tables, routes, permissions, and views.
 
-```
+```text
 App/Modules/YourModule/
 ├── Module.php          # Implements ModuleInterface (install, uninstall, registerRoutes)
 ├── module.json         # Manifest: name, slug, version, category, nav links, permissions
@@ -129,6 +138,10 @@ Install a module: **Admin → Module Manager → Install**
 | Theme Customizer | 0.0.1 | Design | Accent color, font, logo, and custom CSS overrides for the public theme |
 | Sitemap | 0.0.1 | SEO | Automatic `/sitemap.xml` from published pages and blog posts |
 | Webhooks | 0.0.1 | Integration | Outgoing webhooks with HMAC-SHA256 signing and delivery logs |
+| Forms | 0.0.1 | Communication | Custom form builder; drag-to-reorder fields; submissions in DB; CSV export; honeypot + rate limiting |
+| Newsletter | 0.0.1 | Communication | Subscriber list with double opt-in; HTML campaigns; test-send; CSV import/export |
+| Events | 0.0.1 | Community | Event listings with RSVP, Canvas calendar sidebar, date badges, and webhook dispatch |
+| Two-Factor Auth | 0.0.1 | Security | TOTP authenticator app support; backup codes; trusted-device cookie |
 
 See [docs/module-system.md](docs/module-system.md) and [docs/creating-a-module.md](docs/creating-a-module.md) for the full guide.
 
@@ -158,6 +171,12 @@ See [docs/module-system.md](docs/module-system.md) and [docs/creating-a-module.m
 | [Gallery Module](docs/gallery-module.md) | Photo albums, lightbox, drag-to-reorder |
 | [Contact Module](docs/contact-module.md) | Public form, admin inbox, email notifications |
 | [Videos Module](docs/videos-module.md) | YouTube/Vimeo embeds, poster thumbnails |
+| [CLI](docs/cli.md) | Module scaffold and bundle creation commands |
+| [2FA Module](docs/2fa.md) | TOTP setup, backup codes, trusted devices |
+| [Forms Module](docs/forms.md) | Form builder, submissions, honeypot, CSV export |
+| [Newsletter Module](docs/newsletter.md) | Subscriber management, double opt-in, HTML campaigns |
+| [Events Module](docs/events.md) | Event listings, RSVP, Canvas calendar |
+| [i18n Guide](docs/i18n.md) | Translation files, `__()` helper, locale switcher |
 
 ---
 

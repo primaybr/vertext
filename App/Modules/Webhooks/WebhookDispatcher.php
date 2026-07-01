@@ -18,13 +18,18 @@ class WebhookDispatcher
 {
     /** Events available for subscription. */
     public const EVENTS = [
-        'post.published' => 'Post Published',
-        'post.deleted'   => 'Post Deleted',
-        'page.published' => 'Page Published',
-        'page.deleted'   => 'Page Deleted',
-        'media.uploaded' => 'Media Uploaded',
-        'media.deleted'  => 'Media Deleted',
-        'ping'           => 'Ping (test)',
+        'post.published'   => 'Post Published',
+        'post.deleted'     => 'Post Deleted',
+        'page.published'   => 'Page Published',
+        'page.deleted'     => 'Page Deleted',
+        'media.uploaded'   => 'Media Uploaded',
+        'media.deleted'    => 'Media Deleted',
+        'form.submitted'          => 'Form Submitted',
+        'newsletter.subscribed'   => 'Newsletter Subscribed',
+        'newsletter.unsubscribed' => 'Newsletter Unsubscribed',
+        'campaign.sent'           => 'Campaign Sent',
+        'event.rsvp'              => 'Event RSVP',
+        'ping'                    => 'Ping (test)',
     ];
 
     /**

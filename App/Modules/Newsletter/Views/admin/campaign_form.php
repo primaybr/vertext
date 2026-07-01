@@ -1,0 +1,293 @@
+<?php $editing = isset($campaign) && is_array($campaign) && !empty($campaign['id']); ?>
+<?php $isSent = $editing && ($campaign['status'] ?? '') === 'sent'; ?>
+<?php $isModal = $isModal ?? false; ?>
+
+<?php if ($isModal): ?>
+<form data-crud-form action="<?php echo htmlspecialchars($action ?? ''); ?>" method="POST">
+  <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token ?? ''); ?>">
+  <div class="vtx-field mb-3">
+    <label class="vtx-label" for="nl-subject-m">Subject <span class="text-danger">*</span></label>
+    <input class="form-control" type="text" id="nl-subject-m" name="subject"
+           placeholder="Your email subject..." required autofocus>
+  </div>
+  <div class="vtx-field mb-3">
+    <label class="vtx-label" for="nl-preview-m">Preview Text</label>
+    <input class="form-control" type="text" id="nl-preview-m" name="preview_text"
+           placeholder="Brief preview shown in email clients...">
+  </div>
+  <p style="font-size:.8125rem;color:var(--ps-text-muted);margin-bottom:.75rem;">
+    After saving you'll be taken to the campaign editor to write the content.
+  </p>
+  <div style="display:flex;gap:.5rem;justify-content:flex-end;">
+    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.vtxFormModalClose()">Cancel</button>
+    <button type="submit" class="btn btn-primary btn-sm"><i class="pi pi-plus me-1"></i> Create Campaign</button>
+  </div>
+</form>
+<?php return; ?>
+<?php endif; ?>
+
+<!-- Page Header -->
+<div class="vtx-page-head">
+  <div>
+    <a href="<?php echo $baseUrl; ?>/admin/newsletter/campaigns" class="vtx-breadcrumb">
+      <i class="pi pi-mail me-1"></i> Campaigns
+    </a>
+    <h1 class="vtx-page-title" style="margin-top:.25rem;">
+      <?php echo $editing ? htmlspecialchars($campaign['subject']) : 'New Campaign'; ?>
+    </h1>
+  </div>
+  <div style="display:flex;gap:.5rem;align-items:center;">
+    <a href="<?php echo $baseUrl; ?>/admin/newsletter/campaigns" class="btn btn-outline-secondary btn-sm">
+      <i class="pi pi-arrow-left me-1"></i> Back
+    </a>
+    <?php if ($editing && !$isSent && \App\CMS\Auth::can('newsletter.manage')): ?>
+    <button type="button" id="nl-test-btn" class="btn btn-outline-secondary btn-sm">
+      <i class="pi pi-mail me-1"></i> Test Send
+    </button>
+    <button type="button" id="nl-send-btn" class="btn btn-primary btn-sm"
+            data-campaign-id="<?php echo htmlspecialchars($campaign['id']); ?>"
+            data-sub-count="<?php echo (int) ($activeCount ?? 0); ?>">
+      <i class="pi pi-zap me-1"></i> Send Campaign
+    </button>
+    <?php endif; ?>
+    <?php if (!$isSent): ?>
+    <button type="submit" form="nl-campaign-form" class="btn btn-primary btn-sm">
+      <i class="pi pi-save me-1"></i> Save Draft
+    </button>
+    <?php endif; ?>
+  </div>
+</div>
+
+<?php if (!empty($flash['message'])): ?>
+<div class="vtx-alert vtx-alert-<?php echo htmlspecialchars($flash['type'] ?? 'info'); ?> mb-3">
+  <?php echo htmlspecialchars($flash['message']); ?>
+</div>
+<?php endif; ?>
+
+<?php if ($isSent): ?>
+<div class="vtx-alert vtx-alert-success mb-3">
+  This campaign was sent to <strong><?php echo (int) $campaign['sent_count']; ?></strong> subscriber(s)
+  on <?php echo date('F j, Y \a\t g:i A', strtotime($campaign['sent_at'])); ?>.
+</div>
+<?php endif; ?>
+
+<div id="nl-api-msg" class="mb-3" style="display:none;"></div>
+
+<div style="display:grid;grid-template-columns:1fr 300px;gap:1.25rem;align-items:start;">
+
+  <div>
+    <form id="nl-campaign-form" method="POST" action="<?php echo htmlspecialchars($action ?? ''); ?>">
+      <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token ?? ''); ?>">
+
+      <div class="vtx-panel mb-3">
+        <div class="vtx-panel-header">Email Details</div>
+        <div class="vtx-panel-body">
+          <div class="vtx-field mb-3">
+            <label class="vtx-label" for="nl-subject">Subject <span class="text-danger">*</span></label>
+            <input class="form-control" type="text" id="nl-subject" name="subject"
+                   value="<?php echo htmlspecialchars($campaign['subject'] ?? ''); ?>"
+                   placeholder="Your email subject..." required
+                   <?php echo $isSent ? 'readonly' : ''; ?>>
+          </div>
+          <div class="vtx-field">
+            <label class="vtx-label" for="nl-preview">Preview Text</label>
+            <input class="form-control" type="text" id="nl-preview" name="preview_text"
+                   value="<?php echo htmlspecialchars($campaign['preview_text'] ?? ''); ?>"
+                   placeholder="Brief preview shown in email clients..."
+                   <?php echo $isSent ? 'readonly' : ''; ?>>
+          </div>
+        </div>
+      </div>
+
+      <div class="vtx-panel mb-3">
+        <div class="vtx-panel-header" style="display:flex;gap:.5rem;">
+          <button type="button" class="nl-tab-btn active" data-tab="html">HTML</button>
+          <button type="button" class="nl-tab-btn" data-tab="text">Plain Text</button>
+        </div>
+        <div class="vtx-panel-body p-0">
+          <div id="nl-tab-html">
+            <textarea class="form-control" name="body_html" rows="18"
+                      style="border:0;border-radius:0 0 6px 6px;font-family:monospace;font-size:.8125rem;resize:vertical;"
+                      placeholder="&lt;h1&gt;Hello!&lt;/h1&gt;&#10;&lt;p&gt;Your message here...&lt;/p&gt;"
+                      <?php echo $isSent ? 'readonly' : ''; ?>><?php echo htmlspecialchars($campaign['body_html'] ?? ''); ?></textarea>
+          </div>
+          <div id="nl-tab-text" style="display:none;">
+            <textarea class="form-control" name="body_text" rows="18"
+                      style="border:0;border-radius:0 0 6px 6px;font-family:monospace;font-size:.8125rem;resize:vertical;"
+                      placeholder="Plain text version of your email..."
+                      <?php echo $isSent ? 'readonly' : ''; ?>><?php echo htmlspecialchars($campaign['body_text'] ?? ''); ?></textarea>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Sidebar -->
+  <div>
+    <?php if ($editing): ?>
+    <div class="vtx-panel mb-3">
+      <div class="vtx-panel-header">Details</div>
+      <div class="vtx-panel-body" style="font-size:.8125rem;display:grid;gap:.6rem;">
+        <div>
+          <span style="color:var(--ps-text-muted);">Status</span>
+          <div style="margin-top:.2rem;">
+            <?php if ($campaign['status'] === 'sent'): ?>
+            <span class="badge badge-success">Sent</span>
+            <?php elseif ($campaign['status'] === 'sending'): ?>
+            <span class="badge badge-warning">Sending...</span>
+            <?php else: ?>
+            <span class="badge badge-secondary">Draft</span>
+            <?php endif; ?>
+          </div>
+        </div>
+        <?php if ($campaign['sent_at']): ?>
+        <div>
+          <span style="color:var(--ps-text-muted);">Sent</span>
+          <div style="margin-top:.2rem;font-weight:600;"><?php echo date('M j, Y g:i A', strtotime($campaign['sent_at'])); ?></div>
+        </div>
+        <div>
+          <span style="color:var(--ps-text-muted);">Delivered to</span>
+          <div style="margin-top:.2rem;font-weight:600;"><?php echo (int) $campaign['sent_count']; ?> subscriber(s)</div>
+        </div>
+        <?php endif; ?>
+        <?php if (!$isSent): ?>
+        <div>
+          <span style="color:var(--ps-text-muted);">Active subscribers</span>
+          <div style="margin-top:.2rem;font-weight:600;"><?php echo (int) ($activeCount ?? 0); ?></div>
+        </div>
+        <?php endif; ?>
+      </div>
+    </div>
+    <?php endif; ?>
+
+    <div class="vtx-panel">
+      <div class="vtx-panel-header">Tips</div>
+      <div class="vtx-panel-body" style="font-size:.8125rem;color:var(--ps-text-muted);line-height:1.6;">
+        <p class="mb-2">Write the HTML body in the editor. An unsubscribe link is added automatically to every email.</p>
+        <p class="mb-0">Use the Plain Text tab for a fallback version. Most clients show HTML when available.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Test send modal -->
+<?php if ($editing && !$isSent): ?>
+<div id="nl-test-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1050;align-items:center;justify-content:center;">
+  <div style="background:var(--ps-bg-base);border-radius:8px;padding:1.5rem;width:100%;max-width:380px;">
+    <h5 style="margin:0 0 1rem;">Test Send</h5>
+    <div class="vtx-field mb-3">
+      <label class="vtx-label">Send to</label>
+      <input class="form-control" type="email" id="nl-test-email" placeholder="your@email.com">
+    </div>
+    <div id="nl-test-msg" style="display:none;" class="mb-3"></div>
+    <div style="display:flex;gap:.5rem;justify-content:flex-end;">
+      <button type="button" class="btn btn-outline-secondary btn-sm" onclick="document.getElementById('nl-test-modal').style.display='none'">Cancel</button>
+      <button type="button" class="btn btn-primary btn-sm" id="nl-test-confirm">Send Test</button>
+    </div>
+  </div>
+</div>
+<?php endif; ?>
+
+<script>
+(function () {
+  const BASE     = <?php echo json_encode($baseUrl); ?>;
+  const CSRF     = <?php echo json_encode($csrf_token ?? ''); ?>;
+  const CAMP_ID  = <?php echo json_encode($campaign['id'] ?? ''); ?>;
+
+  // Tab switching
+  document.querySelectorAll('.nl-tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.nl-tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const tab = btn.dataset.tab;
+      document.getElementById('nl-tab-html').style.display = tab === 'html' ? '' : 'none';
+      document.getElementById('nl-tab-text').style.display = tab === 'text' ? '' : 'none';
+    });
+  });
+
+  <?php if ($editing && !$isSent): ?>
+  // Auto-save on form submit via fetch if action differs from page (AJAX update)
+  const form = document.getElementById('nl-campaign-form');
+  if (form && CAMP_ID) {
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      const data = new URLSearchParams(new FormData(form));
+      fetch(form.action, { method: 'POST', body: data })
+        .then(r => r.json())
+        .then(res => showApiMsg(res.success ? 'success' : 'error', res.message || 'Saved.'))
+        .catch(() => showApiMsg('error', 'Network error.'));
+    });
+  }
+
+  // Send campaign
+  const sendBtn = document.getElementById('nl-send-btn');
+  if (sendBtn) {
+    sendBtn.addEventListener('click', () => {
+      const count = parseInt(sendBtn.dataset.subCount, 10);
+      if (!confirm('Send this campaign to ' + count + ' active subscriber(s)? This cannot be undone.')) return;
+      sendBtn.disabled = true;
+      fetch(BASE + '/admin/newsletter/campaigns/' + CAMP_ID + '/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ csrf_token: CSRF }),
+      })
+      .then(r => r.json())
+      .then(res => {
+        showApiMsg(res.success ? 'success' : 'error', res.message || '');
+        if (res.success) setTimeout(() => location.reload(), 1500);
+        else sendBtn.disabled = false;
+      })
+      .catch(() => { showApiMsg('error', 'Network error.'); sendBtn.disabled = false; });
+    });
+  }
+
+  // Test send
+  const testBtn = document.getElementById('nl-test-btn');
+  if (testBtn) {
+    testBtn.addEventListener('click', () => {
+      document.getElementById('nl-test-modal').style.display = 'flex';
+    });
+    document.getElementById('nl-test-confirm').addEventListener('click', () => {
+      const email = document.getElementById('nl-test-email').value.trim();
+      if (!email) return;
+      document.getElementById('nl-test-confirm').disabled = true;
+      fetch(BASE + '/admin/newsletter/campaigns/' + CAMP_ID + '/test-send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ csrf_token: CSRF, test_email: email }),
+      })
+      .then(r => r.json())
+      .then(res => {
+        const msgEl = document.getElementById('nl-test-msg');
+        msgEl.className = 'vtx-alert vtx-alert-' + (res.success ? 'success' : 'error');
+        msgEl.textContent = res.message || '';
+        msgEl.style.display = 'block';
+        document.getElementById('nl-test-confirm').disabled = false;
+        if (res.success) setTimeout(() => { document.getElementById('nl-test-modal').style.display = 'none'; }, 2000);
+      })
+      .catch(() => { document.getElementById('nl-test-confirm').disabled = false; });
+    });
+  }
+  <?php endif; ?>
+
+  function showApiMsg(type, msg) {
+    const el = document.getElementById('nl-api-msg');
+    el.className = 'vtx-alert vtx-alert-' + type + ' mb-3';
+    el.textContent = msg;
+    el.style.display = 'block';
+    setTimeout(() => { el.style.display = 'none'; }, 5000);
+  }
+})();
+</script>
+
+<style>
+.nl-tab-btn {
+  background: none; border: none; padding: .35rem .75rem; font-size: .8125rem;
+  color: var(--ps-text-muted); cursor: pointer; border-radius: 4px;
+  transition: background .1s, color .1s;
+}
+.nl-tab-btn.active { background: var(--ps-bg-alt); color: var(--ps-text); font-weight: 600; }
+.vtx-breadcrumb { font-size:.8125rem;color:var(--ps-text-muted);text-decoration:none; }
+.vtx-breadcrumb:hover { color:var(--ps-accent); }
+</style>

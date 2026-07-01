@@ -5,6 +5,7 @@
     "description": "Portfolio or media-heavy site with photo galleries, video library, and navigation.",
     "icon": "pi-images",
     "category": "Media",
+    "builtin": true,
     "modules": [
         { "slug": "media",      "required": true  },
         { "slug": "gallery",    "required": true  },

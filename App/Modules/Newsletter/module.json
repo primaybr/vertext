@@ -1,0 +1,29 @@
+{
+    "name": "Newsletter",
+    "slug": "newsletter",
+    "version": "0.0.1",
+    "description": "Subscriber list management and email campaign sending",
+    "author": "Vertext",
+    "category": "Communication",
+    "requires": { "vertext": ">=0.0.7" },
+    "nav_routes": [],
+    "nav": {
+        "label":      "Newsletter",
+        "icon":       "pi-mail",
+        "path":       "/admin/newsletter",
+        "active":     "newsletter",
+        "permission": "newsletter.view",
+        "subnav": [
+            { "label": "Subscribers", "path": "/admin/newsletter/subscribers", "icon": "pi-users",     "permission": "newsletter.view" },
+            { "label": "Campaigns",   "path": "/admin/newsletter/campaigns",   "icon": "pi-mail",      "permission": "newsletter.view" },
+            { "label": "Settings",    "path": "/admin/newsletter/settings",    "icon": "pi-settings",  "permission": "newsletter.manage" }
+        ]
+    },
+    "assets": {
+        "css": ["Assets/newsletter.css"]
+    },
+    "install_settings": [
+        { "name": "newsletter_from_name",  "label": "From Name",  "type": "text",  "required": true,  "default": "", "placeholder": "My Site Newsletter" },
+        { "name": "newsletter_from_email", "label": "From Email", "type": "email", "required": true,  "default": "", "placeholder": "newsletter@example.com" }
+    ]
+}

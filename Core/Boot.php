@@ -43,3 +43,10 @@ spl_autoload_register(function ($namespace_class) {
         throw $e;
     }
 });
+
+// Global helper functions (e.g. the __() translation helper)
+$_vtxHelpers = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'App' . DIRECTORY_SEPARATOR . 'helpers.php';
+if (file_exists($_vtxHelpers)) {
+    require_once $_vtxHelpers;
+}
+unset($_vtxHelpers);

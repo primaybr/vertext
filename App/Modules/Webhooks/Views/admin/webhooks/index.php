@@ -6,9 +6,11 @@
   </div>
   <?php if (\App\CMS\Auth::can('webhooks.manage')): ?>
   <div>
-    <a href="{{baseUrl}}/admin/webhooks/create" class="btn btn-primary">
+    <button type="button" class="btn btn-primary"
+            data-form-url="{{baseUrl}}/admin/webhooks/create"
+            data-form-title="New Webhook Endpoint" data-form-size="modal-lg">
       <i class="pi pi-plus me-1"></i> New Endpoint
-    </a>
+    </button>
   </div>
   <?php endif; ?>
 </div>
@@ -79,10 +81,11 @@
                       onclick="vtxTestWebhook('<?php echo $ep['id']; ?>')">
                 <i class="pi pi-refresh"></i>
               </button>
-              <a href="{{baseUrl}}/admin/webhooks/<?php echo $ep['id']; ?>/edit"
-                 class="vtx-icon-btn" title="Edit">
+              <button type="button" class="vtx-icon-btn" title="Edit"
+                      data-form-url="{{baseUrl}}/admin/webhooks/<?php echo $ep['id']; ?>/edit"
+                      data-form-title="Edit Webhook" data-form-size="modal-lg">
                 <i class="pi pi-edit"></i>
-              </a>
+              </button>
               <form id="del-wh-<?php echo $ep['id']; ?>" method="POST"
                     action="{{baseUrl}}/admin/webhooks/<?php echo $ep['id']; ?>/delete" style="display:none;">
                 <input type="hidden" name="csrf_token" value="{{csrf_token}}">

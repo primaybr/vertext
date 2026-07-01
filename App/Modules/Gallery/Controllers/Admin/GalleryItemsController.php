@@ -89,7 +89,7 @@ class GalleryItemsController extends BaseController
         }
 
         $maxOrder = (int) ($this->db('gallery_items')
-            ->selectRaw('COALESCE(MAX(sort_order), -1) AS mx')
+            ->select('COALESCE(MAX(sort_order), -1) AS mx')
             ->where('gallery_id', $galleryId)
             ->get(1)['mx'] ?? -1);
 
@@ -99,11 +99,17 @@ class GalleryItemsController extends BaseController
             'sort_order'    => $maxOrder + 1,
         ]);
 
+        $inserted = $this->db('gallery_items')
+            ->where('gallery_id', $galleryId)
+            ->where('media_file_id', $mediaId)
+            ->get(1);
+
         Auth::audit('gallery.item.add', 'gallery_items', $mediaId, ['gallery_id' => $galleryId]);
 
         $this->json([
             'success'       => true,
             'message'       => 'Image added.',
+            'item_id'       => $inserted['id'] ?? '',
             'thumbnail_url' => $this->baseUrl . '/uploads/media/' . ($media['thumbnail_path'] ?: $media['filename']),
             'url'           => $this->baseUrl . '/uploads/media/' . $media['filename'],
             'name'          => $media['original_name'],

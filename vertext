@@ -1,0 +1,47 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+define('BASE_PATH', __DIR__);
+
+require __DIR__ . '/App/CMS/Cli/MakeModule.php';
+require __DIR__ . '/App/CMS/Cli/MakeBundle.php';
+
+$command = $argv[1] ?? null;
+$name    = $argv[2] ?? null;
+
+if (!$command || !$name) {
+    usage();
+    exit(1);
+}
+
+match ($command) {
+    'make:module' => App\CMS\Cli\MakeModule::run($name),
+    'make:bundle' => App\CMS\Cli\MakeBundle::run($name),
+    default       => (static function () use ($command): never {
+        echo "\033[31mUnknown command:\033[0m {$command}\n\n";
+        usage();
+        exit(1);
+    })(),
+};
+
+function usage(): void
+{
+    echo <<<HELP
+\033[1mVertext CLI\033[0m
+
+Usage:
+  php vertext <command> <name>
+
+Commands:
+  \033[36mmake:module\033[0m \033[33m<ModuleName>\033[0m   Scaffold a new module (PascalCase name)
+  \033[36mmake:bundle\033[0m \033[33m<bundle-slug>\033[0m   Create a bundle.json skeleton (kebab-case slug)
+
+Examples:
+  php vertext make:module Blog
+  php vertext make:module ThemeCustomizer
+  php vertext make:bundle marketing-suite
+
+HELP;
+}

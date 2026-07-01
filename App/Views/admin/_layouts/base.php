@@ -165,6 +165,22 @@
           <i id="theme-icon" class="pi pi-moon"></i>
         </button>
 
+        <!-- Locale switcher -->
+        <?php
+        $__curLocale  = \App\CMS\I18n::getLocale();
+        $__allLocales = \App\CMS\I18n::getSupportedLocales();
+        if (count($__allLocales) > 1):
+        ?>
+        <form id="vtx-locale-form" method="POST" action="{{baseUrl}}/admin/settings/set-locale" style="display:flex;align-items:center;margin:0;">
+          <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+          <select name="locale" class="vtx-locale-select" onchange="document.getElementById('vtx-locale-form').submit()" title="Switch language" aria-label="Language">
+            <?php foreach ($__allLocales as $__loc): ?>
+            <option value="<?= htmlspecialchars($__loc) ?>"<?= $__loc === $__curLocale ? ' selected' : '' ?>><?= strtoupper(htmlspecialchars($__loc)) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </form>
+        <?php endif; ?>
+
         <!-- User menu -->
         <div class="vtx-user-menu">
           <button id="user-menu-trigger" class="vtx-user-trigger" type="button">

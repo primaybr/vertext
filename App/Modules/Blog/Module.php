@@ -43,6 +43,7 @@ class Module implements ModuleInterface
             meta_title        VARCHAR(160),
             meta_description  VARCHAR(320),
             reading_time      SMALLINT     DEFAULT 0,
+            lang              VARCHAR(10)  NOT NULL DEFAULT 'en',
             created_at        TIMESTAMP    DEFAULT NOW(),
             updated_at        TIMESTAMP    DEFAULT NOW(),
             updated_by        {$userIdType},
