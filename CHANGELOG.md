@@ -55,6 +55,34 @@ in isolation.
 
 `Version::PHUSE` bumped to `1.2.8`.
 
+### Phuse Framework Sync - Bugs Found via Phuse's Unit Test Hardening Pass
+
+Fixing Phuse's own pre-existing test suite backlog (14 errors/27 failures/2 risky, unrelated to
+the 1.2.8 work above) surfaced 5 more real bugs in the same vendored Core code Vertext carries -
+all fixed here and verified against the live `vertext` database and running site.
+
+- **Fixed a dead-code trap**: `Core\Exception\SystemException` and `ConfigurationException` were
+  referenced throughout (`Container.php`, `Base.php`, `Http/URI.php`, `Http/Session.php`) but only
+  ever defined inside `Core/Exception/PhuseExceptions.php` - a file bundling six exception classes
+  that the autoloader (direct namespace-to-filepath mapping) can never actually load. Extracted
+  both into their own properly-named files; deleted `PhuseExceptions.php` entirely (confirmed
+  unreferenced anywhere in Vertext, same as in Phuse - its other four classes were exact-name
+  duplicates of already-used standalone files, or (`FilesystemException`) unused).
+- **Fixed `Core\Utilities\Image\ImageTrait::setImageSource()`** - called `$this->getImageType()`,
+  a method that was never implemented anywhere, so every single `Image` operation fataled.
+  Implemented via `getimagesize()` + `image_type_to_extension()`. Vertext's `App/` code doesn't
+  call `Core\Utilities\Image\Image` directly today, but this was a real landmine for any future use.
+- **Fixed `Core\Utilities\Upload\UploadConfig::setAllowedMimes()`** - its validation regex rejected
+  `.` in MIME subtypes, so the real, IANA-registered MIME type for `.docx` files was rejected as
+  "invalid format." Widened to the full RFC 6838 token character set (`!#$&-^_.+`).
+- **Fixed `UploadConfig::setImageDimensions()`** - unconditionally required all four dimensions to
+  be positive, but `forDocuments()` deliberately passes `(0, 0, 0, 0)` as a documented sentinel
+  meaning "skip image validation" (documents aren't images). Added a special case allowing that
+  exact all-zero combination through. Vertext's Media module currently only uses
+  `UploadConfig::forImages()` (`App/Modules/Media/Controllers/Admin/MediaController.php`), so
+  neither Upload bug was hit in production today, but both would have blocked a future
+  "Documents" upload type immediately.
+
 ## [0.0.7b-alpha] - 2026-07-01
 
 ### Phuse Framework Sync (1.2.5 -> 1.2.6)
