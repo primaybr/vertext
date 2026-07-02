@@ -10,5 +10,5 @@ final class Version
     public const APP = '0.0.7b-alpha';
 
     /** Phuse framework version this CMS was built on. */
-    public const PHUSE = '1.2.6';
+    public const PHUSE = '1.2.8';
 }

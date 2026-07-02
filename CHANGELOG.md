@@ -5,6 +5,56 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.0.7c-alpha] - 2026-07-02
+
+### Phuse Framework Sync (1.2.6 -> 1.2.8)
+
+Six real bugs were found and fixed while writing new test coverage for Phuse 1.2.8, all of which
+also existed in Vertext's own copy of the same Core code (Vertext historically vendors Phuse's
+`Core/` directory rather than pulling it as a Composer dependency). All fixes below were verified
+directly against Vertext's live PostgreSQL database and the running site (`vertext.test`), not just
+in isolation.
+
+- **Fixed a dormant slug-generation crash** - `Core\Http\URI::makeURL()` failed on every call (a
+  regex delimiter collision), though nothing in Vertext's app code called it directly (Vertext uses
+  `Str::slug()` for actual slug generation) - fixed for correctness and for any future/module code
+  that might call it.
+- **Fixed silently-broken file caching** - `Core\Cache\FileCache::isCacheValid()` compared a raw
+  serialized string against an array key, so every cached entry was reported expired immediately
+  after being written. This was actively degrading Vertext's caching (query/template caching is
+  enabled in `Config/Database.php`) - every cache read was silently forcing a fresh regenerate.
+- **Fixed a connection-lifecycle fatal risk** - `Drivers\PgSQL`/`MySQL::connect()` swallowed
+  `PDOException` via `echo` instead of rethrowing, `Connection::__construct()` never validated the
+  resulting PDO handle, and a since-removed `Connection::__destruct()` raced against
+  `ConnectionPool`'s shutdown-time cleanup - together these could fatal with "call to a member
+  function prepare() on null" (an `\Error`, uncaught by the pool's `\Exception`-only catch blocks).
+  This is Vertext's live, only-used database driver path - fixed and verified against the real
+  `vertext` PostgreSQL database, including forcing garbage collection to confirm no shutdown fatal.
+- **Fixed the MySQL query builder** (`Core\Database\Builders\MySQL`/`BuildersTrait`) - dead,
+  accidentally-commented-out `compile()`/`resetQuery()` code in `BuildersTrait` (the tail of an old
+  implementation got swallowed into a docblock that never closed with `*/`). Not directly load-bearing
+  for Vertext (Postgres-only in production), but `PgSQL.php`'s own duplicate `compile()`/`resetQuery()`
+  were removed in favor of the now-shared trait versions - verified Vertext's Postgres-specific
+  overrides (`quoteIdentifier()` double-quoting, `insertIgnore()` `ON CONFLICT`, `ilike()`, etc.)
+  still work correctly afterward.
+- **Fixed non-functional encryption** - `Core\Security\Encryption` never actually worked: its
+  SHA-512 key never matched any AES-256 cipher's 32-byte requirement, and the configured cipher
+  (`aes-256-cbc-hmac-sha256`) itself fails under `openssl_encrypt()` on OpenSSL 3.x regardless of
+  key length. Switched to SHA-256 key derivation + `aes-256-cbc`. Not currently used anywhere in
+  Vertext's app code, so no data-migration concern.
+- **Fixed `CacheManager` preset methods** - `createMemoryConfig()`/`createFileConfig()` used
+  snake_case option keys that don't match `CacheConfig`'s camelCase properties, so the presets
+  silently had no effect. Not currently called from Vertext's app code.
+
+**New capabilities pulled in from Phuse 1.2.7/1.2.8:**
+
+- **Router named routes** - `$router->get(...)->name('users.edit')` + `$router->route('users.edit', [$id])` for reverse URL generation, alongside the existing UUID-safe route capture casting and FQCN module-controller resolution (both preserved).
+- **`Core\Security\Password`** (new) - `hash()`/`verify()`/`needsRehash()` wrapper (Argon2id default, bcrypt fallback).
+- **9 new Validator rules** - `date`, `datetime`, `uuid`, `fileType`, `fileSize`, `confirmed`, `distinct`, `json`, `unique` (the DB-backed one, via `Core\Model`), plus the `password` rule from 1.2.7.
+- **4 new Middleware** for the `MiddlewareStack` pipeline - `RateLimitMiddleware`, `TrimStrings`, `ConvertEmptyStringsToNull`, `LogRequest`.
+
+`Version::PHUSE` bumped to `1.2.8`.
+
 ## [0.0.7b-alpha] - 2026-07-01
 
 ### Phuse Framework Sync (1.2.5 -> 1.2.6)
