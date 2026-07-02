@@ -108,6 +108,9 @@ class BlogSettingsController extends BaseController
                 $this->upsertSetting('blog_redirect_paths', json_encode($existing));
             }
 
+            // Keep Blog's own nav item (and the routes it points to) in sync
+            \App\Modules\Blog\Module::syncNavItem($newPath);
+
             // New routes → clear cache so they take effect immediately
             ModuleManager::clearRouteCache();
         }

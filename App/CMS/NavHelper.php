@@ -126,10 +126,26 @@ class NavHelper
                     if (empty($route['path'])) {
                         continue;
                     }
+
+                    $path = $route['path'];
+
+                    // Blog's base path is user-configurable at runtime, unlike every
+                    // other module's static nav_routes declaration - resolve it live
+                    // instead of trusting module.json's default "/blog", and skip
+                    // entirely when Blog is at the site root (it's the homepage then,
+                    // so a separate nav link would be redundant).
+                    if ($mod['slug'] === 'blog' && class_exists(\App\Modules\Blog\Module::class)) {
+                        $blogBase = \App\Modules\Blog\Module::basePath();
+                        if ($blogBase === '') {
+                            continue;
+                        }
+                        $path = '/' . $blogBase;
+                    }
+
                     $items[] = [
-                        'id'          => 'auto_' . md5($route['path']),
+                        'id'          => 'auto_' . md5($path),
                         'label'       => $route['label'] ?? $mod['slug'],
-                        'url'         => $baseUrl . $route['path'],
+                        'url'         => $baseUrl . $path,
                         'open_in_new' => false,
                         'type'        => 'module',
                         'children'    => [],

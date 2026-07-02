@@ -5,6 +5,80 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.0.7d-alpha] - 2026-07-02
+
+### Blog Module - Base Path Change Bugs
+
+Changing Blog's front-end base path (Blog Settings) had three compounding bugs, all reproduced and
+verified live against the `vertext` database/site before and after the fix.
+
+- **Fixed other modules' front-end routes 404ing when Blog's base path was set to `/`** -
+  `Blog/Module.php::registerRoutes()` registered its post-slug route as `/([a-z0-9\-]+)`, which
+  collapses into a global single-segment catch-all once the base path is root. Because
+  `ModuleManager::loadRoutes()` loads modules alphabetically, Blog's catch-all was inserted ahead of
+  Contact/Events/Gallery/Search/Videos's own specific routes, and the router's first-match-wins
+  matching shadowed them permanently - re-syncing views or clearing the cache couldn't fix it, since
+  the bug was in route *order*, not cached content. Moved the root-only catch-all out of the module
+  and into `Config/Routes.php`, registered after `ModuleManager::loadRoutes($router)` (same pattern
+  already used by `Pages/Module.php` for its own catch-all, see the comment there). Verified live:
+  `/contact`, `/events`, `/search`, `/videos`, `/gallery` all 404'd with Blog at `/` before the fix
+  and returned 200 after, with no code changes other than clearing the route cache.
+- **Fixed path changes not updating navigation or the view cache** - `BlogSettingsController::save()`
+  and `BlogSetupController::complete()` only called `ModuleManager::clearRouteCache()` on a path
+  change; Blog's own primary-nav item (seeded once at install time) was never kept in sync, and
+  compiled view templates were never purged. Added `Blog\Module::syncNavItem()`, called from both
+  controllers, and added a `Core\Cache\TemplateCache::clear()` call inside
+  `ModuleManager::clearRouteCache()` so both route and view cache are purged together.
+- **Fixed Blog's nav item not disappearing when it becomes the homepage** - `syncNavItem()` removes
+  Blog's primary-nav entry when the new base path is `/` (a "Blog" link to the homepage is redundant
+  once Blog serves it), and re-creates it if the path later moves off root. `Module::install()` now
+  skips seeding the nav item in the first place when installed directly at root.
+- **Fixed two other places that could resurrect the stale "/blog" nav link independently of the
+  above** - both read the *static* `"/blog"` default from `module.json`'s `nav_routes`, with no idea
+  the path is runtime-configurable or that root means "hide it": `NavHelper::buildFromModuleRoutes()`
+  (the fallback that fills in nav items for modules not yet present in the DB-driven menu - this is
+  exactly what re-added the link after `syncNavItem()` removed it, since removing the DB row is what
+  makes the fallback think Blog was never synced) and
+  `NavigationController::syncModules()`/`builder()` (the "Sync Modules" admin action and its available-
+  routes list). Both now resolve Blog's path via `Blog\Module::basePath()` live and skip it entirely
+  at root, via a shared `resolveModuleRoutePath()` helper. Verified live: `/admin` and the front-end
+  both stopped showing `/blog` after clearing the two stale rows these had independently inserted.
+- **Found (not fixed) a latent ORM bug while building the above**: `BuildersTrait::where($key,
+  $value)`'s operator/value auto-detection (`Core/Database/Builders/BuildersTrait.php:12-15,328-333`)
+  misreads a 2-arg call as `where($key, $operator)` whenever `$value` case-insensitively matches one
+  of its whitelisted operator tokens (`+ - * / % & | ^ = > < ... AND OR LIKE IN ...`). A value that
+  happens to be exactly `/` (e.g. a root URL) gets used as a literal SQL operator instead of a bound
+  value, corrupting the query. Hit while matching Blog's nav item by URL; worked around by matching
+  on `(type, label)` instead. Left unfixed since `Core/` is vendored framework code, not
+  Vertext-owned - flagging here for awareness since it can silently corrupt any `where()` call with
+  a coincidentally operator-shaped value.
+
+---
+
+## Upcoming
+
+### [0.0.8-alpha]
+
+#### User Authentication (Front-end)
+
+- Public registration, login, and profile pages for site visitors (`site_users` table separate from admin `users`)
+- Email verification; session-based auth for front-end modules (Forms pre-fill, RSVP owner tracking)
+
+#### Module Enhancements
+
+- **Forms Builder v2** - conditional field logic; file upload field type; reCAPTCHA v3 integration
+- **Newsletter v2** - subscriber segments; scheduled campaigns; basic welcome-series automation
+- **Events v2** - ticket types (free, paid); waiting list when capacity reached; iCal export (`.ics`)
+- **REST API** - JSON API endpoints for Pages, Blog Posts, and Events; API key authentication; rate limiting
+
+#### DX / Infrastructure
+
+- **Media folders** - organize the media library into named folders; folder picker in the upload dialog and media picker modal
+- **Performance** - query result caching for public page/post renders; asset fingerprinting for HTTP cache-busting
+- **i18n v2** - translation management UI in admin; URL path-prefix routing (`/id/...`); `lang` column filtering on public page/post queries
+
+---
+
 ## [0.0.7c-alpha] - 2026-07-02
 
 ### Phuse Framework Sync (1.2.6 -> 1.2.8)
@@ -91,30 +165,6 @@ all fixed here and verified against the live `vertext` database and running site
 - **25 new icons** available: `pi-clipboard`, `pi-spinner`, `pi-circle`, `pi-map`, `pi-verified`, `pi-shopping-cart`, `pi-print`, `pi-play-circle`, `pi-minus-circle`, `pi-key`, `pi-puzzle`, `pi-package`, `pi-languages`, `pi-send`, `pi-log-in`, `pi-log-out`, `pi-help-circle`, `pi-rss`, `pi-share-2`, `pi-thumbs-up`, `pi-flag`, `pi-server`, `pi-cloud`, `pi-wrench`, `pi-building` - fixes several icons that were already referenced in admin views (Forms, ModuleLoader fallback, webhook logs) but rendered blank because the icon didn't exist yet
 - Vertext's own manually-added `pi-clipboard` (added locally as a stopgap before upstream had one) is now superseded by upstream's - same shape, no visual change
 - `Version::PHUSE` bumped to `1.2.6`; `styles.css?v=` cache-bust query bumped to `142` across all views
-
----
-
-## Upcoming
-
-### [0.0.8-alpha]
-
-#### User Authentication (Front-end)
-
-- Public registration, login, and profile pages for site visitors (`site_users` table separate from admin `users`)
-- Email verification; session-based auth for front-end modules (Forms pre-fill, RSVP owner tracking)
-
-#### Module Enhancements
-
-- **Forms Builder v2** - conditional field logic; file upload field type; reCAPTCHA v3 integration
-- **Newsletter v2** - subscriber segments; scheduled campaigns; basic welcome-series automation
-- **Events v2** - ticket types (free, paid); waiting list when capacity reached; iCal export (`.ics`)
-- **REST API** - JSON API endpoints for Pages, Blog Posts, and Events; API key authentication; rate limiting
-
-#### DX / Infrastructure
-
-- **Media folders** - organize the media library into named folders; folder picker in the upload dialog and media picker modal
-- **Performance** - query result caching for public page/post renders; asset fingerprinting for HTTP cache-busting
-- **i18n v2** - translation management UI in admin; URL path-prefix routing (`/id/...`); `lang` column filtering on public page/post queries
 
 ---
 

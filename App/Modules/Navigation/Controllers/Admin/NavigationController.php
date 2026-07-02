@@ -112,12 +112,19 @@ class NavigationController extends BaseController
             }
             $manifest = json_decode(file_get_contents($manifestPath) ?: '{}', true) ?: [];
             foreach ($manifest['nav_routes'] ?? [] as $route) {
-                if (!empty($route['path'])) {
-                    $moduleRoutes[] = [
-                        'label' => $route['label'] ?? $slug,
-                        'path'  => $route['path'],
-                    ];
+                if (empty($route['path'])) {
+                    continue;
                 }
+
+                $path = $this->resolveModuleRoutePath($slug, $route['path']);
+                if ($path === null) {
+                    continue;
+                }
+
+                $moduleRoutes[] = [
+                    'label' => $route['label'] ?? $slug,
+                    'path'  => $path,
+                ];
             }
         }
 
@@ -129,6 +136,24 @@ class NavigationController extends BaseController
             'pagesEnabled'   => ModuleLoader::isEnabled('pages'),
             'moduleRoutes'   => $moduleRoutes,
         ], 'Edit: ' . $menu['name'], 'navigation');
+    }
+
+    /**
+     * Resolve a module's nav_routes path for modules whose front-end path is
+     * user-configurable at runtime, rather than trusting the static default
+     * baked into module.json. Returns null when the route should be skipped
+     * entirely (e.g. Blog configured at the site root, where a separate nav
+     * link would duplicate the homepage).
+     */
+    private function resolveModuleRoutePath(string $slug, string $manifestPath): ?string
+    {
+        if ($slug === 'blog' && class_exists(\App\Modules\Blog\Module::class)) {
+            $blogBase = \App\Modules\Blog\Module::basePath();
+
+            return $blogBase === '' ? null : '/' . $blogBase;
+        }
+
+        return $manifestPath;
     }
 
     public function syncModules(string $menuId): void
@@ -156,9 +181,16 @@ class NavigationController extends BaseController
                 if (empty($route['path'])) {
                     continue;
                 }
+
+                $path = $this->resolveModuleRoutePath($slug, $route['path']);
+                if ($path === null) {
+                    continue;
+                }
+
                 $exists = $this->db('nav_items')
                     ->where('menu_id', $menuId)
-                    ->where('url', $route['path'])
+                    ->where('type', 'module')
+                    ->where('label', $route['label'] ?? $slug)
                     ->get(1);
                 if (!$exists) {
                     $order = (int) ($this->db('nav_items')
@@ -169,7 +201,7 @@ class NavigationController extends BaseController
                         'menu_id'     => $menuId,
                         'type'        => 'module',
                         'label'       => $route['label'] ?? $slug,
-                        'url'         => $route['path'],
+                        'url'         => $path,
                         'sort_order'  => $order,
                         'open_in_new' => false,
                     ]);

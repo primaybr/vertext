@@ -103,6 +103,14 @@ $router->post('/admin/settings/set-locale',             'Admin\SettingsControlle
 // ── Non-core module routes (loaded from DB, only when CMS is installed) ────────
 \App\CMS\ModuleManager::loadRoutes($router);
 
+// ── Blog root catch-all (only active when Blog's base path is "/") ─────────────
+// Registered here instead of inside Blog/Module.php::registerRoutes() so that
+// alphabetical module-load order cannot cause it to shadow other modules'
+// specific front-end routes (e.g. /contact, /events, /search, /videos).
+if (\App\CMS\ModuleLoader::isEnabled('blog') && \App\Modules\Blog\Module::basePath() === '') {
+    $router->get('/([a-z0-9\-]+)', 'App\Modules\Blog\Controllers\Front\BlogController', 'post');
+}
+
 // ── Pages catch-all (must be last so specific module routes like /search win) ──
 // Registered here instead of inside Pages/Module.php::registerRoutes() so that
 // alphabetical module-load order cannot cause it to shadow later modules.

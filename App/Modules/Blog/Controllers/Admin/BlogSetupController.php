@@ -65,6 +65,8 @@ class BlogSetupController extends BaseController
             $this->redirect($this->baseUrl . '/admin/blog/setup');
         }
 
+        $oldPath = \App\Modules\Blog\Module::basePath();
+
         $rawPath = trim($this->input->post('blog_base_path', false) ?? 'blog');
         $rawPath = strtolower(preg_replace('/[^a-z0-9\-_\/]/i', '', $rawPath));
         $rawPath = trim($rawPath, '/');
@@ -98,6 +100,10 @@ class BlogSetupController extends BaseController
                     'label' => ucwords(str_replace('_', ' ', $key)),
                 ]);
             }
+        }
+
+        if ($rawPath !== $oldPath) {
+            \App\Modules\Blog\Module::syncNavItem($rawPath);
         }
 
         ModuleManager::clearRouteCache();

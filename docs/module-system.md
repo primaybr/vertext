@@ -144,6 +144,8 @@ Modules that expose public front-end routes can declare them via `nav_routes` in
 
 The `nav_routes` array supports multiple entries (for modules with more than one public page). Each entry needs `path` (required) and `label` (used as the default menu label). Nav items inserted this way have `type = 'module'` in the `nav_items` table.
 
+**If your module's path is user-configurable at runtime** (like Blog's base path setting), the static `path` in `module.json` is only a *default* - it is not re-read automatically. Both auto-registration paths (`NavHelper::buildFromModuleRoutes()`'s fallback and `NavigationController::syncModules()`/`builder()`) must resolve the live path instead of trusting the manifest; see `resolveModuleRoutePath()` in `NavigationController` and the `blog` special-case in `NavHelper` for the pattern to follow. Your module's settings-save handler is also responsible for calling something equivalent to `Blog\Module::syncNavItem()` to keep the existing nav item's URL (and visibility) in sync when the path changes.
+
 **Install snippet** - add this at the end of `Module::install()`:
 
 ```php

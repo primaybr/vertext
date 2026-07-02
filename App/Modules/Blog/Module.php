@@ -326,10 +326,16 @@ class Module implements ModuleInterface
         }
 
         // Auto-insert into primary navigation if Navigation module is installed
-        // Uses the configured base path (defaults to /blog)
+        // Uses the configured base path (defaults to /blog). Skipped when the
+        // base path is root ("/") since Blog is then the homepage and a
+        // separate "Blog" nav link would be redundant.
         $pathRow = \Core\Model::on($db, 'settings')
             ->select('value')->where('key', 'blog_base_path')->where('grp', 'blog')->get(1);
-        $blogPath = '/' . trim($pathRow['value'] ?? 'blog', '/');
+        $rawInstallPath = trim($pathRow['value'] ?? 'blog', '/');
+        if ($rawInstallPath === '') {
+            return;
+        }
+        $blogPath = '/' . $rawInstallPath;
         try {
             $db->query("SAVEPOINT sp_blog_nav"); $db->execute();
             $pm = \Core\Model::on($db, 'nav_menus')->select('id')->where('slug', 'primary')->get(1);
@@ -379,6 +385,81 @@ class Module implements ModuleInterface
 
         // Settings are intentionally kept so that reinstalling pre-populates
         // the setup wizard with the previously configured values.
+    }
+
+    /** Normalized blog base path segment (e.g. "blog", "docs/news", or "" for root). */
+    public static function basePath(): string
+    {
+        $row = (new \Core\Model('settings'))
+            ->select('value')
+            ->where('key', 'blog_base_path')
+            ->where('grp', 'blog')
+            ->get(1);
+
+        return trim($row['value'] ?? 'blog', '/');
+    }
+
+    /**
+     * Keep Blog's auto-registered primary-nav item in sync with the configured
+     * base path: update its URL when the path changes, remove it when Blog
+     * becomes the homepage (newPath === ''), or re-create it if it was
+     * previously removed and Blog has since moved off the homepage.
+     *
+     * Matched by (type, label) rather than URL: the URL is exactly what's
+     * changing, and a bare "/" value would otherwise be misread as the SQL
+     * division operator by BuildersTrait::where()'s operator/value detection.
+     */
+    public static function syncNavItem(string $newPath): void
+    {
+        if (!\App\CMS\ModuleLoader::isEnabled('navigation')) {
+            return;
+        }
+
+        try {
+            $menu = (new \Core\Model('nav_menus'))->select('id')->where('slug', 'primary')->get(1);
+            if (!$menu) {
+                return;
+            }
+
+            $item = (new \Core\Model('nav_items'))
+                ->where('menu_id', $menu['id'])
+                ->where('type', 'module')
+                ->where('label', 'Blog')
+                ->get(1);
+
+            if ($newPath === '') {
+                // Blog is now the homepage - its own nav link is redundant.
+                if ($item) {
+                    (new \Core\Model('nav_items'))->where('id', $item['id'])->delete();
+                }
+                return;
+            }
+
+            $newUrl = '/' . trim($newPath, '/');
+
+            if ($item) {
+                (new \Core\Model('nav_items'))
+                    ->where('id', $item['id'])
+                    ->update(['url' => $newUrl, 'updated_at' => date('Y-m-d H:i:s')]);
+                return;
+            }
+
+            // Blog moved off the homepage but has no nav item (e.g. it was
+            // removed on a previous change to root) - re-create it like
+            // install() does.
+            $order = (int) ((new \Core\Model('nav_items'))
+                ->where('menu_id', $menu['id'])->whereRaw('parent_id IS NULL', [])->totalRows() ?: 0);
+            (new \Core\Model('nav_items'))->save([
+                'menu_id'     => $menu['id'],
+                'type'        => 'module',
+                'label'       => 'Blog',
+                'url'         => $newUrl,
+                'sort_order'  => $order,
+                'open_in_new' => false,
+            ]);
+        } catch (\Throwable) {
+            // Navigation tables may not exist - nav sync is best-effort.
+        }
     }
 
     public function registerRoutes(\Core\Router $router): void
@@ -452,19 +533,25 @@ class Module implements ModuleInterface
         $front    = $nsF . 'BlogController';
         $redirect = $nsF . 'BlogRedirectController';
 
-        $pathRow = (new \Core\Model('settings'))
-            ->select('value')
-            ->where('key', 'blog_base_path')
-            ->where('grp', 'blog')
-            ->get(1);
-        $rawBase = trim($pathRow['value'] ?? 'blog', '/');
+        $rawBase = self::basePath();
         $base    = $rawBase === '' ? '' : '/' . $rawBase;
 
         $router->get($base . '/feed.rss',                                 $front, 'feed');
         $router->get($base === '' ? '/' : $base,                          $front, 'index');
         $router->get($base . '/category/([a-z0-9\-]+)',                   $front, 'category');
         $router->post($base . '/([a-z0-9\-]+)/comment',                   $front, 'submitComment');
-        $router->get($base . '/([a-z0-9\-]+)',                            $front, 'post');
+
+        if ($base !== '') {
+            // Scoped under a path prefix, so this is safe to register here.
+            // When Blog is at the site root ($base === ''), this pattern would
+            // become a global single-segment catch-all and — because modules
+            // load alphabetically in ModuleManager::loadRoutes() — could shadow
+            // other modules' front-end routes (e.g. /contact, /events, /search).
+            // In that case it is registered centrally in Config/Routes.php,
+            // after all other module routes, instead. See Pages/Module.php for
+            // the same convention.
+            $router->get($base . '/([a-z0-9\-]+)', $front, 'post');
+        }
 
         // 301 redirects for previously used base paths
         $redirectRow = (new \Core\Model('settings'))

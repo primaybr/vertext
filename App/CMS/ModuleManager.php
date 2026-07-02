@@ -490,6 +490,14 @@ class ModuleManager
                 @unlink($f);
             }
         }
+
+        // Also flush compiled view templates - route changes (e.g. a module's
+        // front-end base path) can be baked into cached nav/layout output.
+        try {
+            (new \Core\Cache\TemplateCache())->clear();
+        } catch (\Throwable) {
+            // Template cache dir may not exist yet - non-fatal.
+        }
     }
 
     // ── Dependency helpers ─────────────────────────────────────────────────────

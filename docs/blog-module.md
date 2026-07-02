@@ -101,6 +101,17 @@ The base path (`/blog` by default) is configurable from Blog Settings. All route
 | POST | `/{base}/{slug}/comment` | Submit a comment |
 | GET | `/{base}/feed.rss` | RSS 2.0 feed of recent published posts |
 
+### Changing the Base Path
+
+Changing `blog_base_path` from Blog Settings automatically:
+
+- Clears the route cache and compiled template cache so the new routes and any nav links take effect on the next request.
+- Updates Blog's own item in the primary navigation menu to point at the new path.
+- Removes Blog's nav item entirely if the new path is the site root (`/`), since Blog then serves the homepage and a separate "Blog" link would be redundant. Moving off the root later re-creates the nav item.
+- Optionally keeps the old path working as a permanent redirect (`path_change_mode = redirect`), or drops it immediately (`permanent`).
+
+When the base path is `/`, Blog's post route is registered centrally in `Config/Routes.php` (after all other module routes) instead of inside `Blog/Module.php::registerRoutes()`, so it can't shadow other modules' front-end routes (e.g. `/contact`, `/events`) the way a module-local catch-all would if module load order changed.
+
 ## RSS Feed
 
 The feed at `/{base}/feed.rss` is an RSS 2.0 document containing the 20 most recent published posts. It includes:
