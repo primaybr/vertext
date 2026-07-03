@@ -102,3 +102,25 @@ Click **Send Campaign** on a draft campaign. A confirmation prompt shows the est
 | `newsletter.view` | View subscribers and campaigns |
 | `newsletter.manage` | Create, edit, delete campaigns and manage subscribers |
 | `newsletter.send` | Send test and blast campaigns |
+
+
+---
+
+## What's new in v0.0.2 (Vertext 0.0.8)
+
+- **Audience segments** - Newsletter > Segments defines saved filters (source, subscribed date
+  range) with live match counts. Campaigns pick a segment (or all active subscribers) in the
+  editor's Audience select.
+- **Scheduled sends** - schedule a draft for a future date/time from the campaign sidebar. Due
+  campaigns send automatically the next time an admin opens the Campaigns page (cron-free, same
+  pattern as scheduled posts); the schedule can be cancelled while pending.
+- **Open tracking** - a per-subscriber pixel records unique opens (`newsletter_opens`); totals
+  show in the campaigns list and editor sidebar.
+- **Click tracking** - links in the HTML body are rewritten through
+  `/newsletter/track/click/{campaign}`; per-URL click counts live in `campaign_links`. The
+  redirect only honors URLs recorded at send time, so it cannot be abused as an open redirect.
+- **Welcome email** - optional subject/body (Newsletter > Settings) sent once when a subscriber
+  becomes active - immediately, or after confirming when double opt-in is enabled.
+- **CSV file import** - the Import modal accepts a `.csv` file upload as well as pasted rows.
+- **Signup shortcode** - place `[newsletter_signup]` in any Page or post body to embed a
+  subscribe box.

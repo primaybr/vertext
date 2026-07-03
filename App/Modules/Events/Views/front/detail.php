@@ -80,38 +80,78 @@
         <div class="ev-info-row">
           <i class="pi pi-users" style="color:var(--clr-accent);"></i>
           <div>
-            <div class="ev-info-label">Interested</div>
-            <div class="ev-info-val"><?php echo (int) $event['rsvp_count']; ?> people</div>
+            <div class="ev-info-label">Attending</div>
+            <div class="ev-info-val">
+              <?php echo (int) $event['rsvp_count']; ?> registered
+              <?php if (isset($spots_left) && $spots_left !== null): ?>
+              <span style="color:var(--clr-text-muted,#9ca3af);font-weight:400;">&middot; <?php echo (int) $spots_left; ?> spot(s) left</span>
+              <?php endif; ?>
+            </div>
           </div>
         </div>
         <?php endif; ?>
+        <div class="ev-info-row">
+          <i class="pi pi-calendar" style="color:var(--clr-accent);"></i>
+          <div>
+            <div class="ev-info-label">Calendar</div>
+            <div class="ev-info-val">
+              <a href="<?php echo $baseUrl; ?>/events/<?php echo htmlspecialchars($event['slug']); ?>/ical"
+                 style="color:var(--clr-accent);text-decoration:none;font-size:.875rem;">
+                Add to calendar (.ics)
+              </a>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- RSVP card -->
       <?php
-        $past    = strtotime($event['start_at']) < time();
-        $hasRsvp = !empty($_COOKIE['rsvp_' . $event['id']]);
+        $past   = strtotime($event['start_at']) < time() && empty($event['recurrence_rule']);
+        $isFull = isset($spots_left) && $spots_left !== null && $spots_left <= 0;
       ?>
       <div class="ev-rsvp-card">
         <?php if ($past): ?>
         <p class="ev-rsvp-done" style="color:var(--clr-text-muted,#6b7280);">
           <i class="pi pi-calendar me-1"></i> This event has passed.
         </p>
-        <?php elseif ($hasRsvp): ?>
-        <p class="ev-rsvp-done">
-          <i class="pi pi-check-circle me-1" style="color:var(--clr-success,#16a34a);"></i>
-          You&rsquo;ve indicated interest in this event.
-        </p>
         <?php else: ?>
-        <p style="margin:0 0 .75rem;font-size:.9375rem;">Are you going to this event?</p>
+        <p style="margin:0 0 .75rem;font-size:.9375rem;font-weight:600;">
+          <?php echo $isFull ? 'Event is full - join the waiting list' : 'Register for this event'; ?>
+        </p>
         <form method="POST" action="<?php echo $baseUrl; ?>/events/<?php echo htmlspecialchars($event['slug']); ?>/rsvp">
           <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
+          <div class="ev-rsvp-field">
+            <input class="ev-rsvp-input" type="text" name="name" maxlength="120" required
+                   placeholder="Your name"
+                   value="<?php echo htmlspecialchars($member['name'] ?? ''); ?>">
+          </div>
+          <div class="ev-rsvp-field">
+            <input class="ev-rsvp-input" type="email" name="email" required
+                   placeholder="you@example.com"
+                   value="<?php echo htmlspecialchars($member['email'] ?? ''); ?>">
+          </div>
+          <?php if (!empty($tickets)): ?>
+          <div class="ev-rsvp-field">
+            <select class="ev-rsvp-input" name="ticket" required>
+              <option value="">-- Choose a ticket --</option>
+              <?php foreach ($tickets as $t): ?>
+              <option value="<?php echo htmlspecialchars($t['name'] ?? ''); ?>">
+                <?php
+                  echo htmlspecialchars($t['name'] ?? '');
+                  $price = (float) ($t['price'] ?? 0);
+                  echo $price > 0 ? ' - ' . number_format($price, 2) : ' - Free';
+                ?>
+              </option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <?php endif; ?>
           <button type="submit" class="btn-rsvp">
-            <i class="pi pi-check me-1"></i> I&rsquo;m interested
+            <i class="pi pi-check me-1"></i> <?php echo $isFull ? 'Join Waiting List' : 'Register'; ?>
           </button>
         </form>
         <p style="font-size:.75rem;margin:.5rem 0 0;color:var(--clr-text-muted,#9ca3af);">
-          No account needed.
+          You will receive a confirmation email with a calendar invite and a cancellation link.
         </p>
         <?php endif; ?>
       </div>
@@ -137,6 +177,10 @@
 .ev-info-val { font-size:.9375rem; font-weight:500; line-height:1.4; }
 .ev-rsvp-card { background:var(--clr-surface); border:1px solid var(--clr-border); border-radius:8px; padding:1rem; margin-bottom:1rem; }
 .ev-rsvp-done { margin:0; font-size:.9375rem; }
+.ev-rsvp-field { margin-bottom:.6rem; }
+.ev-rsvp-input { width:100%; padding:.5rem .7rem; border:1px solid var(--clr-border); border-radius:6px;
+  font-size:.875rem; font-family:inherit; background:var(--clr-bg); color:var(--clr-text); box-sizing:border-box; }
+.ev-rsvp-input:focus { outline:none; border-color:var(--clr-accent); }
 .btn-rsvp { display:block; width:100%; padding:.625rem 1rem; background:var(--clr-accent); color:#fff; border:none; border-radius:6px; font-size:.9375rem; font-weight:600; cursor:pointer; text-align:center; }
 .btn-rsvp:hover { opacity:.9; }
 .ev-back-link { display:inline-flex; align-items:center; font-size:.875rem; color:var(--clr-text-muted,#6b7280); text-decoration:none; }

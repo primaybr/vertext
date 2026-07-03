@@ -99,10 +99,23 @@ class Module implements ModuleInterface
         $db->query("CREATE INDEX IF NOT EXISTS idx_content_revisions_content ON content_revisions (content_type, content_id)");
         $db->execute();
 
+        // v0.0.2: per-page custom fields
+        $db->query("CREATE TABLE IF NOT EXISTS page_meta (
+            id         UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+            page_id    UUID         NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
+            meta_key   VARCHAR(100) NOT NULL,
+            meta_value TEXT,
+            created_at TIMESTAMP    DEFAULT NOW(),
+            updated_at TIMESTAMP    DEFAULT NOW(),
+            UNIQUE (page_id, meta_key)
+        )");
+        $db->execute();
+
         // Safely add new columns to existing tables (re-install safe)
         foreach ([
             "ALTER TABLE pages ADD COLUMN IF NOT EXISTS published_at TIMESTAMP",
             "ALTER TABLE pages ADD COLUMN IF NOT EXISTS expire_at    TIMESTAMP",
+            "ALTER TABLE pages ADD COLUMN IF NOT EXISTS template VARCHAR(30) NOT NULL DEFAULT 'default'",
             "ALTER TABLE content_revisions ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW()",
             "ALTER TABLE content_revisions ADD COLUMN IF NOT EXISTS updated_by UUID",
             "ALTER TABLE content_revisions ADD COLUMN IF NOT EXISTS slug VARCHAR(255)",

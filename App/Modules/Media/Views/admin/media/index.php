@@ -27,7 +27,7 @@
 <div id="vtx-upload-zone" class="vtx-panel mb-3" style="display:none;">
   <div class="vtx-panel-body">
     <div data-vtx-upload
-         data-url="{{baseUrl}}/admin/media/upload"
+         data-url="{{baseUrl}}/admin/media/upload<?php echo ($folder !== '' && $folder !== 'unfiled') ? '?folder_id=' . urlencode($folder) : ''; ?>"
          data-csrf="{{csrf_token}}"
          data-accept="image/*"
          data-max-mb="5"
@@ -40,17 +40,56 @@
 </div>
 <?php endif; ?>
 
-<!-- Search -->
+<!-- Folders + search -->
 <div class="vtx-panel mb-3">
-  <div class="vtx-panel-body" style="padding:.75rem 1rem;">
+  <div class="vtx-panel-body" style="padding:.75rem 1rem;display:flex;flex-direction:column;gap:.75rem;">
+    <div style="display:flex;gap:.35rem;flex-wrap:wrap;align-items:center;">
+      <i class="pi pi-package" style="color:var(--ps-text-muted);margin-right:.15rem;"></i>
+      <a href="{{baseUrl}}/admin/media" class="btn btn-sm <?php echo $folder === '' ? 'btn-primary' : 'btn-outline-secondary'; ?>">
+        All (<?php echo (int) ($total ?? 0); ?><?php echo $folder !== '' ? '+' : ''; ?>)
+      </a>
+      <a href="{{baseUrl}}/admin/media?folder=unfiled" class="btn btn-sm <?php echo $folder === 'unfiled' ? 'btn-primary' : 'btn-outline-secondary'; ?>">
+        Unfiled
+      </a>
+      <?php foreach (($folders ?? []) as $fld): ?>
+      <a href="{{baseUrl}}/admin/media?folder=<?php echo $fld['id']; ?>"
+         class="btn btn-sm <?php echo $folder === $fld['id'] ? 'btn-primary' : 'btn-outline-secondary'; ?>">
+        <?php echo htmlspecialchars($fld['name']); ?> (<?php echo (int) $fld['count']; ?>)
+      </a>
+      <?php endforeach; ?>
+      <?php if (\App\CMS\Auth::can('media.upload')): ?>
+      <button type="button" class="btn btn-sm btn-link" id="vtx-folder-new" title="New folder">
+        <i class="pi pi-plus me-1"></i>Folder
+      </button>
+      <?php endif; ?>
+      <?php if ($currentFolder ?? null): ?>
+      <span style="margin-left:auto;display:flex;gap:.25rem;">
+        <?php if (\App\CMS\Auth::can('media.edit')): ?>
+        <button type="button" class="vtx-icon-btn" id="vtx-folder-rename" title="Rename this folder"
+                data-folder-id="<?php echo $currentFolder['id']; ?>"
+                data-folder-name="<?php echo htmlspecialchars($currentFolder['name']); ?>">
+          <i class="pi pi-edit"></i>
+        </button>
+        <?php endif; ?>
+        <?php if (\App\CMS\Auth::can('media.delete')): ?>
+        <button type="button" class="vtx-icon-btn danger" id="vtx-folder-delete" title="Delete this folder"
+                data-folder-id="<?php echo $currentFolder['id']; ?>"
+                data-folder-name="<?php echo htmlspecialchars($currentFolder['name']); ?>">
+          <i class="pi pi-trash"></i>
+        </button>
+        <?php endif; ?>
+      </span>
+      <?php endif; ?>
+    </div>
     <form method="GET" action="{{baseUrl}}/admin/media" style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;">
+      <input type="hidden" name="folder" value="<?php echo htmlspecialchars($folder ?? ''); ?>">
       <div style="flex:1;min-width:200px;">
         <input class="form-control form-control-sm" type="search" name="search"
                value="<?php echo htmlspecialchars($search ?? ''); ?>" placeholder="Search by filename…">
       </div>
       <button type="submit" class="btn btn-outline-secondary btn-sm">Search</button>
       <?php if (!empty($search)): ?>
-      <a href="{{baseUrl}}/admin/media" class="btn btn-link btn-sm text-muted">Clear</a>
+      <a href="{{baseUrl}}/admin/media?folder=<?php echo urlencode($folder ?? ''); ?>" class="btn btn-link btn-sm text-muted">Clear</a>
       <?php endif; ?>
     </form>
   </div>
@@ -70,7 +109,17 @@
       <input type="checkbox" id="vtx-media-select-all">
       <span id="vtx-media-bulk-count">0 selected</span>
     </label>
-    <div style="margin-left:auto;display:flex;gap:.5rem;">
+    <div style="margin-left:auto;display:flex;gap:.5rem;align-items:center;">
+      <select class="form-select form-select-sm" id="vtx-media-move-target" style="width:auto;">
+        <option value="">Move to…</option>
+        <option value="unfiled">Unfiled</option>
+        <?php foreach (($folders ?? []) as $fld): ?>
+        <option value="<?php echo $fld['id']; ?>"><?php echo htmlspecialchars($fld['name']); ?></option>
+        <?php endforeach; ?>
+      </select>
+      <button type="button" class="btn btn-outline-secondary btn-sm" id="vtx-media-bulk-move">
+        <i class="pi pi-arrow-right me-1"></i> Move
+      </button>
       <button type="button" class="btn btn-danger btn-sm" id="vtx-media-bulk-delete">
         <i class="pi pi-trash me-1"></i> Delete Selected
       </button>
@@ -110,11 +159,20 @@
         </div>
         <div class="vtx-media-actions">
           <?php if (\App\CMS\Auth::can('media.edit')): ?>
-          <button type="button" class="vtx-icon-btn" title="Edit"
+          <button type="button" class="vtx-icon-btn" title="Edit details"
                   data-form-url="{{baseUrl}}/admin/media/<?php echo $f['id']; ?>/edit-form"
                   data-form-title="Edit Media">
             <i class="pi pi-edit"></i>
           </button>
+          <?php if (str_starts_with((string) $f['mime_type'], 'image/') && $f['mime_type'] !== 'image/gif'): ?>
+          <button type="button" class="vtx-icon-btn" title="Edit image (crop / rotate / flip)"
+                  data-image-editor="<?php echo $f['id']; ?>"
+                  data-image-url="<?php echo htmlspecialchars($f['url']); ?>"
+                  data-image-w="<?php echo (int) $f['width']; ?>"
+                  data-image-h="<?php echo (int) $f['height']; ?>">
+            <i class="pi pi-sliders"></i>
+          </button>
+          <?php endif; ?>
           <?php endif; ?>
           <?php if (\App\CMS\Auth::can('media.delete')): ?>
           <form id="del-media-<?php echo $f['id']; ?>" method="POST"
@@ -205,6 +263,28 @@
             sync();
         });
     }
+    var moveBtn = document.getElementById('vtx-media-bulk-move');
+    if (moveBtn) {
+        moveBtn.addEventListener('click', function () {
+            var ids    = getChecked().map(function (c) { return c.value; });
+            var target = document.getElementById('vtx-media-move-target').value;
+            if (!ids.length) return;
+            if (!target) { Phuse.toast('Choose a destination folder first.', 'error'); return; }
+            var fd = new FormData();
+            fd.append('csrf_token', '{{csrf_token}}');
+            fd.append('bulk_action', 'move');
+            fd.append('folder_id', target);
+            ids.forEach(function (id) { fd.append('ids[]', id); });
+            fetch('{{baseUrl}}/admin/media/bulk', { method: 'POST', body: fd, headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(function (r) { return r.json(); })
+                .then(function (res) {
+                    Phuse.toast(res.message || (res.success ? 'Moved.' : 'Failed.'), res.success ? 'success' : 'error');
+                    if (res.success) setTimeout(function () { window.location.reload(); }, 800);
+                })
+                .catch(function () { Phuse.toast('Network error.', 'error'); });
+        });
+    }
+
     if (delBtn) {
         delBtn.addEventListener('click', function () {
             var ids = getChecked().map(function (c) { return c.value; });
@@ -273,6 +353,246 @@
                 btn.disabled = false;
                 btn.innerHTML = '<i class="pi pi-refresh me-1"></i> Regenerate Thumbnails';
             });
+    });
+}());
+</script>
+<?php endif; ?>
+
+<?php if (\App\CMS\Auth::can('media.upload')): ?>
+<script>
+(function () {
+    'use strict';
+    function post(url, fields, done) {
+        var fd = new FormData();
+        fd.append('csrf_token', '{{csrf_token}}');
+        Object.keys(fields || {}).forEach(function (k) { fd.append(k, fields[k]); });
+        fetch(url, { method: 'POST', body: fd, headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function (r) { return r.json(); })
+            .then(function (res) { done(res); })
+            .catch(function () { done({ success: false, message: 'Network error.' }); });
+    }
+
+    var newBtn = document.getElementById('vtx-folder-new');
+    if (newBtn) {
+        newBtn.addEventListener('click', function () {
+            var name = window.prompt('New folder name:', '');
+            if (name === null) return;
+            name = name.trim();
+            if (!name) return;
+            post('{{baseUrl}}/admin/media/folders/store', { name: name }, function (res) {
+                Phuse.toast(res.message || '', res.success ? 'success' : 'error');
+                if (res.success) setTimeout(function () { window.location = '{{baseUrl}}/admin/media?folder=' + res.id; }, 600);
+            });
+        });
+    }
+
+    var renameBtn = document.getElementById('vtx-folder-rename');
+    if (renameBtn) {
+        renameBtn.addEventListener('click', function () {
+            var name = window.prompt('Rename folder:', renameBtn.dataset.folderName);
+            if (name === null) return;
+            name = name.trim();
+            if (!name || name === renameBtn.dataset.folderName) return;
+            post('{{baseUrl}}/admin/media/folders/' + renameBtn.dataset.folderId + '/rename', { name: name }, function (res) {
+                Phuse.toast(res.message || '', res.success ? 'success' : 'error');
+                if (res.success) setTimeout(function () { window.location.reload(); }, 600);
+            });
+        });
+    }
+
+    var deleteBtn = document.getElementById('vtx-folder-delete');
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', function () {
+            vtxConfirmModal({
+                title: 'Delete Folder',
+                message: 'Delete "' + deleteBtn.dataset.folderName + '"? Files inside are kept and become Unfiled.',
+                confirmLabel: 'Delete',
+                confirmClass: 'btn-danger',
+                onConfirm: function () {
+                    post('{{baseUrl}}/admin/media/folders/' + deleteBtn.dataset.folderId + '/delete', {}, function (res) {
+                        Phuse.toast(res.message || '', res.success ? 'success' : 'error');
+                        if (res.success) setTimeout(function () { window.location = '{{baseUrl}}/admin/media'; }, 700);
+                    });
+                }
+            });
+        });
+    }
+}());
+</script>
+<?php endif; ?>
+
+<?php if (\App\CMS\Auth::can('media.edit')): ?>
+<!-- Image editor modal -->
+<div id="vtx-imged-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1060;align-items:center;justify-content:center;padding:1rem;">
+  <div style="background:var(--ps-bg-base);border-radius:8px;padding:1.25rem;width:100%;max-width:760px;max-height:92vh;overflow:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;">
+      <h5 style="margin:0;">Edit Image</h5>
+      <button type="button" class="vtx-icon-btn" onclick="document.getElementById('vtx-imged-modal').style.display='none'">
+        <i class="pi pi-x-circle"></i>
+      </button>
+    </div>
+    <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:.75rem;">
+      <button type="button" class="btn btn-outline-secondary btn-sm" data-imged-op="rotate-left" title="Rotate left"><i class="pi pi-refresh me-1"></i>Rotate L</button>
+      <button type="button" class="btn btn-outline-secondary btn-sm" data-imged-op="rotate-right" title="Rotate right"><i class="pi pi-refresh me-1"></i>Rotate R</button>
+      <button type="button" class="btn btn-outline-secondary btn-sm" data-imged-op="flip-h" title="Flip horizontal">Flip H</button>
+      <button type="button" class="btn btn-outline-secondary btn-sm" data-imged-op="flip-v" title="Flip vertical">Flip V</button>
+      <button type="button" class="btn btn-outline-secondary btn-sm" data-imged-op="crop-clear" title="Clear crop selection">Clear Crop</button>
+      <span style="margin-left:auto;font-size:.75rem;color:var(--ps-text-muted);align-self:center;" id="vtx-imged-hint">
+        Drag on the image to select a crop area
+      </span>
+    </div>
+    <div style="text-align:center;background:var(--ps-bg-alt);border-radius:6px;padding:.5rem;">
+      <canvas id="vtx-imged-canvas" style="max-width:100%;cursor:crosshair;"></canvas>
+    </div>
+    <div style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:1rem;flex-wrap:wrap;">
+      <button type="button" class="btn btn-outline-secondary btn-sm" onclick="document.getElementById('vtx-imged-modal').style.display='none'">Cancel</button>
+      <button type="button" class="btn btn-outline-primary btn-sm" id="vtx-imged-save-copy"><i class="pi pi-plus me-1"></i>Save as Copy</button>
+      <button type="button" class="btn btn-primary btn-sm" id="vtx-imged-overwrite"><i class="pi pi-save me-1"></i>Overwrite Original</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+    'use strict';
+    var modal   = document.getElementById('vtx-imged-modal');
+    var canvas  = document.getElementById('vtx-imged-canvas');
+    var ctx     = canvas.getContext('2d');
+    var state   = null; // {id, img, ops[], crop{x,y,w,h}|null, dragStart}
+
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-image-editor]');
+        if (!btn) return;
+        var img = new Image();
+        img.onload = function () {
+            state = { id: btn.dataset.imageEditor, img: img, ops: [], crop: null, dragStart: null };
+            draw();
+            modal.style.display = 'flex';
+        };
+        img.onerror = function () { Phuse.toast('Could not load the image.', 'error'); };
+        img.src = btn.dataset.imageUrl + (btn.dataset.imageUrl.indexOf('?') === -1 ? '?' : '&') + 'v=' + Date.now();
+    });
+
+    // Render the source image through the pending ops so the preview matches
+    // what the server will produce.
+    function draw() {
+        if (!state) return;
+
+        var off = document.createElement('canvas');
+        off.width = state.img.naturalWidth; off.height = state.img.naturalHeight;
+        off.getContext('2d').drawImage(state.img, 0, 0);
+
+        state.ops.forEach(function (op) {
+            var src = off;
+            if (op.op === 'rotate') {
+                var nw = src.height, nh = src.width;
+                var next = document.createElement('canvas');
+                next.width = nw; next.height = nh;
+                var nctx = next.getContext('2d');
+                nctx.translate(nw / 2, nh / 2);
+                nctx.rotate(op.deg * Math.PI / 180);
+                nctx.drawImage(src, -src.width / 2, -src.height / 2);
+                off = next;
+            } else if (op.op === 'flip') {
+                var next2 = document.createElement('canvas');
+                next2.width = src.width; next2.height = src.height;
+                var n2 = next2.getContext('2d');
+                if (op.dir === 'h') { n2.translate(src.width, 0); n2.scale(-1, 1); }
+                else { n2.translate(0, src.height); n2.scale(1, -1); }
+                n2.drawImage(src, 0, 0);
+                off = next2;
+            }
+        });
+
+        state.rendered = off; // post-op pixels; crop coords refer to THIS
+
+        var scale = Math.min(1, 700 / off.width, 480 / off.height);
+        canvas.width  = Math.round(off.width * scale);
+        canvas.height = Math.round(off.height * scale);
+        state.scale   = scale;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(off, 0, 0, canvas.width, canvas.height);
+
+        if (state.crop) {
+            var c = state.crop;
+            ctx.save();
+            ctx.fillStyle = 'rgba(0,0,0,.45)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(off, c.x, c.y, c.w, c.h, c.x * scale, c.y * scale, c.w * scale, c.h * scale);
+            ctx.strokeStyle = '#4f46e5';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(c.x * scale, c.y * scale, c.w * scale, c.h * scale);
+            ctx.restore();
+        }
+    }
+
+    canvas.addEventListener('mousedown', function (e) {
+        if (!state) return;
+        var r = canvas.getBoundingClientRect();
+        var cssScale = canvas.width / r.width; // CSS max-width shrink factor
+        state.dragStart = { x: (e.clientX - r.left) * cssScale / state.scale, y: (e.clientY - r.top) * cssScale / state.scale };
+    });
+    canvas.addEventListener('mousemove', function (e) {
+        if (!state || !state.dragStart) return;
+        var r = canvas.getBoundingClientRect();
+        var cssScale = canvas.width / r.width;
+        var cur = { x: (e.clientX - r.left) * cssScale / state.scale, y: (e.clientY - r.top) * cssScale / state.scale };
+        state.crop = {
+            x: Math.round(Math.min(state.dragStart.x, cur.x)),
+            y: Math.round(Math.min(state.dragStart.y, cur.y)),
+            w: Math.round(Math.abs(cur.x - state.dragStart.x)),
+            h: Math.round(Math.abs(cur.y - state.dragStart.y))
+        };
+        draw();
+    });
+    window.addEventListener('mouseup', function () { if (state) state.dragStart = null; });
+
+    document.querySelectorAll('[data-imged-op]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            if (!state) return;
+            switch (btn.dataset.imgedOp) {
+                case 'rotate-left':  state.ops.push({ op: 'rotate', deg: -90 }); state.crop = null; break;
+                case 'rotate-right': state.ops.push({ op: 'rotate', deg: 90 });  state.crop = null; break;
+                case 'flip-h':       state.ops.push({ op: 'flip', dir: 'h' });   state.crop = null; break;
+                case 'flip-v':       state.ops.push({ op: 'flip', dir: 'v' });   state.crop = null; break;
+                case 'crop-clear':   state.crop = null; break;
+            }
+            draw();
+        });
+    });
+
+    function save(mode) {
+        if (!state) return;
+        var ops = state.ops.slice();
+        if (state.crop && state.crop.w > 9 && state.crop.h > 9) {
+            ops.push({ op: 'crop', x: state.crop.x, y: state.crop.y, w: state.crop.w, h: state.crop.h });
+        }
+        if (!ops.length) { Phuse.toast('No changes to save.', 'error'); return; }
+
+        var fd = new FormData();
+        fd.append('csrf_token', '{{csrf_token}}');
+        fd.append('ops', JSON.stringify(ops));
+        fd.append('mode', mode);
+        fetch('{{baseUrl}}/admin/media/' + state.id + '/edit-image', {
+            method: 'POST', body: fd, headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (res) {
+            Phuse.toast(res.message || (res.success ? 'Saved.' : 'Failed.'), res.success ? 'success' : 'error');
+            if (res.success) { modal.style.display = 'none'; setTimeout(function () { window.location.reload(); }, 900); }
+        })
+        .catch(function () { Phuse.toast('Network error.', 'error'); });
+    }
+
+    document.getElementById('vtx-imged-save-copy').addEventListener('click', function () { save('copy'); });
+    document.getElementById('vtx-imged-overwrite').addEventListener('click', function () {
+        vtxConfirmModal({
+            title: 'Overwrite Original',
+            message: 'Replace the original file with the edited version? This cannot be undone.',
+            confirmLabel: 'Overwrite',
+            confirmClass: 'btn-danger',
+            onConfirm: function () { save('overwrite'); }
+        });
     });
 }());
 </script>

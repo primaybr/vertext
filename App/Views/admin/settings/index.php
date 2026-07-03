@@ -161,7 +161,7 @@ document.getElementById('vtx-test-mail-btn').addEventListener('click', function 
 </script>
 
 <?php else: ?>
-<form method="POST" action="{{baseUrl}}/admin/settings/save" data-ajax-form>
+<form method="POST" action="{{baseUrl}}/admin/settings/save" data-ajax-form id="vtx-settings-form">
   <input type="hidden" name="csrf_token" value="{{csrf_token}}">
 
   <div class="row g-4">
@@ -327,13 +327,26 @@ document.getElementById('vtx-test-mail-btn').addEventListener('click', function 
           <h2 class="vtx-panel-title"><i class="pi pi-database me-1 text-primary"></i> Cache</h2>
         </div>
         <div class="vtx-panel-body">
+          <!-- Full-page cache toggle (submits with the main Save Settings form) -->
+          <label style="display:flex;align-items:flex-start;gap:.6rem;cursor:pointer;margin-bottom:.875rem;">
+            <input type="checkbox" name="cache_pages_enabled" value="1" form="vtx-settings-form"
+                   style="margin-top:.2rem;"
+                   <?php echo ($settings['cache_pages_enabled'] ?? '0') === '1' ? 'checked' : ''; ?>>
+            <span style="font-size:.8125rem;">
+              <strong>Full-page cache</strong><br>
+              <span style="color:var(--ps-text-muted);">
+                Serve public pages and posts from disk for 10 minutes. Skipped automatically for
+                logged-in visitors and pages containing forms.
+              </span>
+            </span>
+          </label>
+
+          <?php $cs = $cacheStats ?? ['pages' => 0, 'fragments' => 0, 'other' => 0, 'bytes' => 0]; ?>
           <p style="font-size:.8125rem;color:var(--ps-text-secondary);margin-bottom:.875rem;">
-            <?php $vtxCacheCount = $cacheFileCount ?? 0; ?>
-            <?php if ($vtxCacheCount > 0): ?>
-              <strong><?php echo $vtxCacheCount; ?></strong> cached file<?php echo $vtxCacheCount !== 1 ? 's' : ''; ?> currently stored.
-            <?php else: ?>
-              Cache is empty.
-            <?php endif; ?>
+            <strong><?php echo (int) $cs['pages']; ?></strong> page(s),
+            <strong><?php echo (int) $cs['fragments']; ?></strong> fragment(s),
+            <strong><?php echo (int) $cs['other']; ?></strong> other cached file(s)
+            &middot; <?php echo number_format(($cs['bytes'] ?? 0) / 1024, 1); ?> KB total.
           </p>
           <button type="button" class="btn btn-outline-warning w-100" style="font-size:.8125rem;"
                   data-confirm-form="vtx-clear-cache-form"

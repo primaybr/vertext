@@ -75,6 +75,8 @@ class NewsletterPublicController extends Controller
         } else {
             $msg = 'You are now subscribed!';
 
+            \App\Modules\Newsletter\NewsletterHelper::sendWelcome($email, (string) $token, $this->baseUrl);
+
             if (\App\CMS\ModuleLoader::isEnabled('webhooks')) {
                 try {
                     \App\Modules\Webhooks\WebhookDispatcher::dispatch('newsletter.subscribed', [
@@ -140,6 +142,8 @@ class NewsletterPublicController extends Controller
             'updated_at' => date('Y-m-d H:i:s'),
         ]);
 
+        \App\Modules\Newsletter\NewsletterHelper::sendWelcome((string) $sub['email'], (string) $sub['token'], $this->baseUrl);
+
         if (\App\CMS\ModuleLoader::isEnabled('webhooks')) {
             try {
                 \App\Modules\Webhooks\WebhookDispatcher::dispatch('newsletter.subscribed', [
@@ -149,6 +153,85 @@ class NewsletterPublicController extends Controller
         }
 
         $this->showMessage('Your subscription is confirmed. Thank you!', true);
+    }
+
+    /**
+     * GET /newsletter/track/open/{campaign_id}/{subscriber_token}
+     * 1x1 transparent GIF; counts one open per campaign+subscriber.
+     */
+    public function trackOpen(string $campaignId, string $token): void
+    {
+        \App\Modules\Newsletter\NewsletterHelper::ensureSchema();
+
+        try {
+            $sub = (new \Core\Model('newsletter_subscribers'))
+                ->select('id')
+                ->where('token', $token)
+                ->get(1);
+
+            if ($sub) {
+                $inserted = false;
+                try {
+                    (new \Core\Model('newsletter_opens'))->withoutTimestamps()->save([
+                        'campaign_id'   => $campaignId,
+                        'subscriber_id' => (string) $sub['id'],
+                    ]);
+                    $inserted = true;
+                } catch (\Throwable) {
+                    // UNIQUE violation = repeat open; do not recount
+                }
+
+                if ($inserted) {
+                    // Atomic increment - avoids read-modify-write races
+                    $db = (new \Core\Model('newsletter_campaigns'))->db;
+                    $db->query('UPDATE newsletter_campaigns SET open_count = open_count + 1 WHERE id = :id');
+                    $db->arrayBind([':id' => $campaignId]);
+                    $db->execute();
+                }
+            }
+        } catch (\Throwable) {
+        }
+
+        // Always return the pixel, even on errors
+        header('Content-Type: image/gif');
+        header('Cache-Control: no-store, no-cache, must-revalidate');
+        // Smallest valid transparent GIF
+        echo base64_decode('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7');
+        exit;
+    }
+
+    /**
+     * GET /newsletter/track/click/{campaign_id}?url=
+     * Redirects only to URLs recorded for this campaign at send time
+     * (open-redirect protection) and increments the link's click count.
+     */
+    public function trackClick(string $campaignId): void
+    {
+        \App\Modules\Newsletter\NewsletterHelper::ensureSchema();
+
+        $url = (string) ($this->input->get('url') ?? '');
+
+        try {
+            $link = (new \Core\Model('campaign_links'))->withoutTimestamps()
+                ->where('campaign_id', $campaignId)
+                ->where('url', $url)
+                ->get(1);
+
+            if (!$link) {
+                // Unknown URL for this campaign - refuse to act as an open redirect
+                $this->redirect($this->baseUrl . '/');
+            }
+
+            $db = (new \Core\Model('campaign_links'))->db;
+            $db->query('UPDATE campaign_links SET click_count = click_count + 1 WHERE id = :id');
+            $db->arrayBind([':id' => (string) $link['id']]);
+            $db->execute();
+
+            header('Location: ' . $link['url'], true, 302);
+            exit;
+        } catch (\Throwable) {
+            $this->redirect($this->baseUrl . '/');
+        }
     }
 
     private function sendConfirmationEmail(string $email, string $token): void

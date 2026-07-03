@@ -132,6 +132,24 @@ class SubscribersController extends BaseController
         $this->validateCsrf();
 
         $csvData = trim($this->input->post('csv_data', false) ?? '');
+
+        // v0.0.2: a .csv file upload takes precedence over the paste box
+        if (!empty($_FILES['csv_file']['name']) && ($_FILES['csv_file']['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
+            if (($_FILES['csv_file']['size'] ?? 0) > 5 * 1024 * 1024) {
+                $this->json(['success' => false, 'message' => 'CSV file must be 5 MB or smaller.']);
+            }
+            $ext = strtolower(pathinfo((string) $_FILES['csv_file']['name'], PATHINFO_EXTENSION));
+            if (!in_array($ext, ['csv', 'txt'], true)) {
+                $this->json(['success' => false, 'message' => 'Only .csv or .txt files can be imported.']);
+            }
+            $contents = @file_get_contents((string) $_FILES['csv_file']['tmp_name']);
+            if ($contents === false) {
+                $this->json(['success' => false, 'message' => 'Could not read the uploaded file.']);
+            }
+            // Strip a UTF-8 BOM so the first email parses cleanly
+            $csvData = trim(preg_replace('/^\xEF\xBB\xBF/', '', $contents));
+        }
+
         if (!$csvData) {
             $this->json(['success' => false, 'message' => 'No CSV data provided.']);
         }

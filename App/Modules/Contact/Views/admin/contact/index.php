@@ -3,7 +3,10 @@
         <h1 class="page-title">Contact Inbox</h1>
         <p class="page-subtitle text-muted"><?= $total ?> submission<?= $total !== 1 ? 's' : '' ?></p>
     </div>
-    <a href="<?= $baseUrl ?>/admin/contact/settings" class="btn btn-outline-secondary">
+    <a href="<?= $baseUrl ?>/admin/contact/settings"
+       data-form-url="<?= $baseUrl ?>/admin/contact/settings"
+       data-form-title="Contact Settings"
+       class="btn btn-outline-secondary">
         <i class="pi pi-cog me-1"></i> Settings
     </a>
 </div>

@@ -517,6 +517,17 @@
     gap: 0.375rem;
 }
 
+.vtx-panel-header {
+    padding: 0.875rem 1.25rem;
+    border-bottom: 1px solid var(--ps-border, #E2E8F0);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--ps-text-primary, #0F172A);
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
 .vtx-panel-body { padding: 1.25rem; }
 
 .vtx-panel-foot {
@@ -1188,12 +1199,12 @@
     align-items: center;
     gap: 0.375rem;
     width: 100%;
-    min-height: 2.375rem;
-    padding: 0.375rem 0.75rem;
+    padding: .5rem .75rem;
     background: var(--ps-bg-base, #fff);
     border: 1px solid var(--ps-border, #CBD5E1);
     border-radius: 6px;
-    font-size: 0.9375rem;
+    font-size: 1rem;
+    line-height: 1.5;
     color: var(--ps-text-primary, #0F172A);
     text-align: left;
     cursor: pointer;

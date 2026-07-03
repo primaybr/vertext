@@ -43,6 +43,7 @@
           ['type' => 'radio',    'icon' => 'pi-check-circle', 'label' => 'Radio'],
           ['type' => 'checkbox', 'icon' => 'pi-check',  'label' => 'Checkbox'],
           ['type' => 'file',     'icon' => 'pi-image',  'label' => 'File Upload'],
+          ['type' => 'step',     'icon' => 'pi-arrow-right', 'label' => 'Step Break'],
         ];
         foreach ($fieldTypes as $ft): ?>
         <button type="button" class="vtx-field-type-btn" data-add-field="<?php echo $ft['type']; ?>">
@@ -55,13 +56,44 @@
     <div class="vtx-panel mt-3">
       <div class="vtx-panel-header">Form Settings</div>
       <div class="vtx-panel-body">
+        <?php $settings = json_decode($form['settings'] ?? '{}', true) ?: []; ?>
         <div class="vtx-field mb-2">
           <label class="vtx-label" style="font-size:.8rem;" for="vtx-success-msg">Success Message</label>
           <textarea class="form-control form-control-sm" id="vtx-success-msg" rows="2"
             placeholder="Thank you! Your response has been submitted."><?php
-            $settings = json_decode($form['settings'] ?? '{}', true) ?: [];
             echo htmlspecialchars($settings['success_message'] ?? '');
           ?></textarea>
+        </div>
+        <div class="vtx-field mb-2">
+          <label class="vtx-label" style="font-size:.8rem;" for="vtx-notify-email">Notification Email</label>
+          <input class="form-control form-control-sm" type="email" id="vtx-notify-email"
+                 placeholder="Leave empty for no email"
+                 value="<?php echo htmlspecialchars($settings['notification_email'] ?? ''); ?>">
+          <div style="font-size:.7rem;color:var(--ps-text-muted);margin-top:.25rem;">
+            Receives an email for every submission.
+          </div>
+        </div>
+        <div class="vtx-field mb-2">
+          <label class="vtx-label" style="display:flex;align-items:center;gap:.4rem;font-size:.8rem;cursor:pointer;">
+            <input type="checkbox" id="vtx-math-challenge" <?php echo !empty($settings['math_challenge']) ? 'checked' : ''; ?>>
+            Math challenge (anti-spam)
+          </label>
+          <div style="font-size:.7rem;color:var(--ps-text-muted);margin-top:.25rem;">
+            Asks visitors a simple "3 + 4 = ?" question.
+          </div>
+        </div>
+        <div class="vtx-field mb-2">
+          <label class="vtx-label" style="font-size:.8rem;" for="vtx-recaptcha-site">reCAPTCHA v3 Site Key</label>
+          <input class="form-control form-control-sm" type="text" id="vtx-recaptcha-site"
+                 placeholder="Optional" value="<?php echo htmlspecialchars($settings['recaptcha_site_key'] ?? ''); ?>">
+        </div>
+        <div class="vtx-field mb-2">
+          <label class="vtx-label" style="font-size:.8rem;" for="vtx-recaptcha-secret">reCAPTCHA v3 Secret Key</label>
+          <input class="form-control form-control-sm" type="password" id="vtx-recaptcha-secret"
+                 placeholder="Optional" value="<?php echo htmlspecialchars($settings['recaptcha_secret_key'] ?? ''); ?>">
+          <div style="font-size:.7rem;color:var(--ps-text-muted);margin-top:.25rem;">
+            Both keys required to enable. Scores below 0.5 are rejected.
+          </div>
         </div>
       </div>
     </div>
@@ -118,6 +150,36 @@
 
     const hasOptions = ['select', 'radio', 'checkbox'].includes(field.type);
 
+    // Step breaks are page separators, not inputs - render a slim divider row
+    if (field.type === 'step') {
+      row.innerHTML = `
+        <div class="vtx-field-row-handle" title="Drag to reorder"><i class="pi pi-bars"></i></div>
+        <div class="vtx-field-row-body" style="display:flex;align-items:center;gap:.75rem;">
+          <span class="vtx-tag" style="flex-shrink:0;"><i class="pi pi-arrow-right me-1"></i>Step break</span>
+          <div class="vtx-field" style="flex:1;margin:0;">
+            <input class="form-control form-control-sm" type="text" value="${esc(field.label)}"
+                   data-field-prop="label" data-idx="${idx}" placeholder="Step title (shown in progress bar)">
+          </div>
+        </div>
+        <button type="button" class="vtx-field-row-delete" data-delete-idx="${idx}" title="Remove step break">
+          <i class="pi pi-trash"></i>
+        </button>
+      `;
+      row.querySelectorAll('[data-field-prop]').forEach(input => {
+        input.addEventListener('input', () => {
+          fields[parseInt(input.dataset.idx, 10)][input.dataset.fieldProp] = input.value;
+        });
+      });
+      row.querySelector('[data-delete-idx]').addEventListener('click', () => {
+        fields.splice(idx, 1);
+        render();
+      });
+      return row;
+    }
+
+    // Conditional logic summary for the toggle button
+    const condCount = (field.conditions || []).length;
+
     row.innerHTML = `
       <div class="vtx-field-row-handle" title="Drag to reorder"><i class="pi pi-bars"></i></div>
       <div class="vtx-field-row-body">
@@ -161,11 +223,65 @@
                     data-field-prop="options" data-idx="${idx}"
                     placeholder="Option 1&#10;Option 2">${(field.options || []).join('\n')}</textarea>
         </div>` : ''}
+        <div class="mt-2">
+          <button type="button" class="btn btn-sm btn-link p-0" data-toggle-logic="${idx}" style="font-size:.75rem;">
+            <i class="pi pi-sliders me-1"></i>Conditional logic${condCount ? ' (' + condCount + ')' : ''}
+          </button>
+          <div data-logic-panel="${idx}" style="display:${condCount ? 'block' : 'none'};margin-top:.5rem;
+               padding:.6rem;border:1px dashed var(--ps-border);border-radius:6px;">
+            <div style="display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;font-size:.8rem;">
+              <select class="form-select form-select-sm" style="width:auto;" data-cond-prop="action" data-idx="${idx}">
+                <option value="show" ${(field.conditions?.[0]?.action || 'show') === 'show' ? 'selected' : ''}>Show</option>
+                <option value="hide" ${(field.conditions?.[0]?.action) === 'hide' ? 'selected' : ''}>Hide</option>
+              </select>
+              <span>this field when</span>
+              <select class="form-select form-select-sm" style="width:auto;min-width:110px;" data-cond-prop="field" data-idx="${idx}">
+                <option value="">-- field --</option>
+                ${fields.filter((f, fi) => fi !== idx && f.type !== 'step' && f.type !== 'file')
+                        .map(f => `<option value="${esc(f.id)}" ${(field.conditions?.[0]?.field) === f.id ? 'selected' : ''}>${esc(f.label)}</option>`).join('')}
+              </select>
+              <select class="form-select form-select-sm" style="width:auto;" data-cond-prop="operator" data-idx="${idx}">
+                ${['equals','not_equals','contains','empty','not_empty']
+                  .map(op => `<option value="${op}" ${(field.conditions?.[0]?.operator || 'equals') === op ? 'selected' : ''}>${op.replace('_',' ')}</option>`).join('')}
+              </select>
+              <input class="form-control form-control-sm" style="width:120px;" type="text" placeholder="value"
+                     value="${esc(field.conditions?.[0]?.value || '')}" data-cond-prop="value" data-idx="${idx}">
+              <button type="button" class="vtx-icon-btn" title="Clear rule" data-cond-clear="${idx}">
+                <i class="pi pi-x-circle"></i>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
       <button type="button" class="vtx-field-row-delete" data-delete-idx="${idx}" title="Remove field">
         <i class="pi pi-trash"></i>
       </button>
     `;
+
+    // Conditional logic wiring
+    const logicBtn = row.querySelector('[data-toggle-logic]');
+    if (logicBtn) {
+      logicBtn.addEventListener('click', () => {
+        const panel = row.querySelector('[data-logic-panel]');
+        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+      });
+    }
+    row.querySelectorAll('[data-cond-prop]').forEach(input => {
+      input.addEventListener('input', () => {
+        const i = parseInt(input.dataset.idx, 10);
+        if (!fields[i].conditions || !fields[i].conditions.length) {
+          fields[i].conditions = [{ field: '', operator: 'equals', value: '', action: 'show' }];
+        }
+        fields[i].conditions[0][input.dataset.condProp] = input.value;
+      });
+    });
+    const clearBtn = row.querySelector('[data-cond-clear]');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        fields[idx].conditions = [];
+        render();
+      });
+    }
 
     // Live-update field props
     row.querySelectorAll('[data-field-prop]').forEach(input => {
@@ -222,15 +338,27 @@
     btn.addEventListener('click', () => {
       const type = btn.dataset.addField;
       const id   = type + '_' + (fields.length + 1);
-      fields.push({ id, type, label: capitalize(type) + ' ' + (fields.length + 1),
-                    placeholder: '', required: false, options: [], width: 'full' });
+      const label = type === 'step' ? '' : capitalize(type) + ' ' + (fields.length + 1);
+      fields.push({ id, type, label,
+                    placeholder: '', required: false, options: [], width: 'full', conditions: [] });
       render();
     });
   });
 
   // ── Save ───────────────────────────────────────────────────────────────────
   document.getElementById('vtx-builder-save').addEventListener('click', () => {
-    const settings = { success_message: document.getElementById('vtx-success-msg').value.trim() };
+    const settings = {
+      success_message:      document.getElementById('vtx-success-msg').value.trim(),
+      notification_email:   document.getElementById('vtx-notify-email').value.trim(),
+      math_challenge:       document.getElementById('vtx-math-challenge').checked,
+      recaptcha_site_key:   document.getElementById('vtx-recaptcha-site').value.trim(),
+      recaptcha_secret_key: document.getElementById('vtx-recaptcha-secret').value.trim(),
+    };
+
+    // Drop empty condition rules before saving
+    fields.forEach(f => {
+      if (f.conditions && f.conditions.length && !f.conditions[0].field) f.conditions = [];
+    });
 
     const btn = document.getElementById('vtx-builder-save');
     btn.disabled = true;
@@ -238,7 +366,7 @@
     fetch(BASE + '/admin/forms/' + FORM_ID + '/save-fields', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ csrf_token: CSRF, fields: JSON.stringify(fields) }),
+      body: new URLSearchParams({ csrf_token: CSRF, fields: JSON.stringify(fields), settings: JSON.stringify(settings) }),
     })
     .then(r => r.json())
     .then(res => {

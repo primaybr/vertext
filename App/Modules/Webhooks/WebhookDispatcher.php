@@ -29,6 +29,7 @@ class WebhookDispatcher
         'newsletter.unsubscribed' => 'Newsletter Unsubscribed',
         'campaign.sent'           => 'Campaign Sent',
         'event.rsvp'              => 'Event RSVP',
+        'user.registered'         => 'Site Member Registered',
         'ping'                    => 'Ping (test)',
     ];
 
@@ -39,7 +40,7 @@ class WebhookDispatcher
     {
         try {
             $endpoints = (new Model('webhook_endpoints'))
-                ->where('enabled', true)
+                ->where('enabled', 1)
                 ->get() ?: [];
         } catch (\Throwable) {
             return;
@@ -129,14 +130,15 @@ class WebhookDispatcher
         // Log the delivery
         try {
             $log = new Model('webhook_logs');
-            $log->endpoint_id   = $ep['id'];
-            $log->event         = $event;
-            $log->payload       = $body;
-            $log->response_code = $code;
-            $log->response_body = mb_substr($respBody, 0, 500);
-            $log->duration_ms   = $elapsed ?? 0;
-            $log->success       = $success;
-            $log->save();
+            $log->save([
+                'endpoint_id'   => $ep['id'],
+                'event'         => $event,
+                'payload'       => $body,
+                'response_code' => $code,
+                'response_body' => mb_substr($respBody, 0, 500),
+                'duration_ms'   => $elapsed ?? 0,
+                'success'       => $success,
+            ]);
         } catch (\Throwable) {}
 
         return [

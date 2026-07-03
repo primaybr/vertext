@@ -40,6 +40,10 @@
       <button type="submit" class="btn btn-primary w-100 mt-2">
         <i class="pi pi-arrow-right me-1"></i> Sign In
       </button>
+
+      <div style="text-align:center;margin-top:.9rem;">
+        <a href="{{baseUrl}}/admin/forgot-password" style="font-size:.85rem;">Forgot your password?</a>
+      </div>
     </form>
 
     <div style="text-align:center;margin-top:1.25rem;">

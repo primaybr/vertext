@@ -160,6 +160,7 @@ class PostsController extends BaseController
                 'meta_title'         => $metaTitle ?: null,
                 'meta_description'   => $metaDesc ?: null,
                 'reading_time'       => $readingTime,
+                'lang'               => $this->postLang(),
             ]);
         } catch (\Exception $e) {
             $this->json(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
@@ -169,6 +170,7 @@ class PostsController extends BaseController
         $this->syncTags($postId, $tagNames);
 
         Auth::audit('post.create', 'posts', $postId, ['title' => $title, 'status' => $status]);
+        \App\CMS\PageCache::flushPages();
         $this->json(['success' => true, 'message' => "Post \"{$title}\" created."]);
     }
 
@@ -273,6 +275,7 @@ class PostsController extends BaseController
             'featured_image_id'  => $featuredImgId,
             'featured_image_url' => $featuredImgUrl ?: null,
             'expire_at'          => $expireAt ? date('Y-m-d H:i:s', strtotime($expireAt)) : null,
+            'lang'               => $this->postLang(),
             'updated_at'         => date('Y-m-d H:i:s'),
         ];
         if ($newSlug) {
@@ -299,6 +302,7 @@ class PostsController extends BaseController
         $this->syncTags($id, $tagNames);
 
         Auth::audit('post.update', 'posts', $id, ['status' => $status]);
+        \App\CMS\PageCache::flushPages();
         $response = ['success' => true, 'message' => 'Post updated successfully.'];
         if ($revisionError) {
             $response['_revision_error'] = $revisionError;
@@ -319,6 +323,7 @@ class PostsController extends BaseController
         ]);
 
         Auth::audit('post.delete', 'posts', $id);
+        \App\CMS\PageCache::flushPages();
         $this->json(['success' => true, 'message' => 'Post moved to trash.']);
     }
 
@@ -593,6 +598,13 @@ class PostsController extends BaseController
             $this->flash('error', 'Security token invalid. Please try again.');
             $this->redirect($this->baseUrl . '/admin/blog/posts');
         }
+    }
+
+    /** Validated content language from the post form ('en' fallback) */
+    private function postLang(): string
+    {
+        $lang = strtolower(trim($this->input->post('lang') ?? ''));
+        return in_array($lang, \App\CMS\I18n::getSupportedLocales(), true) ? $lang : 'en';
     }
 
     private function makeSlug(string $text): string

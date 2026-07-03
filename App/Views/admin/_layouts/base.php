@@ -4,14 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{pageTitle}} - Vertext CMS</title>
-  <link rel="stylesheet" href="{{assetsUrl}}css/styles.css?v=142">
-  <link rel="stylesheet" href="{{assetsUrl}}css/admin.css?v=5">
+  <link rel="stylesheet" href="{{assetsUrl}}css/styles.css?v=<?php echo substr(hash('crc32b', \App\CMS\Version::APP), 0, 8); ?>">
+  <link rel="stylesheet" href="{{assetsUrl}}css/admin.css?v=<?php echo substr(hash('crc32b', \App\CMS\Version::APP), 0, 8); ?>">
   <?php foreach (\App\CMS\ModuleLoader::assets()['css'] as $__mAsset): ?>
   <link rel="stylesheet" href="<?php echo htmlspecialchars(($assetsUrl ?? '') . $__mAsset); ?>">
   <?php endforeach; ?>
   <script>(function(){try{var t=localStorage.getItem('phuse-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})()</script>
   <script>window.VTX_ASSETS_URL = '{{assetsUrl}}'; window.VTX_BASE_URL = '{{baseUrl}}';</script>
-  <script src="{{assetsUrl}}js/admin.js?v=4"></script>
+  <script src="{{assetsUrl}}js/admin.js?v=<?php echo substr(hash('crc32b', \App\CMS\Version::APP), 0, 8); ?>"></script>
 </head>
 <body>
 
@@ -72,6 +72,20 @@
         <i class="pi pi-clock"></i> Audit Log
       </a>
 
+      <?php if (\App\CMS\Auth::can('api.manage')): ?>
+      <a href="{{baseUrl}}/admin/api-keys"
+         class="vtx-nav-link {% if activeMenu == 'api-keys' %}active{% endif %}">
+        <i class="pi pi-key"></i> API Keys
+      </a>
+      <?php endif; ?>
+
+      <?php if (\App\CMS\Auth::can('translations.manage')): ?>
+      <a href="{{baseUrl}}/admin/translations"
+         class="vtx-nav-link {% if activeMenu == 'translations' %}active{% endif %}">
+        <i class="pi pi-languages"></i> Translations
+      </a>
+      <?php endif; ?>
+
       <?php $__moduleNav = \App\CMS\ModuleLoader::navItems(); ?>
       <?php if (!empty($__moduleNav)): ?>
       <div class="vtx-nav-section">Modules</div>
@@ -123,7 +137,12 @@
 
     <div class="vtx-sidebar-foot">
       <div class="vtx-sidebar-user">
+        <?php if (!empty($avatarUrl)): ?>
+        <img src="<?php echo htmlspecialchars($avatarUrl); ?>" alt=""
+             style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;">
+        <?php else: ?>
         <div class="vtx-avatar">{{currentUser.name|substr:0:1|upper}}</div>
+        <?php endif; ?>
         <div style="flex:1;min-width:0;">
           <div class="vtx-avatar-name">{{currentUser.name}}</div>
           <div class="vtx-avatar-role">Administrator</div>
@@ -184,9 +203,14 @@
         <!-- User menu -->
         <div class="vtx-user-menu">
           <button id="user-menu-trigger" class="vtx-user-trigger" type="button">
+            <?php if (!empty($avatarUrl)): ?>
+            <img src="<?php echo htmlspecialchars($avatarUrl); ?>" alt=""
+                 style="width:24px;height:24px;border-radius:50%;object-fit:cover;">
+            <?php else: ?>
             <div class="vtx-avatar" style="width:24px;height:24px;font-size:.6875rem;">
               {{currentUser.name|substr:0:1|upper}}
             </div>
+            <?php endif; ?>
             <span>{{currentUser.name}}</span>
             <i class="pi pi-chevron-down" style="font-size:.75rem;opacity:.6;"></i>
           </button>
@@ -221,7 +245,7 @@
 
 </div>
 
-<script src="{{assetsUrl}}js/scripts.js?v=136"></script>
+<script src="{{assetsUrl}}js/scripts.js?v=<?php echo substr(hash('crc32b', \App\CMS\Version::APP), 0, 8); ?>"></script>
 <?php foreach (\App\CMS\ModuleLoader::assets()['js'] as $__mAsset): ?>
 <script src="<?php echo htmlspecialchars(($assetsUrl ?? '') . $__mAsset); ?>"></script>
 <?php endforeach; ?>

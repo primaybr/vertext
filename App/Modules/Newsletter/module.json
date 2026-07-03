@@ -1,8 +1,8 @@
 {
     "name": "Newsletter",
     "slug": "newsletter",
-    "version": "0.0.1",
-    "description": "Subscriber list management and email campaign sending",
+    "version": "0.0.2",
+    "description": "Subscriber list management, segments, scheduled campaigns, and open/click tracking",
     "author": "Vertext",
     "category": "Communication",
     "requires": { "vertext": ">=0.0.7" },
@@ -16,6 +16,7 @@
         "subnav": [
             { "label": "Subscribers", "path": "/admin/newsletter/subscribers", "icon": "pi-users",     "permission": "newsletter.view" },
             { "label": "Campaigns",   "path": "/admin/newsletter/campaigns",   "icon": "pi-mail",      "permission": "newsletter.view" },
+            { "label": "Segments",    "path": "/admin/newsletter/segments",    "icon": "pi-sliders",   "permission": "newsletter.view" },
             { "label": "Settings",    "path": "/admin/newsletter/settings",    "icon": "pi-settings",  "permission": "newsletter.manage" }
         ]
     },

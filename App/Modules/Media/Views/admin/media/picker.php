@@ -9,6 +9,17 @@
     <input class="form-control form-control-sm" type="search" id="vtx-picker-search"
            placeholder="Search…" value="<?php echo htmlspecialchars($search ?? ''); ?>"
            autocomplete="off">
+    <?php if (!empty($folders)): ?>
+    <select class="form-select form-select-sm" id="vtx-picker-folder" style="width:auto;max-width:160px;">
+      <option value="">All folders</option>
+      <option value="unfiled" <?php echo ($folder ?? '') === 'unfiled' ? 'selected' : ''; ?>>Unfiled</option>
+      <?php foreach ($folders as $fld): ?>
+      <option value="<?php echo $fld['id']; ?>" <?php echo ($folder ?? '') === $fld['id'] ? 'selected' : ''; ?>>
+        <?php echo htmlspecialchars($fld['name']); ?>
+      </option>
+      <?php endforeach; ?>
+    </select>
+    <?php endif; ?>
     <div id="vtx-picker-upload-wrap">
       <div data-vtx-upload
            data-url="<?php echo htmlspecialchars($baseUrl); ?>/admin/media/upload"
@@ -106,17 +117,23 @@
         });
     });
 
-    // Inline search
-    var searchInput = document.getElementById('vtx-picker-search');
+    // Inline search + folder filter
+    var searchInput  = document.getElementById('vtx-picker-search');
+    var folderSelect = document.getElementById('vtx-picker-folder');
+    function pickerUrl() {
+        return '<?php echo htmlspecialchars($baseUrl); ?>/admin/media/picker?search=' +
+            encodeURIComponent(searchInput ? searchInput.value : '') +
+            '&folder=' + encodeURIComponent(folderSelect ? folderSelect.value : '');
+    }
     if (searchInput) {
         var timer;
         searchInput.addEventListener('input', function () {
             clearTimeout(timer);
-            timer = setTimeout(function () {
-                reloadPicker('<?php echo htmlspecialchars($baseUrl); ?>/admin/media/picker?search=' +
-                    encodeURIComponent(searchInput.value));
-            }, 320);
+            timer = setTimeout(function () { reloadPicker(pickerUrl()); }, 320);
         });
+    }
+    if (folderSelect) {
+        folderSelect.addEventListener('change', function () { reloadPicker(pickerUrl()); });
     }
 
     // Upload complete → reload picker

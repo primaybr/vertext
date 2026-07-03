@@ -6,6 +6,7 @@ namespace App\Modules\Events\Controllers\Admin;
 
 use App\Controllers\Admin\BaseController;
 use App\CMS\Auth;
+use App\Modules\Events\EventHelper;
 use Core\Utilities\Text\Str;
 
 /**
@@ -25,6 +26,47 @@ class EventsController extends BaseController
     public function __construct()
     {
         parent::__construct();
+        EventHelper::ensureSchema();
+    }
+
+    /** Shared v2 field extraction for store()/update() */
+    private function readV2Fields(): array
+    {
+        $max = (int) ($this->input->post('max_attendees') ?? 0);
+
+        // Recurrence: freq none|daily|weekly|monthly (+ interval, until)
+        $freq = $this->input->post('recurrence_freq') ?? '';
+        $rule = null;
+        if (in_array($freq, ['daily', 'weekly', 'monthly'], true)) {
+            $rule = json_encode([
+                'freq'     => $freq,
+                'interval' => max(1, (int) ($this->input->post('recurrence_interval') ?? 1)),
+                'until'    => preg_match('/^\d{4}-\d{2}-\d{2}$/', $this->input->post('recurrence_until') ?? '')
+                    ? $this->input->post('recurrence_until')
+                    : null,
+            ]);
+        }
+
+        // Tickets: parallel arrays ticket_name[] / ticket_price[]
+        $tickets   = [];
+        $tNames    = (array) ($this->input->post('ticket_name') ?? []);
+        $tPrices   = (array) ($this->input->post('ticket_price') ?? []);
+        foreach ($tNames as $i => $tName) {
+            $tName = substr(trim((string) $tName), 0, 100);
+            if ($tName === '') continue;
+            $price = trim((string) ($tPrices[$i] ?? ''));
+            $tickets[] = [
+                'name'  => $tName,
+                'price' => is_numeric($price) ? round((float) $price, 2) : 0,
+            ];
+            if (count($tickets) >= 10) break;
+        }
+
+        return [
+            'max_attendees'   => $max > 0 ? $max : null,
+            'recurrence_rule' => $rule,
+            'tickets'         => $tickets ? json_encode($tickets) : null,
+        ];
     }
 
     public function index(): void
@@ -116,7 +158,7 @@ class EventsController extends BaseController
             $this->redirect($this->baseUrl . '/admin/events/create');
         }
 
-        $id = (string) $this->db('events')->save([
+        $id = (string) $this->db('events')->save(array_merge([
             'title'       => $title,
             'slug'        => $slug,
             'description' => trim($this->input->post('description', false) ?? ''),
@@ -126,7 +168,7 @@ class EventsController extends BaseController
             'end_at'      => trim($this->input->post('end_at', false) ?? '') ?: null,
             'status'      => $this->input->post('status') === 'published' ? 'published' : 'draft',
             'created_by'  => $this->currentUser['id'] ?? null,
-        ]);
+        ], $this->readV2Fields()));
 
         Auth::audit('event.create', 'events', $id, ['title' => $title]);
 
@@ -189,7 +231,7 @@ class EventsController extends BaseController
             $newSlug = $this->uniqueSlug($newSlug, $id);
         }
 
-        $data = [
+        $data = array_merge([
             'title'       => $title,
             'description' => trim($this->input->post('description', false) ?? ''),
             'body'        => $this->input->post('body', false) ?? '',
@@ -199,7 +241,7 @@ class EventsController extends BaseController
             'status'      => $this->input->post('status') === 'published' ? 'published' : 'draft',
             'updated_at'  => date('Y-m-d H:i:s'),
             'updated_by'  => $this->currentUser['id'] ?? null,
-        ];
+        ], $this->readV2Fields());
         if ($newSlug) {
             $data['slug'] = $newSlug;
         }
@@ -226,6 +268,124 @@ class EventsController extends BaseController
 
         Auth::audit('event.delete', 'events', $id, ['title' => $event['title']]);
         $this->json(['success' => true, 'message' => "Event \"{$event['title']}\" deleted."]);
+    }
+
+    // ── Attendees (v0.0.2) ─────────────────────────────────────────────────────
+
+    /** GET /admin/events/{id}/attendees */
+    public function attendees(string $id): void
+    {
+        $this->requirePermission('events.view');
+
+        $event = $this->db('events')->where('id', $id)->whereNull('deleted_at')->get(1);
+        if (!$event) {
+            $this->flash('error', 'Event not found.');
+            $this->redirect($this->baseUrl . '/admin/events');
+        }
+
+        $attendees = $this->db('event_rsvps')
+            ->where('event_id', $id)
+            ->whereNull('deleted_at')
+            ->orderBy('registered_at', 'ASC')
+            ->get() ?: [];
+
+        $counts = ['confirmed' => 0, 'waitlist' => 0, 'cancelled' => 0];
+        foreach ($attendees as $a) {
+            $counts[(string) $a['status']] = ($counts[(string) $a['status']] ?? 0) + 1;
+        }
+
+        $this->adminRender('modules/events/admin/attendees', [
+            'event'     => $event,
+            'attendees' => $attendees,
+            'counts'    => $counts,
+            'spotsLeft' => EventHelper::spotsLeft($event),
+        ], 'Attendees - ' . $event['title'], 'events');
+    }
+
+    /** POST /admin/events/{id}/attendees/{rid}/status - AJAX status change */
+    public function setAttendeeStatus(string $id, string $rid): void
+    {
+        $this->requirePermission('events.manage');
+        $this->validateCsrf();
+
+        $event = $this->db('events')->where('id', $id)->whereNull('deleted_at')->get(1);
+        $rsvp  = $this->db('event_rsvps')->where('id', $rid)->where('event_id', $id)->whereNull('deleted_at')->get(1);
+        if (!$event || !$rsvp) {
+            $this->json(['success' => false, 'message' => 'Attendee not found.'], 404);
+        }
+
+        $to = $this->input->post('status') ?? '';
+        if (!in_array($to, ['confirmed', 'waitlist', 'cancelled'], true)) {
+            $this->json(['success' => false, 'message' => 'Invalid status.'], 422);
+        }
+
+        // Capacity guard when force-confirming
+        if ($to === 'confirmed' && $rsvp['status'] !== 'confirmed') {
+            $spots = EventHelper::spotsLeft($event);
+            if ($spots !== null && $spots <= 0) {
+                $this->json(['success' => false, 'message' => 'Event is at capacity. Raise the limit first or cancel another attendee.']);
+            }
+        }
+
+        $this->db('event_rsvps')->where('id', $rid)->update([
+            'status'     => $to,
+            'updated_at' => date('Y-m-d H:i:s'),
+        ]);
+
+        // Cancelling a confirmed spot can promote the next in line
+        $promotedName = null;
+        if ($to === 'cancelled' && $rsvp['status'] === 'confirmed') {
+            $promoted = EventHelper::promoteWaitlist($event);
+            if ($promoted) {
+                $promotedName = (string) $promoted['name'];
+            }
+        }
+
+        EventHelper::syncRsvpCount($id);
+
+        Auth::audit('event.attendee_status', 'event_rsvps', $rid, [
+            'event' => $event['title'], 'from' => $rsvp['status'], 'to' => $to,
+        ]);
+
+        $message = "\"{$rsvp['name']}\" is now {$to}.";
+        if ($promotedName !== null) {
+            $message .= " \"{$promotedName}\" was promoted from the waiting list.";
+        }
+        $this->json(['success' => true, 'message' => $message, 'promoted' => $promotedName]);
+    }
+
+    /** GET /admin/events/{id}/attendees/export - CSV */
+    public function exportAttendees(string $id): void
+    {
+        $this->requirePermission('events.view');
+
+        $event = $this->db('events')->where('id', $id)->whereNull('deleted_at')->get(1);
+        if (!$event) {
+            $this->flash('error', 'Event not found.');
+            $this->redirect($this->baseUrl . '/admin/events');
+        }
+
+        $attendees = $this->db('event_rsvps')
+            ->where('event_id', $id)
+            ->whereNull('deleted_at')
+            ->orderBy('registered_at', 'ASC')
+            ->get() ?: [];
+
+        Auth::audit('event.attendees_exported', 'events', $id, ['count' => count($attendees)]);
+
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="attendees-' . $event['slug'] . '-' . date('Ymd') . '.csv"');
+        $out = fopen('php://output', 'w');
+        fwrite($out, "\xEF\xBB\xBF"); // UTF-8 BOM for Excel
+        fputcsv($out, ['Name', 'Email', 'Ticket', 'Status', 'Registered At']);
+        foreach ($attendees as $a) {
+            fputcsv($out, [
+                $a['name'], $a['email'], $a['ticket'] ?? '', $a['status'],
+                $a['registered_at'],
+            ]);
+        }
+        fclose($out);
+        exit;
     }
 
     private function validateCsrf(): void

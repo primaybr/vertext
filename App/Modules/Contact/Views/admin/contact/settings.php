@@ -1,13 +1,17 @@
-<div class="page-header mb-4">
-    <a href="<?= $baseUrl ?>/admin/contact" class="btn btn-sm btn-outline-secondary mb-2">
-        <i class="pi pi-arrow-left me-1"></i> Back to Inbox
-    </a>
-    <h1 class="page-title">Contact Settings</h1>
-</div>
+<?php if (empty($isAjax)): ?>
+    <?php if (!isset($isAjax) || !$isAjax): ?>
+    <div class="page-header mb-4">
+        <a href="<?= $baseUrl ?>/admin/contact" class="btn btn-sm btn-outline-secondary mb-2">
+            <i class="pi pi-arrow-left me-1"></i> Back to Inbox
+        </a>
+        <h1 class="page-title">Contact Settings</h1>
+    </div>
+<?php endif; ?>
+<?php endif; ?>
 
 <div class="card" style="max-width:640px">
     <div class="card-body">
-        <form method="POST" action="<?= $baseUrl ?>/admin/contact/settings/save">
+        <form method="POST" action="<?= $baseUrl ?>/admin/contact/settings/save" data-crud-form>
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken ?? '') ?>">
 
             <div class="mb-3">

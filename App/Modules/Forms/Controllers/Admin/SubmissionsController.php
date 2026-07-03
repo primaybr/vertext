@@ -94,6 +94,7 @@ class SubmissionsController extends BaseController
 
         // Decode data for preview column (first 2 values)
         $fields = json_decode($form['fields'] ?: '[]', true) ?: [];
+        $fields = array_values(array_filter($fields, static fn($f) => ($f['type'] ?? '') !== 'step'));
         foreach ($subs as &$s) {
             $data    = json_decode($s['data'] ?? '{}', true) ?: [];
             $preview = [];
@@ -147,6 +148,7 @@ class SubmissionsController extends BaseController
         }
 
         $fields = json_decode($form['fields'] ?: '[]', true) ?: [];
+        $fields = array_values(array_filter($fields, static fn($f) => ($f['type'] ?? '') !== 'step'));
         $data   = json_decode($sub['data'] ?: '{}', true) ?: [];
 
         if ($this->input->isAjax()) {
@@ -205,6 +207,7 @@ class SubmissionsController extends BaseController
         }
 
         $fields = json_decode($form['fields'] ?: '[]', true) ?: [];
+        $fields = array_values(array_filter($fields, static fn($f) => ($f['type'] ?? '') !== 'step'));
         $subs   = $this->db('form_submissions')
             ->where('form_id', $id)
             ->whereNull('deleted_at')

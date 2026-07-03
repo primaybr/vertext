@@ -44,9 +44,17 @@ class ContactSettingsController extends BaseController
             }
         }
 
-        $this->adminRender('modules/contact/admin/contact/settings', [
-            'settings' => $s,
-        ], 'Contact Settings', 'contact');
+        if ($this->isAjax()) {
+            // For AJAX requests, return only the content for modal display
+            $this->renderPartial('modules/contact/admin/contact/settings', [
+                'settings' => $s,
+                'isAjax'   => true,
+            ]);
+        } else {
+            $this->adminRender('modules/contact/admin/contact/settings', [
+                'settings' => $s,
+            ], 'Contact Settings', 'contact');
+        }
     }
 
     public function save(): void
@@ -55,8 +63,12 @@ class ContactSettingsController extends BaseController
 
         $token = $this->input->post('csrf_token') ?? '';
         if (!$this->csrf->validateToken($token)) {
-            $this->flash('error', 'Security token invalid.');
-            $this->redirect($this->baseUrl . '/admin/contact/settings');
+            if ($this->isAjax()) {
+                $this->json(['success' => false, 'message' => 'Security token invalid.'], 403);
+            } else {
+                $this->flash('error', 'Security token invalid.');
+                $this->redirect($this->baseUrl . '/admin/contact/settings');
+            }
         }
 
         foreach (self::KEYS as $key => $default) {
@@ -64,8 +76,12 @@ class ContactSettingsController extends BaseController
             $this->upsertSetting($key, $val);
         }
 
-        $this->flash('success', 'Contact settings saved.');
-        $this->redirect($this->baseUrl . '/admin/contact/settings');
+        if ($this->isAjax()) {
+            $this->json(['success' => true, 'message' => 'Settings saved.']);
+        } else {
+            $this->flash('flash' => 'success', 'message' => 'Settings saved.');
+            $this->redirect($this->baseUrl . '/admin/contact/settings');
+        }
     }
 
     private function upsertSetting(string $key, string $value): void

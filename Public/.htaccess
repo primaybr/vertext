@@ -1,6 +1,12 @@
 <IfModule mod_rewrite.c>
    Options +FollowSymLinks
    RewriteEngine on
+
+   # Forward the Authorization header to PHP (fcgid/CGI strip it by default);
+   # required for REST API Bearer-token auth.
+   RewriteCond %{HTTP:Authorization} .
+   RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
    RewriteCond %{REQUEST_FILENAME} !-f
    RewriteRule . index.php [L]
 </IfModule>

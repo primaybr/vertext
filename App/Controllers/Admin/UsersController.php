@@ -46,6 +46,13 @@ class UsersController extends BaseController
         $total = (int) ($countModel->totalRows() ?: 0);
         $users = $listModel->get() ?: [];
 
+        $sessionCounts = \App\CMS\SessionTracker::countByUser();
+        foreach ($users as &$u) {
+            $u['session_count'] = $sessionCounts[(string) $u['id']] ?? 0;
+            $u['avatar_url']    = \App\CMS\AvatarHelper::url((string) $u['id'], $this->baseUrl);
+        }
+        unset($u);
+
         $this->adminRender('admin/users/index', [
             'users'  => $users,
             'total'  => $total,
@@ -53,6 +60,33 @@ class UsersController extends BaseController
             'pages'  => max(1, (int) ceil($total / $perPage)),
             'search' => $search,
         ], 'Users', 'users');
+    }
+
+    /** POST /admin/users/([a-zA-Z0-9\-]+)/revoke-sessions - admin signs a user out everywhere */
+    public function revokeSessions(string $id): void
+    {
+        $this->requirePermission('users.update');
+        $this->validateCsrf();
+
+        $user = $this->db('users')->where('id', $id)->whereNull('deleted_at')->get(1);
+        if (!$user) {
+            if ($this->isAjax()) { $this->json(['success' => false, 'message' => 'User not found.'], 404); }
+            $this->flash('error', 'User not found.');
+            $this->redirect($this->baseUrl . '/admin/users');
+        }
+
+        // keepCurrent only matters when revoking your own account's sessions
+        $keepCurrent = ((string) $user['id'] === (string) $this->currentUser['id']);
+        $count = \App\CMS\SessionTracker::revokeAllForUser($id, $keepCurrent);
+
+        Auth::audit('user.sessions_revoked', 'users', $id, ['count' => $count]);
+        $message = $count > 0
+            ? "Revoked {$count} active session(s) for \"{$user['name']}\"."
+            : 'No active sessions to revoke.';
+
+        if ($this->isAjax()) { $this->json(['success' => true, 'message' => $message, 'count' => $count]); }
+        $this->flash('success', $message);
+        $this->redirect($this->baseUrl . '/admin/users');
     }
 
     /** GET /admin/users/form - AJAX: returns create form partial for modal */
@@ -106,7 +140,7 @@ class UsersController extends BaseController
             $this->redirect($this->baseUrl . '/admin/users/create');
         }
 
-        $hash   = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
+        $hash   = \App\Models\UserModel::hashPassword($password);
         $userId = (string) $this->db('users')->save([
             'name'     => $name,
             'email'    => $email,
@@ -185,7 +219,7 @@ class UsersController extends BaseController
                 $this->flash('error', 'Password must be at least 8 characters.');
                 $this->redirect($this->baseUrl . "/admin/users/{$id}/edit");
             }
-            $data['password'] = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
+            $data['password'] = \App\Models\UserModel::hashPassword($password);
         }
 
         $this->db('users')->where('id', $id)->update($data);

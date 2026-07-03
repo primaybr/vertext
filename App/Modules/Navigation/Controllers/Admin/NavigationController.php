@@ -61,6 +61,7 @@ class NavigationController extends BaseController
 
         $this->db('nav_menus')->save(['name' => $name, 'slug' => $slug]);
         Auth::audit('navigation.menu.create', 'nav_menus', '', ['name' => $name]);
+        $this->invalidateNavCaches();
 
         $this->json(['success' => true, 'message' => "Menu \"{$name}\" created."]);
     }
@@ -213,6 +214,7 @@ class NavigationController extends BaseController
         $msg = $added > 0
             ? "Synced {$added} module route(s) into this menu."
             : 'All module routes are already in this menu.';
+        $this->invalidateNavCaches();
         $this->json(['success' => true, 'message' => $msg, 'added' => $added]);
     }
 
@@ -232,6 +234,7 @@ class NavigationController extends BaseController
 
         $this->db('nav_menus')->where('id', $id)->delete();
         Auth::audit('navigation.menu.delete', 'nav_menus', $id);
+        $this->invalidateNavCaches();
 
         $this->json(['success' => true, 'message' => 'Menu deleted.']);
     }
@@ -287,6 +290,7 @@ class NavigationController extends BaseController
             'open_in_new' => $openInNew,
         ]);
 
+        $this->invalidateNavCaches();
         $this->json(['success' => true, 'message' => 'Item added.']);
     }
 
@@ -323,6 +327,7 @@ class NavigationController extends BaseController
 
         $this->db('nav_items')->where('id', $itemId)->update($updates);
 
+        $this->invalidateNavCaches();
         $this->json(['success' => true, 'message' => 'Item updated.']);
     }
 
@@ -338,6 +343,7 @@ class NavigationController extends BaseController
 
         $this->db('nav_items')->where('id', $itemId)->delete();
 
+        $this->invalidateNavCaches();
         $this->json(['success' => true, 'message' => 'Item removed.']);
     }
 
@@ -376,6 +382,7 @@ class NavigationController extends BaseController
             ]);
         }
 
+        $this->invalidateNavCaches();
         $this->json(['success' => true]);
     }
 
@@ -394,6 +401,14 @@ class NavigationController extends BaseController
             $slug = $base . '-' . $counter++;
         }
         return $slug;
+    }
+
+    /** Nav changes invalidate the cached menu fragment AND cached pages */
+    private function invalidateNavCaches(): void
+    {
+        \App\CMS\PageCache::forgetFragment(null);
+        \App\CMS\PageCache::flushPages();
+        \App\CMS\NavHelper::flush();
     }
 
     private function validateCsrf(): void

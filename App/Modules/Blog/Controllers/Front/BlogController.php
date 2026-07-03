@@ -60,12 +60,29 @@ class BlogController extends Controller
 
     public function index(): void
     {
+        \App\CMS\PageCache::serve();
+
         $page   = max(1, (int) ($this->input->get('page') ?? 1));
         $offset = ($page - 1) * $this->perPage;
 
         $visibleFilter = "(posts.status = 'published' OR (posts.status = 'scheduled' AND posts.published_at <= NOW())) AND (posts.expire_at IS NULL OR posts.expire_at > NOW())";
+        $totalFilter   = "(status = 'published' OR (status = 'scheduled' AND published_at <= NOW())) AND (expire_at IS NULL OR expire_at > NOW())";
 
-        $posts = (new \Core\Model('posts'))
+        // i18n: filter the listing by the visitor's locale, but only when that
+        // locale actually has posts - otherwise fall back to everything.
+        $locale     = \App\CMS\I18n::getLocale();
+        $langFilter = false;
+        try {
+            $langCount = (int) ((new \Core\Model('posts'))
+                ->whereRaw($totalFilter, [])
+                ->where('lang', $locale)
+                ->whereNull('deleted_at')
+                ->totalRows() ?: 0);
+            $langFilter = $langCount > 0;
+        } catch (\Throwable) {
+        }
+
+        $q = (new \Core\Model('posts'))
             ->select('posts.id, posts.title, posts.slug, posts.excerpt, posts.published_at,
                       posts.reading_time, posts.featured_image_url,
                       users.name AS author_name')
@@ -73,15 +90,19 @@ class BlogController extends Controller
             ->whereRaw($visibleFilter, [])
             ->whereNull('posts.deleted_at')
             ->orderBy('posts.published_at', 'DESC')
-            ->limitOffset($this->perPage, $offset)
-            ->get() ?: [];
+            ->limitOffset($this->perPage, $offset);
+        if ($langFilter) {
+            $q->where('posts.lang', $locale);
+        }
+        $posts = $q->get() ?: [];
 
-        $totalFilter = "(status = 'published' OR (status = 'scheduled' AND published_at <= NOW())) AND (expire_at IS NULL OR expire_at > NOW())";
-
-        $total = (int) ((new \Core\Model('posts'))
+        $qc = (new \Core\Model('posts'))
             ->whereRaw($totalFilter, [])
-            ->whereNull('deleted_at')
-            ->totalRows() ?: 0);
+            ->whereNull('deleted_at');
+        if ($langFilter) {
+            $qc->where('lang', $locale);
+        }
+        $total = (int) ($qc->totalRows() ?: 0);
 
         // Attach categories to each post
         foreach ($posts as &$p) {
@@ -89,7 +110,7 @@ class BlogController extends Controller
         }
         unset($p);
 
-        ThemeEngine::render('modules/blog/front/index', [
+        $vars = [
             'posts'            => $posts,
             'total'            => $total,
             'page'             => $page,
@@ -98,11 +119,16 @@ class BlogController extends Controller
             'baseUrl'          => $this->baseUrl,
             'page_title'       => $this->settings['blog_title'] ?? 'Blog',
             'page_description' => $this->settings['blog_description'] ?? '',
-        ]);
+        ];
+        \App\CMS\PageCache::capture(static function () use ($vars) {
+            ThemeEngine::render('modules/blog/front/index', $vars);
+        });
     }
 
     public function post(string $slug): void
     {
+        \App\CMS\PageCache::serve();
+
         $post = (new \Core\Model('posts'))
             ->select('posts.*, users.name AS author_name')
             ->join('users', 'users.id = posts.created_by', 'LEFT')
@@ -112,6 +138,12 @@ class BlogController extends Controller
             ->get(1);
 
         if (!$post) {
+            // With Blog mounted at the root path its slug catch-all shadows the
+            // Pages catch-all - fall through so /some-page still renders.
+            if (\App\CMS\ModuleLoader::isEnabled('pages')) {
+                (new \App\Modules\Pages\Controllers\Front\PageController())->show($slug);
+                return;
+            }
             http_response_code(404);
             $this->render('error/404', ['baseUrl' => $this->baseUrl]);
             return;
@@ -147,7 +179,10 @@ class BlogController extends Controller
         $pageTitle = !empty($post['meta_title']) ? $post['meta_title'] : $post['title'];
         $pageDesc  = $post['meta_description'] ?? $post['excerpt'] ?? '';
 
-        ThemeEngine::render('modules/blog/front/post', [
+        // Resolve [form slug="..."] and future shortcodes in the trusted body
+        $post['body'] = \App\CMS\Shortcodes::render((string) ($post['body'] ?? ''), $this->baseUrl);
+
+        $vars = [
             'post'             => $post,
             'threadedComments' => $threadedComments,
             'commentsEnabled'  => $commentsEnabled,
@@ -160,7 +195,12 @@ class BlogController extends Controller
             'page_title'       => $pageTitle,
             'page_description' => $pageDesc,
             'page_image'       => $post['featured_image_url'] ?? $this->settings['og_default_image'] ?? '',
-        ]);
+        ];
+        // Posts with comments enabled embed a CSRF token, so capture() will
+        // detect that and skip storing - only comment-free pages get cached.
+        \App\CMS\PageCache::capture(static function () use ($vars) {
+            ThemeEngine::render('modules/blog/front/post', $vars);
+        });
     }
 
     public function category(string $slug): void

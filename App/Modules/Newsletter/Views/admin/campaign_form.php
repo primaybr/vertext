@@ -89,12 +89,27 @@
                    placeholder="Your email subject..." required
                    <?php echo $isSent ? 'readonly' : ''; ?>>
           </div>
-          <div class="vtx-field">
+          <div class="vtx-field mb-3">
             <label class="vtx-label" for="nl-preview">Preview Text</label>
             <input class="form-control" type="text" id="nl-preview" name="preview_text"
                    value="<?php echo htmlspecialchars($campaign['preview_text'] ?? ''); ?>"
                    placeholder="Brief preview shown in email clients..."
                    <?php echo $isSent ? 'readonly' : ''; ?>>
+          </div>
+          <div class="vtx-field">
+            <label class="vtx-label" for="nl-segment">Audience</label>
+            <select class="form-select" id="nl-segment" name="segment_id" <?php echo $isSent ? 'disabled' : ''; ?>>
+              <option value="">All active subscribers</option>
+              <?php foreach (($segments ?? []) as $seg): ?>
+              <option value="<?php echo htmlspecialchars($seg['id']); ?>"
+                      <?php echo ($campaign['segment_id'] ?? '') === $seg['id'] ? 'selected' : ''; ?>>
+                Segment: <?php echo htmlspecialchars($seg['name']); ?>
+              </option>
+              <?php endforeach; ?>
+            </select>
+            <div style="font-size:.75rem;color:var(--ps-text-muted);margin-top:.35rem;">
+              Manage segments under <a href="<?php echo $baseUrl; ?>/admin/newsletter/segments">Newsletter &rarr; Segments</a>.
+            </div>
           </div>
         </div>
       </div>
@@ -135,6 +150,8 @@
             <span class="badge badge-success">Sent</span>
             <?php elseif ($campaign['status'] === 'sending'): ?>
             <span class="badge badge-warning">Sending...</span>
+            <?php elseif ($campaign['status'] === 'scheduled'): ?>
+            <span class="badge badge-primary">Scheduled</span>
             <?php else: ?>
             <span class="badge badge-secondary">Draft</span>
             <?php endif; ?>
@@ -149,12 +166,49 @@
           <span style="color:var(--ps-text-muted);">Delivered to</span>
           <div style="margin-top:.2rem;font-weight:600;"><?php echo (int) $campaign['sent_count']; ?> subscriber(s)</div>
         </div>
+        <div>
+          <span style="color:var(--ps-text-muted);">Unique opens</span>
+          <div style="margin-top:.2rem;font-weight:600;"><?php echo (int) ($campaign['open_count'] ?? 0); ?></div>
+        </div>
+        <?php endif; ?>
+        <?php if ($campaign['status'] === 'scheduled' && !empty($campaign['scheduled_at'])): ?>
+        <div>
+          <span style="color:var(--ps-text-muted);">Scheduled for</span>
+          <div style="margin-top:.2rem;font-weight:600;"><?php echo date('M j, Y g:i A', strtotime($campaign['scheduled_at'])); ?></div>
+        </div>
         <?php endif; ?>
         <?php if (!$isSent): ?>
         <div>
           <span style="color:var(--ps-text-muted);">Active subscribers</span>
           <div style="margin-top:.2rem;font-weight:600;"><?php echo (int) ($activeCount ?? 0); ?></div>
         </div>
+        <?php endif; ?>
+      </div>
+    </div>
+    <?php endif; ?>
+
+    <?php if ($editing && !$isSent && \App\CMS\Auth::can('newsletter.manage')): ?>
+    <div class="vtx-panel mb-3">
+      <div class="vtx-panel-header">Schedule</div>
+      <div class="vtx-panel-body" style="font-size:.8125rem;">
+        <?php if ($campaign['status'] === 'scheduled'): ?>
+        <p class="mb-2">Sends automatically at
+          <strong><?php echo date('M j, Y g:i A', strtotime($campaign['scheduled_at'])); ?></strong>
+          (checked whenever the admin is opened).</p>
+        <button type="button" class="btn btn-outline-danger btn-sm w-100" id="nl-unschedule-btn">
+          <i class="pi pi-x-circle me-1"></i> Cancel Schedule
+        </button>
+        <?php else: ?>
+        <div class="vtx-field mb-2">
+          <label class="vtx-label" for="nl-schedule-at" style="font-size:.75rem;">Send at</label>
+          <input class="form-control form-control-sm" type="datetime-local" id="nl-schedule-at">
+        </div>
+        <button type="button" class="btn btn-outline-primary btn-sm w-100" id="nl-schedule-btn">
+          <i class="pi pi-clock me-1"></i> Schedule Send
+        </button>
+        <p style="font-size:.7rem;color:var(--ps-text-muted);margin:.5rem 0 0;">
+          Cron-free: due campaigns send when an admin page is opened at or after this time.
+        </p>
         <?php endif; ?>
       </div>
     </div>
@@ -267,6 +321,45 @@
         if (res.success) setTimeout(() => { document.getElementById('nl-test-modal').style.display = 'none'; }, 2000);
       })
       .catch(() => { document.getElementById('nl-test-confirm').disabled = false; });
+    });
+  }
+  // Schedule / unschedule
+  const schedBtn = document.getElementById('nl-schedule-btn');
+  if (schedBtn) {
+    schedBtn.addEventListener('click', () => {
+      const when = document.getElementById('nl-schedule-at').value;
+      if (!when) { showApiMsg('error', 'Choose a date and time first.'); return; }
+      schedBtn.disabled = true;
+      fetch(BASE + '/admin/newsletter/campaigns/' + CAMP_ID + '/schedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ csrf_token: CSRF, scheduled_at: when }),
+      })
+      .then(r => r.json())
+      .then(res => {
+        showApiMsg(res.success ? 'success' : 'error', res.message || '');
+        if (res.success) setTimeout(() => location.reload(), 1200);
+        else schedBtn.disabled = false;
+      })
+      .catch(() => { showApiMsg('error', 'Network error.'); schedBtn.disabled = false; });
+    });
+  }
+  const unschedBtn = document.getElementById('nl-unschedule-btn');
+  if (unschedBtn) {
+    unschedBtn.addEventListener('click', () => {
+      unschedBtn.disabled = true;
+      fetch(BASE + '/admin/newsletter/campaigns/' + CAMP_ID + '/unschedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ csrf_token: CSRF }),
+      })
+      .then(r => r.json())
+      .then(res => {
+        showApiMsg(res.success ? 'success' : 'error', res.message || '');
+        if (res.success) setTimeout(() => location.reload(), 1200);
+        else unschedBtn.disabled = false;
+      })
+      .catch(() => { showApiMsg('error', 'Network error.'); unschedBtn.disabled = false; });
     });
   }
   <?php endif; ?>

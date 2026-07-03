@@ -18,8 +18,12 @@
   <?php if (!empty($feedUrl)): ?>
   <link rel="alternate" type="application/rss+xml" title="<?php echo htmlspecialchars($siteName . ' RSS Feed'); ?>" href="<?php echo htmlspecialchars($feedUrl); ?>">
   <?php endif; ?>
-  <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl . '/assets/css/styles.css'); ?>">
-  <link rel="stylesheet" href="<?php echo htmlspecialchars($themeUrl . '/css/theme.css'); ?>">
+  <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl . '/assets/css/styles.css'); ?>?v=<?php echo substr(hash('crc32b', \App\CMS\Version::APP), 0, 8); ?>">
+  <link rel="stylesheet" href="<?php echo htmlspecialchars($themeUrl . '/css/theme.css'); ?>?v=<?php echo substr(hash('crc32b', \App\CMS\Version::APP), 0, 8); ?>">
+  <?php // hreflang alternates for locale path-prefix routing (i18n v0.0.2) ?>
+  <?php foreach (\App\CMS\I18n::getSupportedLocales() as $__hl): ?>
+  <link rel="alternate" hreflang="<?php echo htmlspecialchars($__hl); ?>" href="<?php echo htmlspecialchars($baseUrl . '/' . $__hl . ($_SERVER['REQUEST_URI'] ?? '/')); ?>">
+  <?php endforeach; ?>
   <?php if (class_exists('App\Modules\ThemeCustomizer\ThemeCustomizerHelper')) echo \App\Modules\ThemeCustomizer\ThemeCustomizerHelper::getCss(); ?>
 </head>
 <body>
@@ -31,7 +35,7 @@
       $tcLogo = class_exists('App\Modules\ThemeCustomizer\ThemeCustomizerHelper')
           ? \App\Modules\ThemeCustomizer\ThemeCustomizerHelper::getLogoUrl() : '';
       if ($tcLogo): ?>
-      <img src="<?php echo htmlspecialchars($tcLogo); ?>" alt="<?php echo htmlspecialchars($siteName); ?>" style="max-height:48px;width:auto;vertical-align:middle;">
+      <img src="<?php echo htmlspecialchars($tcLogo); ?>" alt="<?php echo htmlspecialchars($siteName); ?>" loading="lazy" style="max-height:48px;width:auto;vertical-align:middle;">
       <?php else: echo htmlspecialchars($siteName); endif; ?>
     </a>
     <nav class="site-nav">
@@ -89,6 +93,6 @@
   </div>
 </footer>
 
-<script src="<?php echo htmlspecialchars($themeUrl . '/js/theme.js'); ?>"></script>
+<script src="<?php echo htmlspecialchars($themeUrl . '/js/theme.js'); ?>?v=<?php echo substr(hash('crc32b', \App\CMS\Version::APP), 0, 8); ?>"></script>
 </body>
 </html>

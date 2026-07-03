@@ -1,0 +1,28 @@
+{
+    "name": "Members",
+    "slug": "members",
+    "version": "0.0.1",
+    "description": "Front-end visitor accounts: registration, login, email verification, and member profiles",
+    "author": "Vertext",
+    "category": "Core",
+    "requires": { "vertext": ">=0.0.8" },
+    "nav": {
+        "label":      "Members",
+        "icon":       "pi-users",
+        "path":       "/admin/members",
+        "active":     "members",
+        "permission": "members.view"
+    },
+    "nav_routes": [
+        { "label": "Account", "icon": "pi-user", "path": "/account" }
+    ],
+    "install_settings": [
+        {
+            "key":     "members_require_verification",
+            "label":   "Require email verification",
+            "type":    "select",
+            "options": { "1": "Yes - members must verify email before signing in", "0": "No - accounts are active immediately" },
+            "default": "1"
+        }
+    ]
+}

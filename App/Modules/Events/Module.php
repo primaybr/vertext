@@ -33,6 +33,33 @@ class Module implements ModuleInterface
         )");
         $db->execute();
 
+        // v0.0.2 schema: capacity, recurrence, tickets, per-attendee RSVPs
+        $db->query("ALTER TABLE events ADD COLUMN IF NOT EXISTS max_attendees INT");
+        $db->execute();
+        $db->query("ALTER TABLE events ADD COLUMN IF NOT EXISTS recurrence_rule TEXT");
+        $db->execute();
+        $db->query("ALTER TABLE events ADD COLUMN IF NOT EXISTS tickets TEXT");
+        $db->execute();
+        $db->query("CREATE TABLE IF NOT EXISTS event_rsvps (
+            id            UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+            event_id      UUID         NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+            site_user_id  UUID,
+            name          VARCHAR(120) NOT NULL,
+            email         VARCHAR(180) NOT NULL,
+            ticket        VARCHAR(100),
+            status        VARCHAR(20)  NOT NULL DEFAULT 'confirmed',
+            token         UUID         NOT NULL DEFAULT gen_random_uuid(),
+            registered_at TIMESTAMP    NOT NULL DEFAULT NOW(),
+            created_at    TIMESTAMP    DEFAULT NOW(),
+            updated_at    TIMESTAMP    DEFAULT NOW(),
+            deleted_at    TIMESTAMP,
+            created_by    UUID,
+            updated_by    UUID,
+            deleted_by    UUID,
+            UNIQUE (event_id, email)
+        )");
+        $db->execute();
+
         // Permissions
         $permSql = "INSERT INTO permissions (name, slug, description, module)
                     VALUES (:name, :slug, :desc, 'events')
@@ -58,6 +85,7 @@ class Module implements ModuleInterface
 
     public function uninstall(\Core\Database\Connection $db): void
     {
+        $db->query("DROP TABLE IF EXISTS event_rsvps CASCADE"); $db->execute();
         $db->query("DROP TABLE IF EXISTS events CASCADE"); $db->execute();
 
         $db->query("DELETE FROM role_permissions WHERE permission_id IN (SELECT id FROM permissions WHERE module = 'events')");
@@ -81,10 +109,15 @@ class Module implements ModuleInterface
         $router->get( "/admin/events/{$id}/edit",       $admin, 'editForm');
         $router->post("/admin/events/{$id}/update",     $admin, 'update');
         $router->post("/admin/events/{$id}/delete",     $admin, 'delete');
+        $router->get( "/admin/events/{$id}/attendees/export",       $admin, 'exportAttendees');
+        $router->post("/admin/events/{$id}/attendees/{$id}/status", $admin, 'setAttendeeStatus');
+        $router->get( "/admin/events/{$id}/attendees",              $admin, 'attendees');
 
-        // Public
+        // Public (static /events/rsvp/cancel registered before slug wildcards)
         $router->get(  '/events',                       $front, 'index');
+        $router->get(  '/events/rsvp/cancel',           $front, 'cancelRsvp');
         $router->post( "/events/{$slug}/rsvp",          $front, 'rsvp');
+        $router->get(  "/events/{$slug}/ical",          $front, 'ical');
         $router->get(  "/events/{$slug}",               $front, 'detail');
     }
 }

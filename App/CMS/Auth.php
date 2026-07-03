@@ -6,6 +6,7 @@ namespace App\CMS;
 
 use Core\Http\Session;
 use Core\Model;
+use Core\Security\Password;
 
 /**
  * Vertext CMS Auth Helper
@@ -58,11 +59,15 @@ class Auth
         ]);
         $session->set('admin_roles',       $roles);
         $session->set('admin_permissions', $permissions);
+
+        // Track this session so the user can review/revoke it from My Profile
+        SessionTracker::record((string) $user['id']);
     }
 
     /** Log the current user out */
     public static function logout(): void
     {
+        SessionTracker::forget();
         self::session()->destroy();
     }
 
@@ -96,7 +101,7 @@ class Auth
                 ->whereNull('deleted_at')
                 ->get(1);
 
-            if (!$user || !password_verify($password, $user['password'])) {
+            if (!$user || !Password::verify($password, $user['password'])) {
                 return null;
             }
 
@@ -104,7 +109,15 @@ class Auth
                 return null;
             }
 
-            (new Model('users'))->where('id', (string) $user['id'])->update(['last_login' => date('Y-m-d H:i:s')]);
+            $update = ['last_login' => date('Y-m-d H:i:s')];
+
+            // Transparently upgrade legacy bcrypt hashes to the current
+            // algorithm (Argon2id when available) on successful login.
+            if (Password::needsRehash($user['password'])) {
+                $update['password'] = Password::hash($password);
+            }
+
+            (new Model('users'))->where('id', (string) $user['id'])->update($update);
 
             return $user;
         } catch (\Exception $e) {

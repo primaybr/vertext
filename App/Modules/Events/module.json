@@ -1,7 +1,7 @@
 {
     "name": "Events",
     "slug": "events",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "Event listings with calendar view and RSVP counter",
     "author": "Vertext",
     "category": "Content",

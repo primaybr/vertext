@@ -81,10 +81,25 @@ class Module implements ModuleInterface
             try { $db->query("ROLLBACK TO SAVEPOINT sp_media_users_fk"); $db->execute(); } catch (\Exception) {}
         }
 
+        // v0.0.2: folders
+        $db->query("CREATE TABLE IF NOT EXISTS media_folders (
+            id         UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+            name       VARCHAR(150) NOT NULL,
+            parent_id  UUID,
+            created_at TIMESTAMP    DEFAULT NOW(),
+            updated_at TIMESTAMP    DEFAULT NOW(),
+            deleted_at TIMESTAMP,
+            created_by {$userIdType},
+            updated_by {$userIdType},
+            deleted_by {$userIdType}
+        )");
+        $db->execute();
+
         // Upgrade columns for existing installations
         foreach ([
             "ALTER TABLE media_files ADD COLUMN IF NOT EXISTS thumbnail_path VARCHAR(500)",
             "ALTER TABLE media_files ADD COLUMN IF NOT EXISTS resized BOOLEAN DEFAULT FALSE",
+            "ALTER TABLE media_files ADD COLUMN IF NOT EXISTS folder_id UUID",
         ] as $alterSql) {
             try {
                 $db->query($alterSql);
@@ -140,6 +155,8 @@ class Module implements ModuleInterface
     {
         $db->query("DROP TABLE IF EXISTS media_files CASCADE");
         $db->execute();
+        $db->query("DROP TABLE IF EXISTS media_folders CASCADE");
+        $db->execute();
 
         $db->query("DELETE FROM role_permissions WHERE permission_id IN (SELECT id FROM permissions WHERE module = 'media')");
         $db->execute();
@@ -157,8 +174,12 @@ class Module implements ModuleInterface
         $router->post('/admin/media/upload',                       $c,  'upload');
         $router->post('/admin/media/regen-thumbnails',             $c,  'regenThumbnails');
         $router->post('/admin/media/bulk',                         $c,  'bulk');
+        $router->post('/admin/media/folders/store',                $c,  'storeFolder');
+        $router->post('/admin/media/folders/([a-zA-Z0-9\-]+)/rename', $c, 'renameFolder');
+        $router->post('/admin/media/folders/([a-zA-Z0-9\-]+)/delete', $c, 'deleteFolder');
         $router->get('/admin/media/([a-zA-Z0-9\-]+)/edit-form',   $c,  'editForm');
         $router->post('/admin/media/([a-zA-Z0-9\-]+)/update',     $c,  'update');
+        $router->post('/admin/media/([a-zA-Z0-9\-]+)/edit-image', $c,  'editImage');
         $router->post('/admin/media/([a-zA-Z0-9\-]+)/delete',     $c,  'delete');
 
         $router->get('/admin/media/picker',           $cp, 'index');

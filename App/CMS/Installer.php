@@ -217,7 +217,7 @@ class Installer
                 \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
             ]);
 
-            $hash = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
+            $hash = \Core\Security\Password::hash($password);
 
             // Insert user
             $stmt = $pdo->prepare(

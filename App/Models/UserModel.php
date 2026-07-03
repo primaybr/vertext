@@ -46,15 +46,15 @@ class UserModel extends Model
         return [];
     }
 
-    /** Hash password */
+    /** Hash password (Argon2id via Core\Security\Password, bcrypt fallback) */
     public static function hashPassword(string $plain): string
     {
-        return password_hash($plain, PASSWORD_BCRYPT, ['cost' => 12]);
+        return \Core\Security\Password::hash($plain);
     }
 
     /** Verify password */
     public static function verifyPassword(string $plain, string $hash): bool
     {
-        return password_verify($plain, $hash);
+        return \Core\Security\Password::verify($plain, $hash);
     }
 }

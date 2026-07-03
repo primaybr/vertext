@@ -57,7 +57,8 @@
           <th data-sort="email">Email</th>
           <th data-sort="status">Status</th>
           <th data-sort="last_login">Last Login</th>
-          <th style="width:80px;"></th>
+          <th>Sessions</th>
+          <th style="width:110px;"></th>
         </tr>
       </thead>
       <tbody id="vtx-users-tbody">
@@ -65,11 +66,16 @@
         <tr>
           <td>
             <div style="display:flex;align-items:center;gap:.625rem;">
+              <?php if (!empty($row['avatar_url'])): ?>
+              <img src="<?php echo htmlspecialchars($row['avatar_url']); ?>" alt=""
+                   style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;">
+              <?php else: ?>
               <div style="width:32px;height:32px;border-radius:50%;background:var(--ps-primary);
                           display:flex;align-items:center;justify-content:center;
                           font-size:.75rem;font-weight:700;color:#fff;flex-shrink:0;">
                 <?php echo strtoupper(substr($row['name'], 0, 1)); ?>
               </div>
+              <?php endif; ?>
               <span class="cell-primary"><?php echo htmlspecialchars($row['name']); ?></span>
             </div>
           </td>
@@ -89,12 +95,35 @@
             <?php echo !empty($row['last_login']) ? date('M d, Y', strtotime($row['last_login'])) : '-'; ?>
           </td>
           <td>
+            <?php if (($row['session_count'] ?? 0) > 0): ?>
+            <span class="vtx-tag success"><?php echo (int) $row['session_count']; ?> active</span>
+            <?php else: ?>
+            <span class="cell-muted">-</span>
+            <?php endif; ?>
+          </td>
+          <td>
             <div style="display:flex;gap:.25rem;justify-content:flex-end;">
               <button type="button" class="vtx-icon-btn" title="Edit"
                       data-form-url="{{baseUrl}}/admin/users/<?php echo $row['id']; ?>/form"
                       data-form-title="Edit User">
                 <i class="pi pi-edit"></i>
               </button>
+              <?php if (($row['session_count'] ?? 0) > 0): ?>
+              <form id="revoke-user-<?php echo $row['id']; ?>" method="POST"
+                    action="{{baseUrl}}/admin/users/<?php echo $row['id']; ?>/revoke-sessions"
+                    style="display:none;">
+                <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+              </form>
+              <button type="button" class="vtx-icon-btn" title="Revoke sessions"
+                      data-confirm-form="revoke-user-<?php echo $row['id']; ?>"
+                      data-confirm-title="Revoke Sessions"
+                      data-confirm-message="Sign &quot;<?php echo htmlspecialchars($row['name']); ?>&quot; out of all devices?"
+                      data-confirm-label="Revoke"
+                      data-confirm-class="btn-danger"
+                      data-confirm-ajax="true">
+                <i class="pi pi-log-out"></i>
+              </button>
+              <?php endif; ?>
               <?php if ($row['id'] !== ($currentUser['id'] ?? '')): ?>
               <form id="del-user-<?php echo $row['id']; ?>" method="POST"
                     action="{{baseUrl}}/admin/users/<?php echo $row['id']; ?>/delete"

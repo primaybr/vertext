@@ -41,7 +41,7 @@ class ModulesController extends BaseController
         }
         unset($avail);
 
-        // Read category + icon from manifest for installed non-core modules
+        // Read category + icon + version from manifest for installed non-core modules
         $modulesDir = defined('ROOT') ? ROOT . 'App' . DS . 'Modules' . DS : '';
         foreach ($modules as &$mod) {
             if (!empty($mod['is_core'])) {
@@ -54,6 +54,10 @@ class ModulesController extends BaseController
             }
             $mod['category'] = $manifest['category'] ?? 'Other';
             $mod['nav_icon'] = $manifest['nav']['icon'] ?? 'pi-layers';
+            // Override version with the one from module.json if present
+            if (!empty($manifest['version'])) {
+                $mod['version'] = $manifest['version'];
+            }
         }
         unset($mod);
 

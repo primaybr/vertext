@@ -33,6 +33,8 @@ class PageController extends Controller
 
     public function show(string $slug): void
     {
+        \App\CMS\PageCache::serve();
+
         $this->ensurePagesSchema();
 
         $page = (new \Core\Model('pages'))
@@ -46,11 +48,19 @@ class PageController extends Controller
             return;
         }
 
-        ThemeEngine::render('modules/pages/front/page', [
-            'page'             => $page,
-            'baseUrl'          => $this->baseUrl,
-            'page_title'       => !empty($page['meta_title']) ? $page['meta_title'] : $page['title'],
-            'page_description' => $page['meta_description'] ?? $page['excerpt'] ?? '',
-        ]);
+        // Resolve [form slug="..."] and future shortcodes in the trusted body
+        $page['content'] = \App\CMS\Shortcodes::render((string) ($page['content'] ?? ''), $this->baseUrl);
+
+        \App\Modules\Pages\PageHelper::ensureSchema();
+
+        \App\CMS\PageCache::capture(function () use ($page) {
+            ThemeEngine::render('modules/pages/front/page', [
+                'page'             => $page,
+                'pageMeta'         => \App\Modules\Pages\PageHelper::getAllMeta((string) $page['id']),
+                'baseUrl'          => $this->baseUrl,
+                'page_title'       => !empty($page['meta_title']) ? $page['meta_title'] : $page['title'],
+                'page_description' => $page['meta_description'] ?? $page['excerpt'] ?? '',
+            ]);
+        });
     }
 }

@@ -30,6 +30,7 @@ class MediaPickerController extends BaseController
         $this->requirePermission('media.view');
 
         $search     = trim($this->input->get('search') ?? '');
+        $folder     = trim($this->input->get('folder') ?? '');
         $page       = max(1, (int) ($this->input->get('page') ?? 1));
         $selectedId = (int) ($this->input->get('selected') ?? 0);
         $perPage    = 20;
@@ -48,6 +49,21 @@ class MediaPickerController extends BaseController
             $qc->whereRaw('original_name ILIKE :s', $binds);
         }
 
+        // Folder filter (v0.0.2)
+        if ($folder === 'unfiled') {
+            $q->whereNull('folder_id');
+            $qc->whereNull('folder_id');
+        } elseif ($folder !== '') {
+            $q->where('folder_id', $folder);
+            $qc->where('folder_id', $folder);
+        }
+
+        $folders = [];
+        try {
+            $folders = $this->db('media_folders')->whereNull('deleted_at')->orderBy('name', 'ASC')->get() ?: [];
+        } catch (\Throwable) {
+        }
+
         $total = (int) ($qc->totalRows() ?: 0);
         $files = $q->get() ?: [];
 
@@ -64,6 +80,8 @@ class MediaPickerController extends BaseController
             'search'     => $search,
             'selectedId' => $selectedId,
             'baseUrl'    => $this->baseUrl,
+            'folders'    => $folders,
+            'folder'     => $folder,
         ]);
     }
 }

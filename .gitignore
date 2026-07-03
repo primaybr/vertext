@@ -12,6 +12,7 @@ composer.json
 .playwright-mcp/
 .github/
 .markdownlint.json
+.remember/
 
 # Runtime-generated credential files — never commit these
 Storage/db.php

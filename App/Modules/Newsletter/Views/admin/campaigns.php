@@ -42,6 +42,8 @@
           <th>Subject</th>
           <th style="text-align:center;width:100px;">Status</th>
           <th style="text-align:center;width:80px;">Sent to</th>
+          <th style="text-align:center;width:80px;">Opens</th>
+          <th style="text-align:center;width:80px;">Clicks</th>
           <th style="width:140px;">Date</th>
           <th style="text-align:right;width:100px;"></th>
         </tr>
@@ -57,6 +59,8 @@
             <span class="badge badge-success">Sent</span>
             <?php elseif ($c['status'] === 'sending'): ?>
             <span class="badge badge-warning">Sending...</span>
+            <?php elseif ($c['status'] === 'scheduled'): ?>
+            <span class="badge badge-primary">Scheduled</span>
             <?php else: ?>
             <span class="badge badge-secondary">Draft</span>
             <?php endif; ?>
@@ -64,10 +68,20 @@
           <td style="text-align:center;font-weight:600;">
             <?php echo $c['status'] === 'sent' ? (int) $c['sent_count'] : '-'; ?>
           </td>
+          <td style="text-align:center;">
+            <?php echo $c['status'] === 'sent' ? (int) ($c['open_count'] ?? 0) : '-'; ?>
+          </td>
+          <td style="text-align:center;">
+            <?php echo $c['status'] === 'sent' ? (int) ($c['click_count'] ?? 0) : '-'; ?>
+          </td>
           <td style="font-size:.8125rem;color:var(--ps-text-muted);white-space:nowrap;">
-            <?php echo $c['sent_at']
-              ? date('M j, Y', strtotime($c['sent_at']))
-              : date('M j, Y', strtotime($c['created_at'])); ?>
+            <?php if ($c['status'] === 'scheduled' && !empty($c['scheduled_at'])): ?>
+              <i class="pi pi-clock me-1"></i><?php echo date('M j, Y g:i A', strtotime($c['scheduled_at'])); ?>
+            <?php else: ?>
+              <?php echo $c['sent_at']
+                ? date('M j, Y', strtotime($c['sent_at']))
+                : date('M j, Y', strtotime($c['created_at'])); ?>
+            <?php endif; ?>
           </td>
           <td style="text-align:right;white-space:nowrap;">
             <?php if ($c['status'] !== 'sent' && \App\CMS\Auth::can('newsletter.manage')): ?>

@@ -353,3 +353,20 @@ Scans `App/Bundles/*/bundle.json`. Annotates each module entry with `installed` 
 1. Create `App/Bundles/my-bundle/bundle.json` following the schema above.
 2. The bundle appears automatically in the Packages tab on next page load (no cache clear needed - bundles are scanned at runtime).
 3. There is no CLI or API required to register a bundle.
+
+---
+
+## Module author notes added in 0.0.8
+
+- **Database writes must go through `Core\Model`** (`save()` / `update()` / `delete()`), never
+  raw `$connection->query()` + `execute()` for INSERT/UPDATE/DELETE. The PDO layer runs without
+  autocommit and only `Model` wraps writes in a transaction commit - raw DML executes but is
+  silently rolled back at the end of the request. Raw statements are fine for DDL
+  (`CREATE TABLE IF NOT EXISTS`, `ALTER TABLE`).
+- **Shortcodes** - `App\CMS\Shortcodes::render($html, $baseUrl)` resolves `[form slug="..."]`
+  and `[newsletter_signup]` inside trusted content bodies. Front controllers that render
+  admin-authored HTML can call it before passing the body to the view.
+- **Page cache invalidation** - if your module renders public content, call
+  `\App\CMS\PageCache::flushPages()` after any change that affects the public output.
+- **Webhook registry** - add new event keys to `WebhookDispatcher::EVENTS` so they appear in the
+  endpoint subscription UI.

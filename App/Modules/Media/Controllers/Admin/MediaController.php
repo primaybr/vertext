@@ -30,6 +30,31 @@ class MediaController extends BaseController
     public function __construct()
     {
         parent::__construct();
+        $this->ensureFolderSchema();
+    }
+
+    /** v0.0.2 runtime schema upgrade for pre-folder installs */
+    private function ensureFolderSchema(): void
+    {
+        static $checked = false;
+        if ($checked) return;
+        $checked = true;
+        try {
+            $db = $this->db('media_files')->db;
+            $db->query("CREATE TABLE IF NOT EXISTS media_folders (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                name VARCHAR(150) NOT NULL,
+                parent_id UUID,
+                created_at TIMESTAMP DEFAULT NOW(),
+                updated_at TIMESTAMP DEFAULT NOW(),
+                deleted_at TIMESTAMP,
+                created_by UUID, updated_by UUID, deleted_by UUID
+            )");
+            $db->execute();
+            $db->query("ALTER TABLE media_files ADD COLUMN IF NOT EXISTS folder_id UUID");
+            $db->execute();
+        } catch (\Throwable) {
+        }
     }
 
     // ── Grid List ──────────────────────────────────────────────────────────────
@@ -39,12 +64,13 @@ class MediaController extends BaseController
         $this->requirePermission('media.view');
 
         $search  = trim($this->input->get('search') ?? '');
+        $folder  = trim($this->input->get('folder') ?? '');
         $page    = max(1, (int) ($this->input->get('page') ?? 1));
         $perPage = 24;
         $offset  = ($page - 1) * $perPage;
 
         $q = $this->db('media_files')
-            ->select('id, filename, original_name, mime_type, size, width, height, alt_text, thumbnail_path, created_at')
+            ->select('id, filename, original_name, mime_type, size, width, height, alt_text, thumbnail_path, folder_id, created_at')
             ->orderBy('created_at', 'DESC')
             ->limitOffset($perPage, $offset);
 
@@ -55,6 +81,28 @@ class MediaController extends BaseController
             $q->whereRaw('original_name ILIKE :s', $binds);
             $qc->whereRaw('original_name ILIKE :s', $binds);
         }
+
+        // Folder filter: '' = everything, 'unfiled' = no folder, else folder id
+        $currentFolder = null;
+        if ($folder === 'unfiled') {
+            $q->whereNull('folder_id');
+            $qc->whereNull('folder_id');
+        } elseif ($folder !== '') {
+            $currentFolder = $this->db('media_folders')->where('id', $folder)->whereNull('deleted_at')->get(1);
+            if ($currentFolder) {
+                $q->where('folder_id', $folder);
+                $qc->where('folder_id', $folder);
+            } else {
+                $folder = '';
+            }
+        }
+
+        // Folder sidebar with per-folder counts
+        $folders = $this->db('media_folders')->whereNull('deleted_at')->orderBy('name', 'ASC')->get() ?: [];
+        foreach ($folders as &$fRow) {
+            $fRow['count'] = (int) ($this->db('media_files')->where('folder_id', (string) $fRow['id'])->totalRows() ?: 0);
+        }
+        unset($fRow);
 
         $total = (int) ($qc->totalRows() ?: 0);
         $files = $q->get() ?: [];
@@ -81,7 +129,85 @@ class MediaController extends BaseController
             'pages'             => max(1, (int) ceil($total / $perPage)),
             'search'            => $search,
             'missingThumbCount' => $missingThumbCount,
+            'folders'           => $folders,
+            'folder'            => $folder,
+            'currentFolder'     => $currentFolder,
         ], 'Media Library', 'media');
+    }
+
+    // ── Folders (v0.0.2) ───────────────────────────────────────────────────────
+
+    /** POST /admin/media/folders/store - AJAX */
+    public function storeFolder(): void
+    {
+        $this->requirePermission('media.upload');
+        $this->validateCsrf();
+
+        $name = trim($this->input->post('name', false) ?? '');
+        if ($name === '' || mb_strlen($name) > 150) {
+            $this->json(['success' => false, 'message' => 'A folder name (max 150 characters) is required.']);
+        }
+
+        $existing = $this->db('media_folders')->where('name', $name)->whereNull('deleted_at')->get(1);
+        if ($existing) {
+            $this->json(['success' => false, 'message' => 'A folder with that name already exists.']);
+        }
+
+        $id = (string) $this->db('media_folders')->save([
+            'name'       => $name,
+            'created_by' => $this->currentUser['id'] ?? null,
+        ]);
+
+        Auth::audit('media.folder_created', 'media_folders', $id, ['name' => $name]);
+        $this->json(['success' => true, 'message' => "Folder \"{$name}\" created.", 'id' => $id, 'name' => $name]);
+    }
+
+    /** POST /admin/media/folders/{id}/rename - AJAX */
+    public function renameFolder(string $id): void
+    {
+        $this->requirePermission('media.edit');
+        $this->validateCsrf();
+
+        $folder = $this->db('media_folders')->where('id', $id)->whereNull('deleted_at')->get(1);
+        if (!$folder) {
+            $this->json(['success' => false, 'message' => 'Folder not found.'], 404);
+        }
+
+        $name = trim($this->input->post('name', false) ?? '');
+        if ($name === '' || mb_strlen($name) > 150) {
+            $this->json(['success' => false, 'message' => 'A folder name (max 150 characters) is required.']);
+        }
+
+        $this->db('media_folders')->where('id', $id)->update([
+            'name'       => $name,
+            'updated_at' => date('Y-m-d H:i:s'),
+            'updated_by' => $this->currentUser['id'] ?? null,
+        ]);
+
+        Auth::audit('media.folder_renamed', 'media_folders', $id, ['from' => $folder['name'], 'to' => $name]);
+        $this->json(['success' => true, 'message' => 'Folder renamed.']);
+    }
+
+    /** POST /admin/media/folders/{id}/delete - AJAX; files fall back to Unfiled */
+    public function deleteFolder(string $id): void
+    {
+        $this->requirePermission('media.delete');
+        $this->validateCsrf();
+
+        $folder = $this->db('media_folders')->where('id', $id)->whereNull('deleted_at')->get(1);
+        if (!$folder) {
+            $this->json(['success' => false, 'message' => 'Folder not found.'], 404);
+        }
+
+        // Files are kept - they just become unfiled
+        $this->db('media_files')->where('folder_id', $id)->update(['folder_id' => null]);
+        $this->db('media_folders')->where('id', $id)->update([
+            'deleted_at' => date('Y-m-d H:i:s'),
+            'deleted_by' => $this->currentUser['id'] ?? null,
+        ]);
+
+        Auth::audit('media.folder_deleted', 'media_folders', $id, ['name' => $folder['name']]);
+        $this->json(['success' => true, 'message' => "Folder \"{$folder['name']}\" deleted. Its files were moved to Unfiled."]);
     }
 
     // ── Upload ─────────────────────────────────────────────────────────────────
@@ -148,6 +274,17 @@ class MediaController extends BaseController
 
         $storedFilename = $year . '/' . $month . '/' . $stored;
 
+        // Optional target folder (validated) - the drop-zone appends it to the
+        // upload URL as a query param, manual forms may POST it
+        $folderId = trim($this->input->post('folder_id', false) ?? '');
+        if ($folderId === '') {
+            $folderId = trim($this->input->get('folder_id') ?? '');
+        }
+        if ($folderId !== '') {
+            $folderRow = $this->db('media_folders')->where('id', $folderId)->whereNull('deleted_at')->get(1);
+            $folderId  = $folderRow ? $folderId : '';
+        }
+
         try {
             $id = (string) $this->db('media_files')->save([
                 'filename'       => $storedFilename,
@@ -158,6 +295,7 @@ class MediaController extends BaseController
                 'height'         => $height,
                 'thumbnail_path' => $thumbnailPath,
                 'resized'        => $resized,
+                'folder_id'      => $folderId !== '' ? $folderId : null,
                 'created_by'     => $this->currentUser['id'],
             ]);
         } catch (\Exception) {
@@ -319,11 +457,12 @@ class MediaController extends BaseController
 
     public function bulk(): void
     {
-        $this->requirePermission('media.delete');
+        // "move" only needs edit rights; delete keeps requiring media.delete below
+        $action = $this->input->post('bulk_action') ?? '';
+        $this->requirePermission($action === 'move' ? 'media.edit' : 'media.delete');
         $this->validateCsrf();
 
-        $action = $this->input->post('bulk_action') ?? '';
-        $ids    = array_filter(array_map('trim', (array) ($this->input->post('ids', false) ?? [])));
+        $ids = array_filter(array_map('trim', (array) ($this->input->post('ids', false) ?? [])));
 
         if (empty($ids)) {
             $this->json(['success' => false, 'message' => 'No files selected.']);
@@ -331,6 +470,23 @@ class MediaController extends BaseController
 
         $count        = count($ids);
         $placeholders = implode(',', array_fill(0, $count, '?'));
+
+        if ($action === 'move') {
+            $folderId = trim($this->input->post('folder_id', false) ?? '');
+            if ($folderId !== '' && $folderId !== 'unfiled') {
+                $folderRow = $this->db('media_folders')->where('id', $folderId)->whereNull('deleted_at')->get(1);
+                if (!$folderRow) {
+                    $this->json(['success' => false, 'message' => 'Target folder not found.']);
+                }
+            }
+
+            $this->db('media_files')
+                ->whereRaw("id IN ({$placeholders})", array_values($ids))
+                ->update(['folder_id' => ($folderId === '' || $folderId === 'unfiled') ? null : $folderId]);
+
+            Auth::audit('media.bulk_move', 'media_files', '', ['count' => $count, 'folder' => $folderId]);
+            $this->json(['success' => true, 'message' => "{$count} file(s) moved."]);
+        }
 
         if ($action === 'delete') {
             $files = $this->db('media_files')
@@ -384,6 +540,145 @@ class MediaController extends BaseController
 
         Auth::audit('media.delete', 'media_files', $id);
         $this->json(['success' => true, 'message' => 'File deleted.']);
+    }
+
+    // ── Image editor (v0.0.2) ──────────────────────────────────────────────────
+
+    /**
+     * POST /admin/media/{id}/edit-image - AJAX
+     * Body: ops = JSON [{op:"rotate",deg:90|-90} | {op:"flip",dir:"h"|"v"} |
+     *                   {op:"crop",x,y,w,h}]  (crop coords in ORIGINAL pixels)
+     *       mode = "copy" (default) | "overwrite"
+     */
+    public function editImage(string $id): void
+    {
+        $this->requirePermission('media.edit');
+        $this->validateCsrf();
+
+        $file = $this->db('media_files')->where('id', $id)->get(1);
+        if (!$file) {
+            $this->json(['success' => false, 'message' => 'File not found.'], 404);
+        }
+
+        $ext = strtolower(pathinfo((string) $file['filename'], PATHINFO_EXTENSION));
+        if (!in_array($ext, self::IMAGE_EXTS, true)) {
+            $this->json(['success' => false, 'message' => 'Only JPG, PNG, and WebP images can be edited.']);
+        }
+
+        $ops = json_decode($this->input->post('ops', false) ?? '[]', true);
+        if (!is_array($ops) || $ops === []) {
+            $this->json(['success' => false, 'message' => 'No edit operations provided.']);
+        }
+        if (count($ops) > 20) {
+            $this->json(['success' => false, 'message' => 'Too many operations.']);
+        }
+
+        $base     = ROOT . 'Public' . DS . 'uploads' . DS . 'media' . DS;
+        $srcPath  = $base . str_replace('/', DS, (string) $file['filename']);
+        $img      = $this->loadGdImage($srcPath, $ext);
+        if (!$img) {
+            $this->json(['success' => false, 'message' => 'Could not open the source image.']);
+        }
+
+        foreach ($ops as $op) {
+            if (!is_array($op)) continue;
+            switch ($op['op'] ?? '') {
+                case 'rotate':
+                    $deg = (int) ($op['deg'] ?? 0);
+                    if (!in_array($deg, [90, -90, 180], true)) break;
+                    // GD rotates counter-clockwise for positive angles
+                    $rotated = imagerotate($img, -$deg, 0);
+                    if ($rotated !== false) {
+                        imagedestroy($img);
+                        $img = $rotated;
+                        if ($ext === 'png') {
+                            imagealphablending($img, true);
+                            imagesavealpha($img, true);
+                        }
+                    }
+                    break;
+
+                case 'flip':
+                    imageflip($img, ($op['dir'] ?? 'h') === 'v' ? IMG_FLIP_VERTICAL : IMG_FLIP_HORIZONTAL);
+                    break;
+
+                case 'crop':
+                    $w = imagesx($img);
+                    $h = imagesy($img);
+                    $cx = max(0, min($w - 1, (int) ($op['x'] ?? 0)));
+                    $cy = max(0, min($h - 1, (int) ($op['y'] ?? 0)));
+                    $cw = max(1, min($w - $cx, (int) ($op['w'] ?? 0)));
+                    $ch = max(1, min($h - $cy, (int) ($op['h'] ?? 0)));
+                    if ($cw < 10 || $ch < 10) break; // ignore degenerate selections
+                    $cropped = imagecrop($img, ['x' => $cx, 'y' => $cy, 'width' => $cw, 'height' => $ch]);
+                    if ($cropped !== false) {
+                        imagedestroy($img);
+                        $img = $cropped;
+                        if ($ext === 'png') {
+                            imagealphablending($img, true);
+                            imagesavealpha($img, true);
+                        }
+                    }
+                    break;
+            }
+        }
+
+        $mode  = ($this->input->post('mode') ?? 'copy') === 'overwrite' ? 'overwrite' : 'copy';
+        $year  = date('Y');
+        $month = date('m');
+
+        if ($mode === 'overwrite') {
+            $destDir      = dirname($srcPath) . DS;
+            $destStored   = basename($srcPath);
+            $destFilename = (string) $file['filename'];
+            $targetId     = $id;
+        } else {
+            $destStored   = date('Ymd') . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
+            $destDir      = $base . $year . DS . $month . DS;
+            $destFilename = $year . '/' . $month . '/' . $destStored;
+            if (!is_dir($destDir)) @mkdir($destDir, 0755, true);
+            $targetId = null;
+        }
+
+        if (!$this->saveGdImage($img, $destDir . $destStored, $ext)) {
+            imagedestroy($img);
+            $this->json(['success' => false, 'message' => 'Could not save the edited image.']);
+        }
+        $newW = imagesx($img);
+        $newH = imagesy($img);
+        imagedestroy($img);
+
+        // Regenerate the thumbnail for the destination
+        $this->processUploadedImage($destDir . $destStored, $destDir, $destStored, $newW, $newH);
+        $thumbRel = dirname($destFilename) . '/thumb_' . $destStored;
+
+        if ($mode === 'overwrite') {
+            $this->db('media_files')->where('id', $id)->update([
+                'width'          => $newW,
+                'height'         => $newH,
+                'size'           => (int) @filesize($destDir . $destStored),
+                'thumbnail_path' => $thumbRel,
+                'updated_at'     => date('Y-m-d H:i:s'),
+                'updated_by'     => $this->currentUser['id'] ?? null,
+            ]);
+            Auth::audit('media.image_edited', 'media_files', $id, ['mode' => 'overwrite']);
+            $this->json(['success' => true, 'message' => 'Image updated.', 'id' => $id]);
+        }
+
+        $newId = (string) $this->db('media_files')->save([
+            'filename'       => $destFilename,
+            'original_name'  => pathinfo((string) $file['original_name'], PATHINFO_FILENAME) . '-edited.' . $ext,
+            'mime_type'      => (string) $file['mime_type'],
+            'size'           => (int) @filesize($destDir . $destStored),
+            'width'          => $newW,
+            'height'         => $newH,
+            'thumbnail_path' => $thumbRel,
+            'folder_id'      => $file['folder_id'] ?? null,
+            'created_by'     => $this->currentUser['id'] ?? null,
+        ]);
+
+        Auth::audit('media.image_edited', 'media_files', $newId, ['mode' => 'copy', 'source' => $id]);
+        $this->json(['success' => true, 'message' => 'Edited copy saved to the library.', 'id' => $newId]);
     }
 
     // ── Image Processing ───────────────────────────────────────────────────────

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Controllers\Admin;
 
 use App\CMS\Auth;
+use App\CMS\AvatarHelper;
+use App\CMS\SessionTracker;
 use App\CMS\TotpHelper;
 
 /**
@@ -39,6 +41,8 @@ class ProfileController extends BaseController
         $this->adminRender('admin/profile/index', [
             'user'          => $user,
             'twofa_enabled' => $twofa_enabled,
+            'avatar_url'    => AvatarHelper::url($this->currentUser['id'], $this->baseUrl),
+            'sessions'      => SessionTracker::listForUser($this->currentUser['id']),
         ], 'My Profile', 'profile');
     }
 
@@ -88,13 +92,80 @@ class ProfileController extends BaseController
                 $this->flash('error', 'Passwords do not match.');
                 $this->redirect($this->baseUrl . '/admin/profile');
             }
-            $data['password'] = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
+            $data['password'] = \App\Models\UserModel::hashPassword($password);
+        }
+
+        // Optional avatar upload alongside the profile fields
+        if (!empty($_FILES['avatar']['name'])) {
+            $error = AvatarHelper::store($_FILES['avatar'], $this->currentUser['id']);
+            if ($error !== null) {
+                $this->flash('error', $error);
+                $this->redirect($this->baseUrl . '/admin/profile');
+            }
         }
 
         $this->db('users')->where('id', $this->currentUser['id'])->update($data);
 
+        // Keep the session's cached user block in sync so the sidebar updates
+        $this->session->set('admin_user', array_merge(Auth::user() ?? [], [
+            'name'  => $name,
+            'email' => $email,
+        ]));
+
         Auth::audit('profile.update', 'users', $this->currentUser['id']);
         $this->flash('success', 'Profile updated successfully.');
+        $this->redirect($this->baseUrl . '/admin/profile');
+    }
+
+    /** POST /admin/profile/avatar/remove */
+    public function removeAvatar(): void
+    {
+        $token = $this->input->post('csrf_token') ?? '';
+        if (!$this->csrf->validateToken($token)) {
+            $this->flash('error', 'Security token invalid. Please try again.');
+            $this->redirect($this->baseUrl . '/admin/profile');
+        }
+
+        AvatarHelper::remove($this->currentUser['id']);
+        Auth::audit('profile.avatar_removed', 'users', $this->currentUser['id']);
+        $this->flash('success', 'Avatar removed.');
+        $this->redirect($this->baseUrl . '/admin/profile');
+    }
+
+    // ── Active sessions ────────────────────────────────────────────────────────
+
+    /** POST /admin/profile/sessions/{id}/revoke - revoke ONE of my own sessions */
+    public function revokeSession(string $id): void
+    {
+        $token = $this->input->post('csrf_token') ?? '';
+        if (!$this->csrf->validateToken($token)) {
+            $this->flash('error', 'Security token invalid. Please try again.');
+            $this->redirect($this->baseUrl . '/admin/profile');
+        }
+
+        if (SessionTracker::revoke($id, $this->currentUser['id'])) {
+            Auth::audit('session.revoked', 'users', $this->currentUser['id'], ['session' => $id]);
+            $this->flash('success', 'Session revoked. That device will be signed out on its next request.');
+        } else {
+            $this->flash('error', 'Session not found.');
+        }
+        $this->redirect($this->baseUrl . '/admin/profile');
+    }
+
+    /** POST /admin/profile/sessions/revoke-others - sign out everywhere else */
+    public function revokeOtherSessions(): void
+    {
+        $token = $this->input->post('csrf_token') ?? '';
+        if (!$this->csrf->validateToken($token)) {
+            $this->flash('error', 'Security token invalid. Please try again.');
+            $this->redirect($this->baseUrl . '/admin/profile');
+        }
+
+        $count = SessionTracker::revokeAllForUser($this->currentUser['id'], true);
+        Auth::audit('session.revoked_others', 'users', $this->currentUser['id'], ['count' => $count]);
+        $this->flash('success', $count > 0
+            ? "Signed out of {$count} other session(s)."
+            : 'No other active sessions found.');
         $this->redirect($this->baseUrl . '/admin/profile');
     }
 

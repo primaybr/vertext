@@ -8,6 +8,7 @@ use App\Controllers\Admin\BaseController;
 use App\CMS\Auth;
 use App\Mail\Mailer;
 use App\Mail\MailMessage;
+use App\Modules\Newsletter\NewsletterHelper;
 
 /**
  * Newsletter campaign management and sending.
@@ -34,16 +35,38 @@ class CampaignsController extends BaseController
     {
         $this->requirePermission('newsletter.view');
 
+        NewsletterHelper::ensureSchema();
+
+        // Cron-free scheduled sends: process due campaigns on page load
+        $processed = NewsletterHelper::processScheduled($this->siteUrl());
+        if ($processed > 0) {
+            $this->flash('success', "{$processed} scheduled campaign(s) were sent.");
+        }
+
         $page    = max(1, (int) ($this->input->get('page') ?? 1));
         $perPage = 20;
         $offset  = ($page - 1) * $perPage;
 
         $campaigns = $this->db('newsletter_campaigns')
-            ->select('id, subject, status, sent_count, sent_at, created_at')
+            ->select('id, subject, status, sent_count, open_count, scheduled_at, sent_at, created_at')
             ->whereNull('deleted_at')
             ->orderBy('created_at', 'DESC')
             ->limitOffset($perPage, $offset)
             ->get() ?: [];
+
+        // Click totals per campaign for the list
+        foreach ($campaigns as &$c) {
+            $c['click_count'] = 0;
+            try {
+                $row = $this->db('campaign_links')->withoutTimestamps()
+                    ->select('COALESCE(SUM(click_count),0) AS n')
+                    ->where('campaign_id', $c['id'])
+                    ->get(1);
+                $c['click_count'] = (int) ($row['n'] ?? 0);
+            } catch (\Throwable) {
+            }
+        }
+        unset($c);
 
         $total = (int) ($this->db('newsletter_campaigns')->whereNull('deleted_at')->totalRows() ?: 0);
 
@@ -115,13 +138,22 @@ class CampaignsController extends BaseController
             $this->redirect($this->baseUrl . '/admin/newsletter/campaigns');
         }
 
+        NewsletterHelper::ensureSchema();
+
         $activeCount = (int) ($this->db('newsletter_subscribers')
             ->where('status', 'active')->whereNull('deleted_at')->totalRows() ?: 0);
+
+        $segments = [];
+        try {
+            $segments = $this->db('newsletter_segments')->whereNull('deleted_at')->orderBy('name', 'ASC')->get() ?: [];
+        } catch (\Throwable) {
+        }
 
         $this->adminRender('modules/newsletter/admin/campaign_form', [
             'campaign'    => $campaign,
             'action'      => $this->baseUrl . "/admin/newsletter/campaigns/{$id}/update",
             'activeCount' => $activeCount,
+            'segments'    => $segments,
         ], 'Edit Campaign', 'newsletter');
     }
 
@@ -143,11 +175,14 @@ class CampaignsController extends BaseController
             $this->json(['success' => false, 'message' => 'Subject is required.']);
         }
 
+        $segmentId = trim($this->input->post('segment_id', false) ?? '');
+
         $this->db('newsletter_campaigns')->where('id', $id)->update([
             'subject'      => $subject,
             'preview_text' => substr(trim($this->input->post('preview_text', false) ?? ''), 0, 255),
             'body_html'    => $this->input->post('body_html', false) ?? '',
             'body_text'    => $this->input->post('body_text', false) ?? '',
+            'segment_id'   => $segmentId !== '' ? $segmentId : null,
             'updated_at'   => date('Y-m-d H:i:s'),
             'updated_by'   => $this->currentUser['id'] ?? null,
         ]);
@@ -197,48 +232,7 @@ class CampaignsController extends BaseController
             'updated_at' => date('Y-m-d H:i:s'),
         ]);
 
-        $settings   = $this->loadSettings();
-        $fromName   = $settings['newsletter_from_name'] ?: ($this->getSiteName());
-        $fromEmail  = $settings['newsletter_from_email'] ?: '';
-        $siteUrl    = $this->baseUrl;
-        $subject    = $campaign['subject'];
-        $bodyHtml   = $campaign['body_html'] ?? '';
-        $bodyText   = $campaign['body_text'] ?? '';
-
-        $subscribers = $this->db('newsletter_subscribers')
-            ->select('id, email, name, token')
-            ->where('status', 'active')
-            ->whereNull('deleted_at')
-            ->get() ?: [];
-
-        $sent = 0;
-        foreach ($subscribers as $sub) {
-            $unsub  = $siteUrl . '/newsletter/unsubscribe?token=' . $sub['token'];
-            $footer = "\n\n--\nYou received this because you subscribed at {$siteUrl}.\nUnsubscribe: {$unsub}";
-            $htmlFooter = '<div style="margin-top:32px;padding-top:16px;border-top:1px solid #e5e7eb;font-size:12px;color:#9ca3af;">'
-                . 'You received this because you subscribed at <a href="' . htmlspecialchars($siteUrl) . '">' . htmlspecialchars($siteUrl) . '</a>.'
-                . ' <a href="' . htmlspecialchars($unsub) . '">Unsubscribe</a></div>';
-
-            try {
-                $msg = (new MailMessage())
-                    ->to($sub['email'], $sub['name'] ?? '')
-                    ->subject($subject)
-                    ->htmlBody($bodyHtml . $htmlFooter)
-                    ->textBody($bodyText . $footer);
-
-                if ($fromEmail) {
-                    // MailMessage::from() if it exists; fall back gracefully
-                    if (method_exists($msg, 'from')) {
-                        $msg->from($fromEmail, $fromName);
-                    }
-                }
-
-                Mailer::make()->send($msg);
-                $sent++;
-            } catch (\Throwable) {
-                // continue on per-recipient failure
-            }
-        }
+        $sent = NewsletterHelper::deliverCampaign($campaign, $this->siteUrl());
 
         $this->db('newsletter_campaigns')->where('id', $id)->update([
             'status'     => 'sent',
@@ -251,7 +245,7 @@ class CampaignsController extends BaseController
             try {
                 \App\Modules\Webhooks\WebhookDispatcher::dispatch('campaign.sent', [
                     'campaign_id' => $id,
-                    'subject'     => $subject,
+                    'subject'     => $campaign['subject'],
                     'sent_count'  => $sent,
                     'sent_at'     => date('c'),
                 ]);
@@ -260,6 +254,83 @@ class CampaignsController extends BaseController
 
         Auth::audit('newsletter.campaign_sent', 'newsletter_campaigns', $id, ['sent' => $sent]);
         $this->json(['success' => true, 'message' => "Campaign sent to {$sent} subscriber(s)."]);
+    }
+
+    /** POST /admin/newsletter/campaigns/{id}/schedule */
+    public function schedule(string $id): void
+    {
+        $this->requirePermission('newsletter.manage');
+        $this->validateCsrf();
+
+        NewsletterHelper::ensureSchema();
+
+        $campaign = $this->db('newsletter_campaigns')->where('id', $id)->whereNull('deleted_at')->get(1);
+        if (!$campaign) {
+            $this->json(['success' => false, 'message' => 'Campaign not found.'], 404);
+        }
+        if (!in_array($campaign['status'], ['draft', 'scheduled'], true)) {
+            $this->json(['success' => false, 'message' => 'Only draft campaigns can be scheduled.']);
+        }
+        if (empty(trim(($campaign['body_html'] ?? '') . ($campaign['body_text'] ?? '')))) {
+            $this->json(['success' => false, 'message' => 'Campaign has no content.']);
+        }
+
+        $when = trim($this->input->post('scheduled_at', false) ?? '');
+        $ts   = strtotime($when);
+        if (!$when || $ts === false) {
+            $this->json(['success' => false, 'message' => 'A valid date and time is required.']);
+        }
+        if ($ts <= time()) {
+            $this->json(['success' => false, 'message' => 'The scheduled time must be in the future.']);
+        }
+
+        $this->db('newsletter_campaigns')->where('id', $id)->update([
+            'status'       => 'scheduled',
+            'scheduled_at' => date('Y-m-d H:i:s', $ts),
+            'updated_at'   => date('Y-m-d H:i:s'),
+            'updated_by'   => $this->currentUser['id'] ?? null,
+        ]);
+
+        Auth::audit('newsletter.campaign_scheduled', 'newsletter_campaigns', $id, ['scheduled_at' => date('c', $ts)]);
+        $this->json(['success' => true, 'message' => 'Campaign scheduled for ' . date('M j, Y g:i A', $ts) . '. It sends automatically when someone opens the admin around that time.']);
+    }
+
+    /** POST /admin/newsletter/campaigns/{id}/unschedule */
+    public function unschedule(string $id): void
+    {
+        $this->requirePermission('newsletter.manage');
+        $this->validateCsrf();
+
+        $campaign = $this->db('newsletter_campaigns')->where('id', $id)->whereNull('deleted_at')->get(1);
+        if (!$campaign) {
+            $this->json(['success' => false, 'message' => 'Campaign not found.'], 404);
+        }
+        if ($campaign['status'] !== 'scheduled') {
+            $this->json(['success' => false, 'message' => 'Campaign is not scheduled.']);
+        }
+
+        $this->db('newsletter_campaigns')->where('id', $id)->update([
+            'status'       => 'draft',
+            'scheduled_at' => null,
+            'updated_at'   => date('Y-m-d H:i:s'),
+        ]);
+
+        Auth::audit('newsletter.campaign_unscheduled', 'newsletter_campaigns', $id);
+        $this->json(['success' => true, 'message' => 'Schedule removed - campaign is a draft again.']);
+    }
+
+    /** Absolute site URL for links inside emails (site_url setting > baseUrl) */
+    private function siteUrl(): string
+    {
+        try {
+            $row = (new \Core\Model('settings'))->select('value')->where('key', 'site_url')->get(1);
+            $url = trim((string) ($row['value'] ?? ''));
+            if ($url !== '') {
+                return rtrim($url, '/');
+            }
+        } catch (\Throwable) {
+        }
+        return $this->baseUrl;
     }
 
     public function testSend(string $id): void

@@ -157,10 +157,15 @@
 <div id="nl-import-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1050;align-items:center;justify-content:center;">
   <div style="background:var(--ps-bg-base);border-radius:8px;padding:1.5rem;width:100%;max-width:520px;box-shadow:0 8px 32px rgba(0,0,0,.2);">
     <h5 style="margin:0 0 .5rem;">Import Subscribers</h5>
-    <p style="font-size:.875rem;color:var(--ps-text-muted);margin-bottom:1rem;">Paste CSV data: one row per line, <code>email,name</code> format. Duplicates are skipped.</p>
-    <form data-crud-form action="<?php echo $baseUrl; ?>/admin/newsletter/subscribers/import" method="POST">
+    <p style="font-size:.875rem;color:var(--ps-text-muted);margin-bottom:1rem;">Upload a .csv file or paste rows below - one per line, <code>email,name</code> format. Duplicates are skipped.</p>
+    <form data-crud-form action="<?php echo $baseUrl; ?>/admin/newsletter/subscribers/import" method="POST" enctype="multipart/form-data">
       <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token ?? ''); ?>">
       <div class="vtx-field mb-3">
+        <label class="vtx-label" style="font-size:.8rem;">CSV File</label>
+        <input class="form-control" type="file" name="csv_file" accept=".csv,.txt,text/csv">
+      </div>
+      <div class="vtx-field mb-3">
+        <label class="vtx-label" style="font-size:.8rem;">Or paste CSV rows</label>
         <textarea class="form-control" name="csv_data" rows="6"
                   placeholder="user@example.com,John Smith&#10;another@example.com,Jane Doe"
                   style="font-family:monospace;font-size:.8125rem;"></textarea>

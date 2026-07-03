@@ -99,6 +99,8 @@ class PagesController extends BaseController
             $publishedAt = date('Y-m-d H:i:s', strtotime($scheduledAt));
         }
 
+        \App\Modules\Pages\PageHelper::ensureSchema();
+
         $id = (string) $this->db('pages')->save([
             'title'            => $title,
             'slug'             => $slug,
@@ -110,11 +112,16 @@ class PagesController extends BaseController
             'meta_title'       => trim($this->input->post('meta_title', false) ?? ''),
             'meta_description' => trim($this->input->post('meta_description', false) ?? ''),
             'sort_order'       => max(0, (int) ($this->input->post('sort_order') ?? 0)),
+            'template'         => \App\Modules\Pages\PageHelper::normalizeTemplate($this->input->post('template')),
+            'lang'             => $this->pageLang(),
             'created_by'       => $this->currentUser['id'],
             'updated_by'       => $this->currentUser['id'],
         ]);
 
+        $this->syncCustomFields($id);
+
         Auth::audit('page.create', 'pages', $id, ['title' => $title]);
+        \App\CMS\PageCache::flushPages();
         $this->json(['success' => true, 'message' => "Page \"{$title}\" created."]);
     }
 
@@ -126,9 +133,12 @@ class PagesController extends BaseController
             $this->json(['success' => false, 'message' => 'Page not found.'], 404);
         }
 
+        \App\Modules\Pages\PageHelper::ensureSchema();
+
         $this->renderPartial('modules/pages/admin/pages/_form', [
             'page'   => $page,
             'action' => $this->baseUrl . "/admin/pages/{$id}/update",
+            'meta'   => \App\Modules\Pages\PageHelper::getAllMeta($id),
         ]);
     }
 
@@ -166,9 +176,12 @@ class PagesController extends BaseController
             'meta_title'       => trim($this->input->post('meta_title', false) ?? ''),
             'meta_description' => trim($this->input->post('meta_description', false) ?? ''),
             'sort_order'       => max(0, (int) ($this->input->post('sort_order') ?? 0)),
+            'template'         => \App\Modules\Pages\PageHelper::normalizeTemplate($this->input->post('template')),
+            'lang'             => $this->pageLang(),
             'updated_by'       => $this->currentUser['id'],
             'updated_at'       => date('Y-m-d H:i:s'),
         ];
+        \App\Modules\Pages\PageHelper::ensureSchema();
         if ($newSlug) {
             $data['slug'] = $newSlug;
         }
@@ -189,8 +202,10 @@ class PagesController extends BaseController
         $revisionError = $this->snapshotRevision($id, $existing);
 
         $this->db('pages')->where('id', $id)->update($data);
+        $this->syncCustomFields($id);
 
         Auth::audit('page.update', 'pages', $id, ['title' => $title]);
+        \App\CMS\PageCache::flushPages();
         $response = ['success' => true, 'message' => 'Page updated.'];
         if ($revisionError) {
             $response['_revision_error'] = $revisionError;
@@ -209,6 +224,7 @@ class PagesController extends BaseController
         ]);
 
         Auth::audit('page.delete', 'pages', $id);
+        \App\CMS\PageCache::flushPages();
         $this->json(['success' => true, 'message' => 'Page deleted.']);
     }
 
@@ -374,6 +390,29 @@ class PagesController extends BaseController
         if (!$this->csrf->validateToken($token)) {
             $this->json(['success' => false, 'message' => 'Security token invalid.'], 403);
         }
+    }
+
+    /** Validated content language from the page form ('en' fallback) */
+    private function pageLang(): string
+    {
+        $lang = strtolower(trim($this->input->post('lang') ?? ''));
+        return in_array($lang, \App\CMS\I18n::getSupportedLocales(), true) ? $lang : 'en';
+    }
+
+    /** Persist the custom-fields rows submitted as meta_key[] / meta_value[] */
+    private function syncCustomFields(string $pageId): void
+    {
+        $keys   = (array) ($this->input->post('meta_key', false) ?? []);
+        $values = (array) ($this->input->post('meta_value', false) ?? []);
+
+        $meta = [];
+        foreach ($keys as $i => $key) {
+            $key = trim((string) $key);
+            if ($key === '') continue;
+            $meta[$key] = (string) ($values[$i] ?? '');
+        }
+
+        \App\Modules\Pages\PageHelper::syncMeta($pageId, $meta);
     }
 
     private function makeSlug(string $text): string

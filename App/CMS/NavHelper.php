@@ -42,6 +42,17 @@ class NavHelper
             return self::$cache[$slug] = self::buildFromModuleRoutes();
         }
 
+        // Fragment-cached for 5 minutes; invalidated by NavigationController
+        // on any menu save (PageCache::forgetFragment('nav_' . slug)).
+        return self::$cache[$slug] = PageCache::remember(
+            'nav_' . $slug,
+            static fn(): array => self::buildMenu($slug)
+        );
+    }
+
+    /** Uncached menu builder (the body previously inlined in getMenu). */
+    private static function buildMenu(string $slug): array
+    {
         try {
             $menu = (new \Core\Model('nav_menus'))
                 ->select('id')
@@ -49,7 +60,7 @@ class NavHelper
                 ->get(1);
 
             if (!$menu) {
-                return self::$cache[$slug] = self::buildFromModuleRoutes();
+                return self::buildFromModuleRoutes();
             }
 
             $rows = (new \Core\Model('nav_items'))
@@ -85,10 +96,10 @@ class NavHelper
             }
 
         } catch (\Throwable) {
-            return self::$cache[$slug] = [];
+            return [];
         }
 
-        return self::$cache[$slug] = $parents;
+        return $parents;
     }
 
     /** Flush per-request cache (useful if menu data changes mid-request). */

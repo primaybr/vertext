@@ -39,6 +39,14 @@ abstract class BaseController extends Controller
             $this->redirect($this->baseUrl . '/admin/login');
         }
 
+        // Enforce session revocation: if this session was revoked from
+        // another device (or by an admin), end it now.
+        if (!\App\CMS\SessionTracker::validate((string) Auth::id())) {
+            Auth::logout();
+            $this->session->set('flash', ['type' => 'error', 'message' => 'This session has been signed out remotely.']);
+            $this->redirect($this->baseUrl . '/admin/login');
+        }
+
         $this->currentUser = Auth::user() ?? [];
 
         // Enforce module enabled/disabled status
@@ -59,6 +67,7 @@ abstract class BaseController extends Controller
         }
         $flash     = $this->session->flash('flash');
         $csrfToken = $this->csrf->getToken();
+        $avatarUrl = \App\CMS\AvatarHelper::url((string) ($this->currentUser['id'] ?? ''), $this->baseUrl);
 
         // Controller-passed keys take precedence over base defaults.
         // 'flash' uses whichever source is non-empty: if the controller already
@@ -70,6 +79,7 @@ abstract class BaseController extends Controller
             'assetsUrl'   => $this->assetsUrl,
             'csrf_token'  => $csrfToken,
             'flash'       => is_array($flash) ? $flash : [],
+            'avatarUrl'   => $avatarUrl,
         ], $data);
 
         $content = $this->render($view, $data, true);
@@ -83,6 +93,7 @@ abstract class BaseController extends Controller
             'currentUser' => $this->currentUser,
             'flash'       => $data['flash'],
             'csrf_token'  => $csrfToken,
+            'avatarUrl'   => $avatarUrl,
         ]);
     }
 

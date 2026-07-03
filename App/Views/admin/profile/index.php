@@ -9,7 +9,7 @@
 <div class="row g-4">
   <div class="col-lg-7 col-xl-6">
 
-    <form method="POST" action="{{baseUrl}}/admin/profile/update">
+    <form method="POST" action="{{baseUrl}}/admin/profile/update" enctype="multipart/form-data">
       <input type="hidden" name="csrf_token" value="{{csrf_token}}">
 
       <!-- Account Details -->
@@ -26,11 +26,19 @@
                    required autocomplete="name">
           </div>
 
-          <div class="vtx-field">
+          <div class="vtx-field mb-3">
             <label class="vtx-label" for="email">Email <span class="req">*</span></label>
             <input class="form-control" type="email" id="email" name="email"
                    value="<?php echo htmlspecialchars($user['email'] ?? ''); ?>"
                    required autocomplete="email">
+          </div>
+
+          <div class="vtx-field">
+            <label class="vtx-label" for="avatar">Avatar</label>
+            <input class="form-control" type="file" id="avatar" name="avatar" accept="image/*">
+            <div style="font-size:.75rem;color:var(--ps-text-muted);margin-top:.35rem;">
+              JPG, PNG, GIF, or WebP. Cropped to a 128x128 square. Max 2 MB.
+            </div>
           </div>
 
         </div>
@@ -104,15 +112,76 @@
       </div>
     </div>
 
+    <!-- Active Sessions -->
+    <div class="vtx-panel mt-4">
+      <div class="vtx-panel-head" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+        <div>
+          <h2 class="vtx-panel-title">Active Sessions</h2>
+          <p class="vtx-panel-desc">Devices currently signed in to your account.</p>
+        </div>
+        <?php if (count($sessions ?? []) > 1): ?>
+        <form method="POST" action="{{baseUrl}}/admin/profile/sessions/revoke-others"
+              onsubmit="return confirm('Sign out of all other sessions?');">
+          <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+          <button type="submit" class="btn btn-sm btn-outline-danger">
+            <i class="pi pi-log-out me-1"></i> Sign out everywhere else
+          </button>
+        </form>
+        <?php endif; ?>
+      </div>
+      <div class="vtx-panel-body" style="padding:0;">
+        <?php if (empty($sessions)): ?>
+          <div style="padding:1rem 1.25rem;font-size:.85rem;color:var(--ps-text-muted);">No tracked sessions.</div>
+        <?php else: ?>
+          <?php foreach ($sessions as $s): ?>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.85rem 1.25rem;border-bottom:1px solid var(--ps-border);flex-wrap:wrap;">
+            <div style="display:flex;align-items:center;gap:.75rem;min-width:0;">
+              <i class="pi pi-monitor" style="font-size:1.1rem;color:var(--ps-text-muted);flex-shrink:0;"></i>
+              <div style="min-width:0;">
+                <div style="font-weight:600;font-size:.85rem;">
+                  <?php echo htmlspecialchars($s['device'] ?? 'Unknown device'); ?>
+                  <?php if (!empty($s['is_current'])): ?>
+                    <span class="vtx-tag success" style="margin-left:.4rem;">This device</span>
+                  <?php endif; ?>
+                </div>
+                <div style="font-size:.75rem;color:var(--ps-text-muted);">
+                  IP <?php echo htmlspecialchars($s['ip'] ?? '-'); ?>
+                  &middot; Last active <?php echo !empty($s['last_active']) ? date('M j, Y H:i', strtotime($s['last_active'])) : '-'; ?>
+                </div>
+              </div>
+            </div>
+            <?php if (empty($s['is_current'])): ?>
+            <form method="POST" action="{{baseUrl}}/admin/profile/sessions/<?php echo htmlspecialchars($s['id']); ?>/revoke">
+              <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+              <button type="submit" class="btn btn-sm btn-outline-danger">Revoke</button>
+            </form>
+            <?php endif; ?>
+          </div>
+          <?php endforeach; ?>
+        <?php endif; ?>
+      </div>
+    </div>
+
   </div>
 
   <!-- Account info sidebar -->
   <div class="col-lg-4 offset-lg-1 col-xl-4 offset-xl-1">
     <div class="vtx-panel">
       <div class="vtx-panel-body" style="text-align:center;padding:1.5rem 1rem;">
+        <?php if (!empty($avatar_url)): ?>
+        <img src="<?php echo htmlspecialchars($avatar_url); ?>" alt="Avatar"
+             style="width:64px;height:64px;border-radius:50%;object-fit:cover;margin:0 auto .5rem;display:block;">
+        <form method="POST" action="{{baseUrl}}/admin/profile/avatar/remove" style="margin-bottom:.75rem;">
+          <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+          <button type="submit" class="btn btn-sm" style="border:none;background:none;color:var(--ps-danger,#dc2626);font-size:.75rem;padding:0;">
+            Remove avatar
+          </button>
+        </form>
+        <?php else: ?>
         <div class="vtx-avatar" style="width:64px;height:64px;font-size:1.5rem;margin:0 auto 1rem;">
           <?php echo htmlspecialchars(mb_strtoupper(mb_substr($user['name'] ?? 'U', 0, 1))); ?>
         </div>
+        <?php endif; ?>
         <div style="font-weight:600;font-size:1rem;color:var(--ps-text-primary);">
           <?php echo htmlspecialchars($user['name'] ?? ''); ?>
         </div>

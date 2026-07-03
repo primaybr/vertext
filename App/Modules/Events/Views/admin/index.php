@@ -98,6 +98,10 @@
             <?php endif; ?>
           </td>
           <td style="text-align:right;white-space:nowrap;">
+            <a href="<?php echo $baseUrl; ?>/admin/events/<?php echo $ev['id']; ?>/attendees"
+               class="btn btn-sm btn-outline-secondary me-1" title="Attendees">
+              <i class="pi pi-users"></i>
+            </a>
             <?php if (\App\CMS\Auth::can('events.manage')): ?>
             <button type="button" class="btn btn-sm btn-outline-secondary me-1" title="Edit"
                     data-form-url="<?php echo $baseUrl; ?>/admin/events/<?php echo $ev['id']; ?>/edit"

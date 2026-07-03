@@ -45,6 +45,10 @@
           $val = $data[$field['id']] ?? null;
           if (is_array($val)) {
             echo '<div style="color:var(--ps-text);">' . htmlspecialchars(json_encode($val, JSON_UNESCAPED_UNICODE)) . '</div>';
+          } elseif (($field['type'] ?? '') === 'file' && is_string($val) && str_starts_with($val, 'uploads/forms/')) {
+            // File upload: value is a stored path - link to it
+            echo '<div><a href="' . htmlspecialchars($baseUrl . '/' . $val) . '" target="_blank" rel="noopener">'
+               . '<i class="pi pi-file me-1"></i>' . htmlspecialchars(basename($val)) . '</a></div>';
           } elseif ($val !== null && $val !== '') {
             echo '<div style="color:var(--ps-text);white-space:pre-wrap;">' . htmlspecialchars((string) $val) . '</div>';
           } else {

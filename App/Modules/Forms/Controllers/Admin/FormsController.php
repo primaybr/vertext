@@ -225,8 +225,15 @@ class FormsController extends BaseController
 
         $fields = $this->sanitizeFields($fields);
 
+        // Form settings travel with the same save (was previously collected in
+        // the builder UI but never persisted).
+        $rawSettings = $this->input->post('settings', false) ?? '{}';
+        $settings    = json_decode($rawSettings, true);
+        $settings    = is_array($settings) ? $this->sanitizeSettings($settings) : [];
+
         $this->db('form_definitions')->where('id', $id)->update([
             'fields'     => json_encode($fields),
+            'settings'   => json_encode($settings),
             'updated_at' => date('Y-m-d H:i:s'),
             'updated_by' => $this->currentUser['id'] ?? null,
         ]);
@@ -237,7 +244,8 @@ class FormsController extends BaseController
 
     private function sanitizeFields(array $fields): array
     {
-        $allowed_types = ['text', 'email', 'textarea', 'select', 'checkbox', 'radio', 'number', 'date', 'file'];
+        // 'step' is a page-break marker for multi-step forms, not an input
+        $allowed_types = ['text', 'email', 'textarea', 'select', 'checkbox', 'radio', 'number', 'date', 'file', 'step'];
         $clean = [];
         foreach ($fields as $f) {
             if (!is_array($f)) continue;
@@ -252,9 +260,47 @@ class FormsController extends BaseController
                     ? array_map(fn($o) => substr(trim((string) $o), 0, 200), array_values(array_filter((array) ($f['options'] ?? []), 'is_string')))
                     : [],
                 'width'       => in_array($f['width'] ?? '', ['full', 'half'], true) ? $f['width'] : 'full',
+                'conditions'  => $this->sanitizeConditions((array) ($f['conditions'] ?? [])),
             ];
         }
         return $clean;
+    }
+
+    /** Conditional visibility rules: [{field, operator, value, action}] */
+    private function sanitizeConditions(array $conditions): array
+    {
+        $operators = ['equals', 'not_equals', 'contains', 'empty', 'not_empty'];
+        $actions   = ['show', 'hide'];
+        $clean     = [];
+        foreach ($conditions as $c) {
+            if (!is_array($c)) continue;
+            $target = substr(preg_replace('/[^a-z0-9_]/', '', strtolower($c['field'] ?? '')), 0, 64);
+            if ($target === '') continue;
+            $clean[] = [
+                'field'    => $target,
+                'operator' => in_array($c['operator'] ?? '', $operators, true) ? $c['operator'] : 'equals',
+                'value'    => substr(trim((string) ($c['value'] ?? '')), 0, 200),
+                'action'   => in_array($c['action'] ?? '', $actions, true) ? $c['action'] : 'show',
+            ];
+            if (count($clean) >= 5) break; // sane cap per field
+        }
+        return $clean;
+    }
+
+    /** Whitelist + normalize the settings JSON persisted by saveFields() */
+    private function sanitizeSettings(array $settings): array
+    {
+        $email = trim((string) ($settings['notification_email'] ?? ''));
+        if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $email = '';
+        }
+        return [
+            'success_message'      => substr(trim((string) ($settings['success_message'] ?? '')), 0, 500),
+            'notification_email'   => substr($email, 0, 180),
+            'math_challenge'       => !empty($settings['math_challenge']),
+            'recaptcha_site_key'   => substr(trim((string) ($settings['recaptcha_site_key'] ?? '')), 0, 100),
+            'recaptcha_secret_key' => substr(trim((string) ($settings['recaptcha_secret_key'] ?? '')), 0, 100),
+        ];
     }
 
     private function validateCsrf(): void

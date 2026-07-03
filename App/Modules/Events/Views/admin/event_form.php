@@ -177,6 +177,8 @@ $isModal = $isModal ?? false;
           </div>
         </div>
       </div>
+
+      <?php include __DIR__ . '/_v2_fields.php'; ?>
     </form>
   </div>
 
@@ -203,12 +205,16 @@ $isModal = $isModal ?? false;
 
     <?php if ($editing): ?>
     <div class="vtx-panel mb-3">
-      <div class="vtx-panel-header">Stats</div>
+      <div class="vtx-panel-header">Attendees</div>
       <div class="vtx-panel-body" style="font-size:.875rem;">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="color:var(--ps-text-muted);">RSVPs</span>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;">
+          <span style="color:var(--ps-text-muted);">Confirmed</span>
           <strong style="font-size:1.25rem;"><?php echo (int) ($event['rsvp_count'] ?? 0); ?></strong>
         </div>
+        <a href="<?php echo $baseUrl; ?>/admin/events/<?php echo $event['id']; ?>/attendees"
+           class="btn btn-outline-secondary btn-sm w-100">
+          <i class="pi pi-users me-1"></i> Manage Attendees
+        </a>
       </div>
     </div>
     <?php endif; ?>

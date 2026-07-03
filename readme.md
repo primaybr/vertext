@@ -1,6 +1,6 @@
 # Vertext CMS
 
-![Version](https://img.shields.io/badge/version-0.0.7d--alpha-blue)
+![Version](https://img.shields.io/badge/version-0.0.8--alpha-blue)
 ![PHP](https://img.shields.io/badge/PHP-8.2%2B-777BB4)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -35,17 +35,20 @@ Vertext is a lightweight, extensible content management system written in PHP 8.
 - **Videos module** - YouTube/Vimeo embed management; poster thumbnail caching; lazy iframe player
 - **Theme Manager** - dedicated admin section (`/admin/themes`) to switch the active front-end theme; promoted from a settings tab to a first-class system module
 - **Setup wizard** - guided 5-step installation with DB connection testing
-- **Security** - CSRF protection, bcrypt passwords, session hardening, login rate limiting, audit logs
+- **Security** - CSRF protection, Argon2id passwords (auto-upgrade from bcrypt), password reset, active-session management, session hardening, login rate limiting, audit logs
 - **PostgreSQL** - full native support via PDO with connection pooling and query caching
 - **vtx-* component library** - chart, datatable, rich-text editor, media picker, tag input, upload, slug, and more
 - **Two-factor authentication (2FA)** - TOTP (RFC 6238) via the TwoFactor module; QR code setup; backup codes; trusted-device cookie (30 days)
-- **Forms Builder module** - drag-to-reorder field builder; submissions stored in DB; CSV export; honeypot + rate-limit anti-spam
-- **Newsletter module** - subscriber list with double opt-in; HTML campaigns with Quill editor; test-send; CSV import/export
-- **Events module** - event listings with RSVP, Canvas calendar sidebar (dots on event days, click-to-scroll), and detail page
+- **Forms Builder module** - drag-to-reorder field builder; conditional logic; multi-step forms; file uploads; email notifications; math challenge + optional reCAPTCHA v3; `[form]` shortcode; CSV export
+- **Newsletter module** - subscribers with double opt-in; audience segments; scheduled campaigns; open/click tracking; welcome email; `[newsletter_signup]` shortcode; CSV import/export
+- **Events module** - event listings with per-attendee RSVP, capacity + waiting list, ticket types, recurring events, iCal export, Canvas calendar sidebar, and attendee admin with CSV export
 - **Bundle packages** - install groups of related modules in one click; custom bundle builder in the Module Manager
 - **Module Marketplace** - install a module from any HTTPS URL via the Module Manager; SSRF-safe, SHA-256 verified
 - **Module scaffold CLI** - `php vertext make:module Foo` and `php vertext make:bundle Foo` generate boilerplate files
-- **i18n Foundation** - `__()` translation helper; `App/Lang/{locale}/{file}.php` file structure; admin locale switcher; `I18n::date()` with `IntlDateFormatter` support
+- **i18n** - `__()` translation helper; locale path-prefix routing (`/id/...`); per-content Language field; admin Translations editor with locale scaffolding; `I18n::date()` with `IntlDateFormatter` support
+- **Members module** - front-end visitor accounts with email verification, member profiles, and admin moderation
+- **REST API** - read-only JSON API (`/api/v1/posts`, `/pages`, `/events`) with Bearer API keys and rate limiting
+- **Performance** - opt-in full-page cache for public renders, nav fragment cache, version-fingerprinted assets, lazy-loaded images
 
 ---
 
@@ -127,8 +130,8 @@ Install a module: **Admin → Module Manager → Install**
 | Module | Version | Category | Description |
 | ------ | ------- | -------- | ----------- |
 | Blog | 0.0.6 | Content | Posts, categories, tags, threaded comments, post series with prev/next nav, related posts, reading list (localStorage), dynamic URL routing, RSS feed, scheduled/expired publishing, content revisions |
-| Pages | 0.0.2 | Content | Static page CRUD with public rendering, scheduled/expired publishing, content revisions |
-| Media | 0.0.3 | Media | File uploads with image resizing, thumbnail generation, bulk delete |
+| Pages | 0.0.3 | Content | Static page CRUD, page templates (default/full-width/sidebar/landing), custom fields, scheduled/expired publishing, content revisions |
+| Media | 0.0.4 | Media | File uploads, folders, browser image editor (crop/rotate/flip), thumbnails, bulk move/delete |
 | Gallery | 0.0.1 | Media | Photo albums with lightbox, backed by Media library |
 | Videos | 0.0.1 | Media | YouTube/Vimeo embed management with poster thumbnails |
 | Contact | 0.0.1 | Communication | Public contact form with admin inbox and email notifications |
@@ -138,9 +141,10 @@ Install a module: **Admin → Module Manager → Install**
 | Theme Customizer | 0.0.1 | Design | Accent color, font, logo, and custom CSS overrides for the public theme |
 | Sitemap | 0.0.1 | SEO | Automatic `/sitemap.xml` from published pages and blog posts |
 | Webhooks | 0.0.1 | Integration | Outgoing webhooks with HMAC-SHA256 signing and delivery logs |
-| Forms | 0.0.1 | Communication | Custom form builder; drag-to-reorder fields; submissions in DB; CSV export; honeypot + rate limiting |
-| Newsletter | 0.0.1 | Communication | Subscriber list with double opt-in; HTML campaigns; test-send; CSV import/export |
-| Events | 0.0.1 | Community | Event listings with RSVP, Canvas calendar sidebar, date badges, and webhook dispatch |
+| Forms | 0.0.2 | Communication | Form builder with conditional logic, multi-step pages, file uploads, email notifications, anti-spam (honeypot/math/reCAPTCHA v3), shortcode embed, CSV export |
+| Newsletter | 0.0.2 | Communication | Subscribers, segments, scheduled campaigns, open/click tracking, welcome email, signup shortcode, CSV import/export |
+| Events | 0.0.2 | Community | Per-attendee RSVP with capacity + waiting list, ticket types, recurring events, iCal export, attendee admin |
+| Members | 0.0.1 | Community | Front-end visitor accounts: registration, email verification, profiles, admin moderation |
 | Two-Factor Auth | 0.0.1 | Security | TOTP authenticator app support; backup codes; trusted-device cookie |
 
 See [docs/module-system.md](docs/module-system.md) and [docs/creating-a-module.md](docs/creating-a-module.md) for the full guide.
@@ -176,7 +180,10 @@ See [docs/module-system.md](docs/module-system.md) and [docs/creating-a-module.m
 | [Forms Module](docs/forms.md) | Form builder, submissions, honeypot, CSV export |
 | [Newsletter Module](docs/newsletter.md) | Subscriber management, double opt-in, HTML campaigns |
 | [Events Module](docs/events.md) | Event listings, RSVP, Canvas calendar |
-| [i18n Guide](docs/i18n.md) | Translation files, `__()` helper, locale switcher |
+| [i18n Guide](docs/i18n.md) | Translation files, `__()` helper, locale routing, Translations admin |
+| [Members Module](docs/members.md) | Front-end accounts, email verification, SiteAuth |
+| [REST API](docs/api.md) | Endpoints, API keys, rate limits, response envelope |
+| [Caching](docs/caching.md) | Full-page cache, fragment cache, asset fingerprinting |
 
 ---
 

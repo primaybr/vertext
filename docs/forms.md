@@ -91,3 +91,26 @@ The Forms module fires the `form.submitted` event via `WebhookDispatcher`. The p
 | `forms.view` | View form list and submissions |
 | `forms.manage` | Create, edit, and delete forms |
 | `forms.export` | Download CSV exports of submissions |
+
+
+---
+
+## What's new in v0.0.2 (Vertext 0.0.8)
+
+- **Conditional logic** - each field can carry one show/hide rule against another field
+  (operators: equals, not equals, contains, empty, not empty). Configured per field in the
+  builder ("Conditional logic"); evaluated live in the browser and re-checked server-side,
+  so hidden required fields never block submission.
+- **Multi-step forms** - add "Step Break" blocks in the builder to split the form into pages.
+  Visitors get a numbered progress bar and validated Next/Back navigation; the server still
+  validates the whole submission at the end.
+- **File uploads** - the file field now stores uploads under `Public/uploads/forms/{form_id}/`
+  (jpg, png, gif, webp, pdf, txt, doc, docx; 10 MB max; extension + MIME sniff). The submission
+  detail view links to the stored file.
+- **Email notification** - set a notification address in the builder's Form Settings to receive
+  a formatted email for every submission (uses the shared Mailer).
+- **Anti-spam** - optional math challenge ("what is 3 + 4?") and optional reCAPTCHA v3
+  (enter both keys in Form Settings; server-side verification, scores below 0.5 rejected).
+- **Shortcode embed** - place `[form slug="contact"]` inside any Page or Blog post body to
+  embed the form inline. The embed and the standalone `/forms/{slug}` page share one partial.
+- **Fix** - Form Settings (success message etc.) now actually persist when saving fields.

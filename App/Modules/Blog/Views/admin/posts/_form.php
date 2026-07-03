@@ -168,6 +168,18 @@ $p       = $editing ? $post : [];
       </select>
     </div>
     <div class="vtx-field">
+      <label class="vtx-label" for="post-lang">Language</label>
+      <select class="form-select" id="post-lang" name="lang" data-vtx-select>
+        <?php foreach (\App\CMS\I18n::getSupportedLocales() as $locOpt): ?>
+        <option value="<?php echo htmlspecialchars($locOpt); ?>"
+          <?php echo ($p['lang'] ?? 'en') === $locOpt ? 'selected' : ''; ?>>
+          <?php echo strtoupper(htmlspecialchars($locOpt)); ?>
+        </option>
+        <?php endforeach; ?>
+      </select>
+      <div class="vtx-help">Listings show posts matching the visitor's locale.</div>
+    </div>
+    <div class="vtx-field">
       <label class="vtx-label" for="post-pub-date">Publish Date</label>
       <input class="form-control" type="datetime-local" id="post-pub-date" name="published_at"
              value="<?php echo !empty($p['published_at'])

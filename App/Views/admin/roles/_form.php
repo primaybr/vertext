@@ -39,7 +39,7 @@
       <?php if (empty($perms)): ?>
       <p style="font-size:.875rem;color:var(--ps-text-muted);">No permissions defined.</p>
       <?php else: ?>
-      <?php $assignedIds = array_map('intval', $rolePerms ?? []); ?>
+      <?php $assignedIds = $rolePerms ?? []; ?>
       <div style="max-height:280px;overflow-y:auto;border:1px solid var(--ps-border);
                   border-radius:var(--ps-radius);padding:.5rem .625rem;background:var(--ps-bg-base);">
         <?php foreach ($perms as $module => $permissions): ?>

@@ -47,8 +47,48 @@ class Module implements ModuleInterface
         )");
         $db->execute();
 
+        // v0.0.2 schema: segments, open/click tracking, per-campaign segment
+        $db->query("ALTER TABLE newsletter_campaigns ADD COLUMN IF NOT EXISTS segment_id UUID");
+        $db->execute();
+        $db->query("ALTER TABLE newsletter_campaigns ADD COLUMN IF NOT EXISTS open_count INT NOT NULL DEFAULT 0");
+        $db->execute();
+        $db->query("CREATE TABLE IF NOT EXISTS newsletter_segments (
+            id         UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+            name       VARCHAR(150) NOT NULL,
+            rules      TEXT         NOT NULL DEFAULT '{}',
+            created_at TIMESTAMP    DEFAULT NOW(),
+            updated_at TIMESTAMP    DEFAULT NOW(),
+            deleted_at TIMESTAMP,
+            created_by UUID,
+            updated_by UUID,
+            deleted_by UUID
+        )");
+        $db->execute();
+        $db->query("CREATE TABLE IF NOT EXISTS newsletter_opens (
+            id            UUID      PRIMARY KEY DEFAULT gen_random_uuid(),
+            campaign_id   UUID      NOT NULL,
+            subscriber_id UUID      NOT NULL,
+            opened_at     TIMESTAMP NOT NULL DEFAULT NOW(),
+            UNIQUE (campaign_id, subscriber_id)
+        )");
+        $db->execute();
+        $db->query("CREATE TABLE IF NOT EXISTS campaign_links (
+            id          UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
+            campaign_id UUID          NOT NULL,
+            url         VARCHAR(2000) NOT NULL,
+            click_count INT           NOT NULL DEFAULT 0,
+            created_at  TIMESTAMP     NOT NULL DEFAULT NOW()
+        )");
+        $db->execute();
+
         // Settings seed (double opt-in off by default)
         $db->query("INSERT INTO settings (key, value, grp) VALUES ('newsletter_double_optin', '0', 'newsletter') ON CONFLICT (key) DO NOTHING");
+        $db->execute();
+        $db->query("INSERT INTO settings (key, value, grp) VALUES ('newsletter_welcome_enabled', '0', 'newsletter') ON CONFLICT (key) DO NOTHING");
+        $db->execute();
+        $db->query("INSERT INTO settings (key, value, grp) VALUES ('newsletter_welcome_subject', '', 'newsletter') ON CONFLICT (key) DO NOTHING");
+        $db->execute();
+        $db->query("INSERT INTO settings (key, value, grp) VALUES ('newsletter_welcome_body', '', 'newsletter') ON CONFLICT (key) DO NOTHING");
         $db->execute();
         $db->query("INSERT INTO settings (key, value, grp) VALUES ('newsletter_from_name', '', 'newsletter') ON CONFLICT (key) DO NOTHING");
         $db->execute();
@@ -85,6 +125,9 @@ class Module implements ModuleInterface
     {
         $db->query("DROP TABLE IF EXISTS newsletter_campaigns CASCADE");   $db->execute();
         $db->query("DROP TABLE IF EXISTS newsletter_subscribers CASCADE"); $db->execute();
+        $db->query("DROP TABLE IF EXISTS newsletter_segments CASCADE");    $db->execute();
+        $db->query("DROP TABLE IF EXISTS newsletter_opens CASCADE");       $db->execute();
+        $db->query("DROP TABLE IF EXISTS campaign_links CASCADE");         $db->execute();
         $db->query("DELETE FROM settings WHERE grp = 'newsletter'");      $db->execute();
 
         $db->query("DELETE FROM role_permissions WHERE permission_id IN (SELECT id FROM permissions WHERE module = 'newsletter')");
@@ -119,6 +162,17 @@ class Module implements ModuleInterface
         $router->post("/admin/newsletter/campaigns/{$id}/delete",     $camp, 'delete');
         $router->post("/admin/newsletter/campaigns/{$id}/send",       $camp, 'send');
         $router->post("/admin/newsletter/campaigns/{$id}/test-send",  $camp, 'testSend');
+        $router->post("/admin/newsletter/campaigns/{$id}/schedule",   $camp, 'schedule');
+        $router->post("/admin/newsletter/campaigns/{$id}/unschedule", $camp, 'unschedule');
+
+        // Segments
+        $seg = 'App\\Modules\\Newsletter\\Controllers\\Admin\\SegmentsController';
+        $router->get( '/admin/newsletter/segments',                $seg, 'index');
+        $router->get( '/admin/newsletter/segments/form',           $seg, 'createForm');
+        $router->post('/admin/newsletter/segments/store',          $seg, 'store');
+        $router->get( "/admin/newsletter/segments/{$id}/form",     $seg, 'editForm');
+        $router->post("/admin/newsletter/segments/{$id}/update",   $seg, 'update');
+        $router->post("/admin/newsletter/segments/{$id}/delete",   $seg, 'delete');
 
         // Settings
         $router->get( '/admin/newsletter/settings',              $set, 'index');
@@ -128,5 +182,7 @@ class Module implements ModuleInterface
         $router->get( '/newsletter/unsubscribe',  $pub, 'unsubscribe');
         $router->get( '/newsletter/confirm',       $pub, 'confirm');
         $router->post('/newsletter/subscribe',     $pub, 'subscribe');
+        $router->get( "/newsletter/track/open/{$id}/{$id}", $pub, 'trackOpen');
+        $router->get( "/newsletter/track/click/{$id}",      $pub, 'trackClick');
     }
 }

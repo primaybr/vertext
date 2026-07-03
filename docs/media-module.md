@@ -140,3 +140,17 @@ $post = $this->db
     ->where('posts.id', $id)
     ->first();
 ```
+
+
+---
+
+## What's new in v0.0.4 (Vertext 0.0.8)
+
+- **Folders** - organize the library into flat folders (`media_folders`). The library shows
+  folder chips with counts plus an Unfiled view; create/rename/delete folders inline (deleting
+  a folder keeps its files and marks them Unfiled). Uploads land in the currently open folder,
+  the bulk bar gains "Move to...", and the media picker modal gets a folder filter.
+- **Browser image editor** - the pencil-sliders button on any JPG/PNG/WebP opens an editor with
+  drag-to-crop, rotate left/right, and flip H/V on a live canvas preview. "Save as Copy" adds a
+  new library item (same folder); "Overwrite Original" replaces the file and regenerates its
+  thumbnail. The server re-applies the operations with GD - the canvas is only a preview.

@@ -57,6 +57,36 @@
       </div>
     </div>
 
+    <div class="vtx-panel mb-3">
+      <div class="vtx-panel-header">Welcome Email</div>
+      <div class="vtx-panel-body">
+        <label style="display:flex;align-items:flex-start;gap:.6rem;cursor:pointer;">
+          <input type="checkbox" name="newsletter_welcome_enabled" value="1"
+                 style="margin-top:.2rem;"
+                 <?php echo ($settings['newsletter_welcome_enabled'] ?? '0') === '1' ? 'checked' : ''; ?>>
+          <span>
+            <strong>Send a welcome email</strong><br>
+            <span style="font-size:.875rem;color:var(--ps-text-muted);">
+              Sent once when a subscriber becomes active (immediately, or after confirming when double opt-in is on).
+            </span>
+          </span>
+        </label>
+
+        <div class="vtx-field mt-3 mb-3">
+          <label class="vtx-label" for="nl-welcome-subject">Welcome Subject</label>
+          <input class="form-control" type="text" id="nl-welcome-subject" name="newsletter_welcome_subject"
+                 value="<?php echo htmlspecialchars($settings['newsletter_welcome_subject'] ?? ''); ?>"
+                 placeholder="Welcome to our newsletter">
+        </div>
+        <div class="vtx-field">
+          <label class="vtx-label" for="nl-welcome-body">Welcome Message</label>
+          <textarea class="form-control" id="nl-welcome-body" name="newsletter_welcome_body" rows="4"
+                    placeholder="Thanks for subscribing! You will hear from us soon."><?php echo htmlspecialchars($settings['newsletter_welcome_body'] ?? ''); ?></textarea>
+          <p class="vtx-field-hint">Plain text - an unsubscribe link is appended automatically.</p>
+        </div>
+      </div>
+    </div>
+
     <div style="display:flex;justify-content:flex-end;">
       <button type="submit" class="btn btn-primary">Save Settings</button>
     </div>

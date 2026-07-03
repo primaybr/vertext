@@ -53,6 +53,7 @@ class SettingsController extends BaseController
             'settings'       => $settings,
             'grouped'        => $grouped,
             'cacheFileCount' => $this->countCacheFiles(),
+            'cacheStats'     => \App\CMS\PageCache::stats(),
         ], 'Settings', 'settings');
     }
 
@@ -73,6 +74,13 @@ class SettingsController extends BaseController
             $value = $this->input->post($key, false) ?? '';
             $this->db('settings')->where('key', $key)->update(['value' => $value]);
         }
+
+        // Full-page cache toggle (checkbox, grp: performance)
+        $this->upsertSetting('cache_pages_enabled', $this->input->post('cache_pages_enabled') ? '1' : '0', 'performance');
+
+        // Site settings feed every cached render - drop them all
+        \App\CMS\PageCache::flushPages();
+        \App\CMS\PageCache::forgetFragment(null);
 
         Auth::audit('settings.save', 'settings');
         if ($this->isAjax()) { $this->json(['success' => true, 'message' => 'Settings saved successfully.']); }

@@ -103,3 +103,24 @@ Semantic alert colors (success, warning, error) include explicit `@media (prefer
 | `events.view` | View event list and RSVPs in admin |
 | `events.manage` | Create, edit, delete events |
 | `events.rsvp` | View and export RSVPs |
+
+
+---
+
+## What's new in v0.0.2 (Vertext 0.0.8)
+
+- **Per-attendee RSVPs** - visitors register with name + email (pre-filled for logged-in
+  members). Each RSVP is a row in `event_rsvps` with a status and a cancellation token;
+  `rsvp_count` now always equals confirmed registrations.
+- **Capacity & waiting list** - set Max Attendees on an event; when full, new registrations
+  join the waiting list. Cancelling a confirmed spot (by the attendee or an admin)
+  auto-promotes the earliest waitlisted person, who is notified by email.
+- **Ticket types** - optional named tickets with display prices. The RSVP form shows a ticket
+  select and the choice is stored per attendee. Display only - no payment processing.
+- **iCal** - `GET /events/{slug}/ical` downloads an RFC 5545 `.ics` (recurring events include
+  their RRULE). Confirmation emails carry an "Add to calendar" link.
+- **Recurring events** - daily/weekly/monthly with an interval and optional until-date; the
+  public listing and calendar expand future occurrences automatically.
+- **Attendee admin** - `/admin/events/{id}/attendees`: status dropdown per attendee
+  (confirmed / waitlist / cancelled, with a capacity guard), counts, and CSV export.
+- **Webhook** - `event.rsvp` now includes the attendee payload (name, email, status, ticket).
