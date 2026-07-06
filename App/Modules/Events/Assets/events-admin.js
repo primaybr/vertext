@@ -43,7 +43,11 @@
         sel.dataset.current = to;
         var cell = sel.closest('tr').querySelector('[data-attendee-status]');
         var cls  = to === 'confirmed' ? 'success' : (to === 'waitlist' ? 'warning' : 'error');
-        cell.innerHTML = '<span class="vtx-tag ' + cls + '">' + to.charAt(0).toUpperCase() + to.slice(1) + '</span>';
+        var tag = document.createElement('span');
+        tag.className = 'vtx-tag ' + cls;
+        tag.textContent = to.charAt(0).toUpperCase() + to.slice(1);
+        cell.textContent = '';
+        cell.appendChild(tag);
         // A promotion changes another row server-side; refresh counts lazily on next visit
       })
       .catch(function () { sel.value = sel.dataset.current; Phuse.toast('Network error.', 'error'); });
