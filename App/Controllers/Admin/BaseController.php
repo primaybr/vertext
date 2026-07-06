@@ -103,6 +103,25 @@ abstract class BaseController extends Controller
         return new \Core\Model($table);
     }
 
+    /**
+     * Build a named-placeholder "IN (...)" fragment plus its matching binds, for use with
+     * Model::whereRaw() - e.g. `[$sql, $binds] = $this->buildInClause($ids); ...->whereRaw("id IN ({$sql})", $binds)`.
+     * whereRaw() merges bind keys verbatim into the query's bind bag, which requires named
+     * (":key") placeholders - passing a plain 0-indexed array of values with positional "?"
+     * placeholders (an easy mistake) mixes named and positional params and fails at the PDO layer.
+     */
+    protected function buildInClause(array $values, string $prefix = 'in'): array
+    {
+        $binds = [];
+        $placeholders = [];
+        foreach (array_values($values) as $i => $value) {
+            $key = ":{$prefix}_{$i}";
+            $placeholders[] = $key;
+            $binds[$key] = $value;
+        }
+        return [implode(',', $placeholders), $binds];
+    }
+
     /** Check permission; redirect to dashboard if denied */
     protected function requirePermission(string $permission): void
     {

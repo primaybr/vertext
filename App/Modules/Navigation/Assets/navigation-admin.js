@@ -1,4 +1,4 @@
-/* ── admin/navigation/builder.php: menu-item editor + drag reorder ── */
+/* -- admin/navigation/builder.php: menu-item editor + drag reorder -- */
 (function () {
   'use strict';
 
@@ -158,7 +158,7 @@
   });
 })();
 
-/* ── admin/navigation/index.php: new-menu modal + create-menu AJAX ── */
+/* -- admin/navigation/index.php: new-menu modal + create-menu AJAX -- */
 (function () {
   'use strict';
 

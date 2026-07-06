@@ -16,7 +16,7 @@ final class MakeBundle
 {
     public static function run(string $slug): never
     {
-        // ── Validate ──────────────────────────────────────────────────────────
+        // -- Validate ----------------------------------------------------------
         if (!preg_match('/^[a-z][a-z0-9\-]+$/', $slug)) {
             self::error(
                 "Bundle slug must be lowercase kebab-case and at least 2 characters.\n" .
@@ -48,7 +48,7 @@ final class MakeBundle
         exit(0);
     }
 
-    // ── Template ──────────────────────────────────────────────────────────────
+    // -- Template --------------------------------------------------------------
 
     private static function bundleJson(string $slug): string
     {
@@ -64,7 +64,7 @@ final class MakeBundle
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
+    // -- Helpers ---------------------------------------------------------------
 
     /** kebab-slug → Title Case: marketing-suite → Marketing Suite */
     private static function toTitle(string $slug): string

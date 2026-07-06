@@ -1,4 +1,4 @@
-/* ── admin/index.php: member status/resend-verification actions ── */
+/* -- admin/index.php: member status/resend-verification actions -- */
 (function () {
   'use strict';
 

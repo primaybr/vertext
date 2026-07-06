@@ -1,4 +1,4 @@
-/* ── admin/contact/index.php: delete-submission AJAX handler ── */
+/* -- admin/contact/index.php: delete-submission AJAX handler -- */
 document.querySelectorAll('[data-action="delete"]').forEach(btn => {
     btn.addEventListener('click', function () {
         if (!confirm('Delete this submission?')) return;
@@ -15,12 +15,12 @@ document.querySelectorAll('[data-action="delete"]').forEach(btn => {
     });
 });
 
-/* ── admin/contact/settings.php: toggle auto-reply message field visibility ── */
+/* -- admin/contact/settings.php: toggle auto-reply message field visibility -- */
 document.getElementById('autoReply')?.addEventListener('change', function () {
     document.getElementById('autoReplyMsg').style.display = this.checked ? '' : 'none';
 });
 
-/* ── admin/contact/view.php: delete/spam/mark-read actions ── */
+/* -- admin/contact/view.php: delete/spam/mark-read actions -- */
 (function () {
     const actions = document.getElementById('contactItemActions');
     if (!actions) return;

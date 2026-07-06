@@ -40,7 +40,7 @@
         overlay.innerHTML = '<span class="vtx-table-spinner"></span>';
         container.appendChild(overlay);
 
-        /* ── Sorting ──────────────────────────────────────────── */
+        /* -- Sorting -------------------------------------------- */
         if (sortable && thead) {
             var sortHeaders = Array.from(thead.querySelectorAll('th[data-sort]'));
             sortHeaders.forEach(function (th) {
@@ -92,7 +92,7 @@
             rows.forEach(function (r) { tbody.appendChild(r); });
         }
 
-        /* ── Row Selection ────────────────────────────────────── */
+        /* -- Row Selection -------------------------------------- */
         var masterCheck = null;
 
         if (selectable && thead) {
@@ -159,7 +159,7 @@
             });
         }
 
-        /* ── Empty state ──────────────────────────────────────── */
+        /* -- Empty state ---------------------------------------- */
         function checkEmpty() {
             var dataRows = Array.from(tbody.querySelectorAll('tr:not(.vtx-empty-row)'));
             var emptyRow = tbody.querySelector('.vtx-empty-row');
@@ -182,7 +182,7 @@
             if (e.detail && e.detail.el === tbody) checkEmpty();
         });
 
-        /* ── AJAX Reload ──────────────────────────────────────── */
+        /* -- AJAX Reload ---------------------------------------- */
         function reload(url) {
             overlay.style.display = 'flex';
 
@@ -217,7 +217,7 @@
             });
         }
 
-        /* ── Public API ───────────────────────────────────────── */
+        /* -- Public API ----------------------------------------- */
         var self = {
             el: tableEl,
             reload: reload,

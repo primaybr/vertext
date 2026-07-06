@@ -10,7 +10,7 @@ use App\Models\SettingModel;
 
 $settings = new SettingModel();
 
-// ── Reading settings ──────────────────────────────────────────────────────────
+// -- Reading settings ----------------------------------------------------------
 
 $siteName    = $settings->get('site_name');
 $siteUrl     = $settings->get('site_url');
@@ -20,12 +20,12 @@ $maintenance = $settings->get('maintenance_mode'); // '1' or '0'
 // With a default fallback
 $language = $settings->get('default_language') ?? 'en';
 
-// ── Writing settings ──────────────────────────────────────────────────────────
+// -- Writing settings ----------------------------------------------------------
 
 $settings->set('site_name', 'My Awesome Site');
 $settings->set('maintenance_mode', '1'); // enable maintenance
 
-// ── Adding custom settings in a module install() ──────────────────────────────
+// -- Adding custom settings in a module install() ------------------------------
 
 /*
 // Inside your Module::install(Connection $db):
@@ -48,14 +48,14 @@ $db->table('settings')->insertBatch([
 ]);
 */
 
-// ── Removing custom settings in uninstall() ───────────────────────────────────
+// -- Removing custom settings in uninstall() -----------------------------------
 
 /*
 // Inside your Module::uninstall(Connection $db):
 $db->table('settings')->where('grp', 'portfolio')->delete()->run();
 */
 
-// ── Adding settings to the Admin UI ──────────────────────────────────────────
+// -- Adding settings to the Admin UI ------------------------------------------
 
 /*
 // 1. Add the field to App/Views/admin/settings/index.php:
@@ -85,7 +85,7 @@ private const ALLOWED_KEYS = [
 // Any key not in ALLOWED_KEYS is silently ignored.
 */
 
-// ── Using settings in a controller ───────────────────────────────────────────
+// -- Using settings in a controller -------------------------------------------
 
 /*
 class ProjectsController extends BaseController

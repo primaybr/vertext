@@ -79,7 +79,7 @@ class ContactSettingsController extends BaseController
         if ($this->isAjax()) {
             $this->json(['success' => true, 'message' => 'Settings saved.']);
         } else {
-            $this->flash('flash' => 'success', 'message' => 'Settings saved.');
+            $this->flash('success', 'Settings saved.');
             $this->redirect($this->baseUrl . '/admin/contact/settings');
         }
     }

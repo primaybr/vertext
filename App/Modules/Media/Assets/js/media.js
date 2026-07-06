@@ -14,7 +14,7 @@
     });
 }());
 
-/* ── admin/media/index.php: bulk-select toolbar (select-all, bulk delete/move) ── */
+/* -- admin/media/index.php: bulk-select toolbar (select-all, bulk delete/move) -- */
 (function () {
     var bar      = document.getElementById('vtx-media-bulk-bar');
     var allChk   = document.getElementById('vtx-media-select-all');
@@ -109,7 +109,7 @@
     }
 }());
 
-/* ── admin/media/index.php: "Regenerate thumbnails" button ── */
+/* -- admin/media/index.php: "Regenerate thumbnails" button -- */
 (function () {
     var btn    = document.getElementById('vtx-regen-thumbs-btn');
     var config = document.getElementById('vtx-media-config');
@@ -148,7 +148,7 @@
     });
 }());
 
-/* ── admin/media/index.php: upload flow (folder create/rename/delete) ── */
+/* -- admin/media/index.php: upload flow (folder create/rename/delete) -- */
 (function () {
     'use strict';
     var config = document.getElementById('vtx-media-config');
@@ -222,7 +222,7 @@
     }
 }());
 
-/* ── admin/media/index.php: canvas-based inline image editor (crop/rotate/flip/save) ── */
+/* -- admin/media/index.php: canvas-based inline image editor (crop/rotate/flip/save) -- */
 (function () {
     'use strict';
     var modal  = document.getElementById('vtx-imged-modal');

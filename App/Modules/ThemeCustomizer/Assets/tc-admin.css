@@ -1,4 +1,4 @@
-/* ── admin/theme-customizer/index.php: corner-radius option cards + sticky live-preview panel ── */
+/* -- admin/theme-customizer/index.php: corner-radius option cards + sticky live-preview panel -- */
 .tc-corner-group { display: flex; gap: .5rem; }
 .tc-corner-option { flex: 1; }
 .tc-corner-option input { position: absolute; opacity: 0; pointer-events: none; }

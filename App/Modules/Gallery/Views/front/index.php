@@ -5,7 +5,7 @@
 
   <?php if (empty($galleries)): ?>
   <div class="gallery-empty">
-    <p class="emoji">📷</p>
+    <p class="empty-icon"><i class="pi pi-images"></i></p>
     <p>No albums published yet.</p>
   </div>
   <?php else: ?>
@@ -18,7 +18,7 @@
           <img src="<?php echo htmlspecialchars($g['cover_url']); ?>"
                alt="<?php echo htmlspecialchars($g['title']); ?>" loading="lazy">
           <?php else: ?>
-          <div class="gallery-cover-placeholder">🖼</div>
+          <div class="gallery-cover-placeholder"><i class="pi pi-image"></i></div>
           <?php endif; ?>
         </div>
         <div class="gallery-info">

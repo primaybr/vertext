@@ -24,7 +24,7 @@ class PageCache
     public const DEFAULT_TTL   = 600; // full pages: 10 min
     public const FRAGMENT_TTL  = 300; // fragments: 5 min
 
-    // ── Enable / bypass logic ─────────────────────────────────────────────────
+    // -- Enable / bypass logic -------------------------------------------------
 
     public static function enabled(): bool
     {
@@ -74,7 +74,7 @@ class PageCache
         return ROOT . 'Cache' . DS . 'pages' . DS . $key . '.html';
     }
 
-    // ── Full-page cache ───────────────────────────────────────────────────────
+    // -- Full-page cache -------------------------------------------------------
 
     /** Serve the cached page and exit, when possible. Call at the top of a front action. */
     public static function serve(): void
@@ -129,7 +129,7 @@ class PageCache
         }
     }
 
-    // ── Fragment cache ────────────────────────────────────────────────────────
+    // -- Fragment cache --------------------------------------------------------
 
     /** Read-through cache for small serializable values. */
     public static function remember(string $name, callable $produce, int $ttl = self::FRAGMENT_TTL): mixed
@@ -166,7 +166,7 @@ class PageCache
         }
     }
 
-    // ── Stats (Settings panel) ────────────────────────────────────────────────
+    // -- Stats (Settings panel) ------------------------------------------------
 
     /** @return array{pages:int, fragments:int, other:int, bytes:int} */
     public static function stats(): array

@@ -1,7 +1,7 @@
 {
     "name":        "Media",
     "slug":        "media",
-    "version":     "0.0.5",
+    "version":     "0.0.6",
     "description": "General-purpose media library: image upload, management, and picker for use by other modules",
     "author":      "Vertext",
     "category":    "Media",

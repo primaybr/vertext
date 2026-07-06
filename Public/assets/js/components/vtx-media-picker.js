@@ -22,7 +22,7 @@
      *   - opens the picker without a button; calls cb on selection.
      */
 
-    // ── Shared overlay builder ────────────────────────────────────────────────
+    // -- Shared overlay builder ------------------------------------------------
     function openPickerOverlay(url) {
         var existing = document.getElementById('vtx-media-picker-overlay');
         if (existing) existing.remove();
@@ -87,7 +87,7 @@
         });
     }
 
-    // ── Instance (button-driven) ──────────────────────────────────────────────
+    // -- Instance (button-driven) ----------------------------------------------
     function VtxMediaPicker(opts) {
         this.btn = opts.btn;
         this._bind();
@@ -133,7 +133,7 @@
         btn.innerHTML = '<i class="pi pi-image"></i> Change Image';
     };
 
-    // ── Static: programmatic open (used by VtxEditor image handler) ──────────
+    // -- Static: programmatic open (used by VtxEditor image handler) ----------
     VtxMediaPicker.open = function (onSelectFn) {
         var pickerUrl = (window.VTX_BASE_URL || '') + '/admin/media/picker';
 

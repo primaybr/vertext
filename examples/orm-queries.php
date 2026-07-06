@@ -9,7 +9,7 @@
 // Assume $db is available via $this->db in a controller, or:
 // $db = \Core\Database\Connection::getInstance();
 
-// ── Basic SELECT ──────────────────────────────────────────────────────────────
+// -- Basic SELECT --------------------------------------------------------------
 
 // All rows
 $posts = $db->table('posts')->select('*')->get();
@@ -28,7 +28,7 @@ $post = $db->table('posts')
     ->orderBy('created_at', 'DESC')
     ->first();
 
-// ── WHERE conditions ──────────────────────────────────────────────────────────
+// -- WHERE conditions ----------------------------------------------------------
 
 // Equality (default operator)
 $db->table('posts')->where('status', 'published');
@@ -55,7 +55,7 @@ $db->table('posts')->whereArray([
     'author_id' => 5,
 ]);
 
-// ── JOINs ────────────────────────────────────────────────────────────────────
+// -- JOINs --------------------------------------------------------------------
 
 // Posts with author name
 $posts = $db->table('posts')
@@ -73,7 +73,7 @@ $posts = $db->table('posts p')
     ->where('p.status', 'published')
     ->get();
 
-// ── Pagination ────────────────────────────────────────────────────────────────
+// -- Pagination ----------------------------------------------------------------
 
 $perPage = 15;
 $page    = max(1, (int) ($_GET['page'] ?? 1));
@@ -94,7 +94,7 @@ $posts = $db->table('posts')
 
 $pager = new \Core\Utilities\Pagination\Pager($total, $perPage, $page, '/blog');
 
-// ── Aggregates ────────────────────────────────────────────────────────────────
+// -- Aggregates ----------------------------------------------------------------
 
 $total    = $db->table('posts')->select('COUNT(*) AS n')->first()->n;
 $maxViews = $db->table('posts')->select('MAX(views) AS m')->where('status', 'published')->first()->m;
@@ -107,7 +107,7 @@ $counts = $db->table('post_category_pivot pcp')
     ->orderBy('post_count', 'DESC')
     ->get();
 
-// ── INSERT / UPDATE / DELETE ──────────────────────────────────────────────────
+// -- INSERT / UPDATE / DELETE --------------------------------------------------
 
 // Insert
 $db->table('posts')->insert([
@@ -137,7 +137,7 @@ $db->table('posts')->where('id', 10)->delete()->run();
 // Delete with IN
 $db->table('post_tag_pivot')->whereIn(['post_id' => [10]])->delete()->run();
 
-// ── PostgreSQL-specific ───────────────────────────────────────────────────────
+// -- PostgreSQL-specific -------------------------------------------------------
 
 // Case-insensitive search
 $results = $db->table('posts')
@@ -159,7 +159,7 @@ $randomPost = $db->table('posts')
     ->limit(1)
     ->first();
 
-// ── Raw query (when ORM is not enough) ───────────────────────────────────────
+// -- Raw query (when ORM is not enough) ---------------------------------------
 
 $results = $db->query(
     "SELECT p.*, COUNT(c.id) AS comment_count

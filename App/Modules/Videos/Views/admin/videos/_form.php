@@ -3,7 +3,7 @@
 <form method="POST"
       action="<?= $baseUrl ?>/admin/videos/<?= $video ? $video['id'].'/update' : 'store' ?>"
       data-crud-form>
-    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken ?? '') ?>">
+    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
 
     <div class="mb-3">
         <label class="form-label">Title <span class="text-danger">*</span></label>

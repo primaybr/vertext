@@ -6,14 +6,14 @@
  * using the vtx-media-picker component and the Media module API.
  */
 
-// ── 1. Store a featured_image_id column in your module table ──────────────────
+// -- 1. Store a featured_image_id column in your module table ------------------
 
 /*
 // In Module::install(Connection $db):
 $db->statement("ALTER TABLE portfolio_projects ADD COLUMN featured_image_id BIGINT REFERENCES media_files(id) ON DELETE SET NULL");
 */
 
-// ── 2. In the controller: load the selected image for edit forms ──────────────
+// -- 2. In the controller: load the selected image for edit forms --------------
 
 /*
 class ProjectsController extends BaseController
@@ -62,7 +62,7 @@ class ProjectsController extends BaseController
 }
 */
 
-// ── 3. In the view (_form.php): add the vtx-media-picker component ────────────
+// -- 3. In the view (_form.php): add the vtx-media-picker component ------------
 
 /*
 <form method="POST" action="...">
@@ -119,7 +119,7 @@ class ProjectsController extends BaseController
 </form>
 */
 
-// ── 4. Displaying the image on the public frontend ────────────────────────────
+// -- 4. Displaying the image on the public frontend ----------------------------
 
 /*
 // Controller: load project with image

@@ -57,7 +57,7 @@ class MediaController extends BaseController
         }
     }
 
-    // ── Grid List ──────────────────────────────────────────────────────────────
+    // -- Grid List --------------------------------------------------------------
 
     public function index(): void
     {
@@ -135,7 +135,7 @@ class MediaController extends BaseController
         ], 'Media Library', 'media');
     }
 
-    // ── Folders (v0.0.2) ───────────────────────────────────────────────────────
+    // -- Folders (v0.0.2) -------------------------------------------------------
 
     /** POST /admin/media/folders/store - AJAX */
     public function storeFolder(): void
@@ -210,7 +210,7 @@ class MediaController extends BaseController
         $this->json(['success' => true, 'message' => "Folder \"{$folder['name']}\" deleted. Its files were moved to Unfiled."]);
     }
 
-    // ── Upload ─────────────────────────────────────────────────────────────────
+    // -- Upload -----------------------------------------------------------------
 
     public function upload(): void
     {
@@ -330,7 +330,7 @@ class MediaController extends BaseController
         ]);
     }
 
-    // ── Bulk: Regenerate Thumbnails ────────────────────────────────────────────
+    // -- Bulk: Regenerate Thumbnails --------------------------------------------
 
     public function regenThumbnails(): void
     {
@@ -416,7 +416,7 @@ class MediaController extends BaseController
         ]);
     }
 
-    // ── Edit form (modal partial) ──────────────────────────────────────────────
+    // -- Edit form (modal partial) ----------------------------------------------
 
     public function editForm(string $id): void
     {
@@ -434,7 +434,7 @@ class MediaController extends BaseController
         ]);
     }
 
-    // ── Update metadata ────────────────────────────────────────────────────────
+    // -- Update metadata --------------------------------------------------------
 
     public function update(string $id): void
     {
@@ -453,7 +453,7 @@ class MediaController extends BaseController
         $this->json(['success' => true, 'message' => 'Media updated.']);
     }
 
-    // ── Bulk ───────────────────────────────────────────────────────────────────
+    // -- Bulk -------------------------------------------------------------------
 
     public function bulk(): void
     {
@@ -468,56 +468,60 @@ class MediaController extends BaseController
             $this->json(['success' => false, 'message' => 'No files selected.']);
         }
 
-        $count        = count($ids);
-        $placeholders = implode(',', array_fill(0, $count, '?'));
+        $count = count($ids);
+        [$inSql, $inBinds] = $this->buildInClause($ids);
 
-        if ($action === 'move') {
-            $folderId = trim($this->input->post('folder_id', false) ?? '');
-            if ($folderId !== '' && $folderId !== 'unfiled') {
-                $folderRow = $this->db('media_folders')->where('id', $folderId)->whereNull('deleted_at')->get(1);
-                if (!$folderRow) {
-                    $this->json(['success' => false, 'message' => 'Target folder not found.']);
+        try {
+            if ($action === 'move') {
+                $folderId = trim($this->input->post('folder_id', false) ?? '');
+                if ($folderId !== '' && $folderId !== 'unfiled') {
+                    $folderRow = $this->db('media_folders')->where('id', $folderId)->whereNull('deleted_at')->get(1);
+                    if (!$folderRow) {
+                        $this->json(['success' => false, 'message' => 'Target folder not found.']);
+                    }
                 }
+
+                $this->db('media_files')
+                    ->whereRaw("id IN ({$inSql})", $inBinds)
+                    ->update(['folder_id' => ($folderId === '' || $folderId === 'unfiled') ? null : $folderId]);
+
+                Auth::audit('media.bulk_move', 'media_files', '', ['count' => $count, 'folder' => $folderId]);
+                $this->json(['success' => true, 'message' => "{$count} file(s) moved."]);
             }
 
-            $this->db('media_files')
-                ->whereRaw("id IN ({$placeholders})", array_values($ids))
-                ->update(['folder_id' => ($folderId === '' || $folderId === 'unfiled') ? null : $folderId]);
+            if ($action === 'delete') {
+                $files = $this->db('media_files')
+                    ->select('id, filename, thumbnail_path')
+                    ->whereRaw("id IN ({$inSql})", $inBinds)
+                    ->get() ?: [];
 
-            Auth::audit('media.bulk_move', 'media_files', '', ['count' => $count, 'folder' => $folderId]);
-            $this->json(['success' => true, 'message' => "{$count} file(s) moved."]);
-        }
-
-        if ($action === 'delete') {
-            $files = $this->db('media_files')
-                ->select('id, filename, thumbnail_path')
-                ->whereRaw("id IN ({$placeholders})", array_values($ids))
-                ->get() ?: [];
-
-            $base = ROOT . 'Public' . DS . 'uploads' . DS . 'media' . DS;
-            foreach ($files as $file) {
-                foreach (['filename', 'thumbnail_path'] as $col) {
-                    if (!empty($file[$col])) {
-                        $path = $base . str_replace('/', DS, $file[$col]);
-                        if (file_exists($path)) {
-                            @unlink($path);
+                $base = ROOT . 'Public' . DS . 'uploads' . DS . 'media' . DS;
+                foreach ($files as $file) {
+                    foreach (['filename', 'thumbnail_path'] as $col) {
+                        if (!empty($file[$col])) {
+                            $path = $base . str_replace('/', DS, $file[$col]);
+                            if (file_exists($path)) {
+                                @unlink($path);
+                            }
                         }
                     }
                 }
+
+                $this->db('media_files')
+                    ->whereRaw("id IN ({$inSql})", $inBinds)
+                    ->delete();
+
+                Auth::audit('media.bulk_delete', 'media_files', '', ['count' => $count]);
+                $this->json(['success' => true, 'message' => "{$count} file(s) deleted."]);
             }
-
-            $this->db('media_files')
-                ->whereRaw("id IN ({$placeholders})", array_values($ids))
-                ->delete();
-
-            Auth::audit('media.bulk_delete', 'media_files', '', ['count' => $count]);
-            $this->json(['success' => true, 'message' => "{$count} file(s) deleted."]);
+        } catch (\Throwable $e) {
+            $this->json(['success' => false, 'message' => 'Database error: ' . $e->getMessage()], 500);
         }
 
         $this->json(['success' => false, 'message' => 'Unknown bulk action.']);
     }
 
-    // ── Delete ─────────────────────────────────────────────────────────────────
+    // -- Delete -----------------------------------------------------------------
 
     public function delete(string $id): void
     {
@@ -542,7 +546,7 @@ class MediaController extends BaseController
         $this->json(['success' => true, 'message' => 'File deleted.']);
     }
 
-    // ── Image editor (v0.0.2) ──────────────────────────────────────────────────
+    // -- Image editor (v0.0.2) --------------------------------------------------
 
     /**
      * POST /admin/media/{id}/edit-image - AJAX
@@ -681,7 +685,7 @@ class MediaController extends BaseController
         $this->json(['success' => true, 'message' => 'Edited copy saved to the library.', 'id' => $newId]);
     }
 
-    // ── Image Processing ───────────────────────────────────────────────────────
+    // -- Image Processing -------------------------------------------------------
 
     /**
      * Resize original if too wide, then generate a 400×400 cover-crop thumbnail.
@@ -783,7 +787,7 @@ class MediaController extends BaseController
         };
     }
 
-    // ── Helpers ────────────────────────────────────────────────────────────────
+    // -- Helpers ----------------------------------------------------------------
 
     private function fileUrl(string $filename): string
     {

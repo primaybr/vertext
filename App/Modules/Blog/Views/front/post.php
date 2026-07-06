@@ -1,11 +1,12 @@
 <?php
-$blogBase = '/' . trim($settings['blog_base_path'] ?? 'blog', '/');
+$rawBlogBase = trim($settings['blog_base_path'] ?? 'blog', '/');
+$blogBase    = $rawBlogBase === '' ? '' : '/' . $rawBlogBase;
 ?>
 
 <div class="container-prose">
   <div class="post-breadcrumb">
     <nav class="crumbs">
-      <a href="<?php echo $baseUrl . $blogBase; ?>"><?php echo htmlspecialchars($settings['blog_title'] ?? 'Blog'); ?></a>
+      <a href="<?php echo $baseUrl . ($blogBase !== '' ? $blogBase : '/'); ?>"><?php echo htmlspecialchars($settings['blog_title'] ?? 'Blog'); ?></a>
       <span class="sep">/</span>
       <span><?php echo htmlspecialchars($post['title']); ?></span>
     </nav>
@@ -14,7 +15,7 @@ $blogBase = '/' . trim($settings['blog_base_path'] ?? 'blog', '/');
             data-post-title="<?php echo htmlspecialchars($post['title']); ?>"
             data-post-slug="<?php echo htmlspecialchars($post['slug']); ?>"
             data-post-url="<?php echo htmlspecialchars($baseUrl . $blogBase . '/' . $post['slug']); ?>">
-      <span id="rl-icon">&#9776;</span>
+      <i id="rl-icon" class="pi pi-menu"></i>
       <span id="rl-label">Save to Reading List</span>
     </button>
   </div>

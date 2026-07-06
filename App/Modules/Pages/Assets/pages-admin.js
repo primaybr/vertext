@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    /* ── admin/pages/_form.php: slug + rich-text editor init ── */
+    /* -- admin/pages/_form.php: slug + rich-text editor init -- */
     /* This form is loaded into the AJAX modal (admin.js dispatches
        'vtx:modal:loaded' after each load), so init must re-run every time. */
     document.addEventListener('vtx:modal:loaded', function (e) {
@@ -18,7 +18,7 @@
         });
     });
 
-    /* ── admin/pages/_revision_diff.php: restore-revision confirm ── */
+    /* -- admin/pages/_revision_diff.php: restore-revision confirm -- */
     /* Also modal-loaded content, so bind via the same event rather than
        a one-time getElementById at page-load time. */
     document.addEventListener('vtx:modal:loaded', function (e) {
@@ -54,7 +54,7 @@
         });
     });
 
-    /* ── admin/pages/revisions.php: generic confirm-modal delegated handler ── */
+    /* -- admin/pages/revisions.php: generic confirm-modal delegated handler -- */
     /* Full top-level page (not modal-loaded), so a plain document-level
        delegated listener bound once at page-load time is sufficient. */
     document.addEventListener('click', function (e) {

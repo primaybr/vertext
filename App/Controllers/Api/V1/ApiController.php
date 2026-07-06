@@ -146,7 +146,7 @@ abstract class ApiController extends Controller
         }
     }
 
-    // ── Response helpers ───────────────────────────────────────────────────────
+    // -- Response helpers -------------------------------------------------------
 
     /** @return array{0:int,1:int} [page, perPage] */
     protected function pageParams(int $defaultPerPage = 10, int $maxPerPage = 50): array

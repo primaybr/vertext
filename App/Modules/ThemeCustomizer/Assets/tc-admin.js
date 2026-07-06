@@ -1,4 +1,4 @@
-/* ── admin/theme-customizer/index.php: live-preview debounced update ── */
+/* -- admin/theme-customizer/index.php: live-preview debounced update -- */
 (function() {
   var colorPicker  = document.getElementById('primary_color_picker');
   var colorText    = document.getElementById('primary_color');

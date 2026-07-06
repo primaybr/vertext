@@ -1,6 +1,6 @@
 /* newsletter module admin scripts */
 
-/* ── admin/campaign_form.php: tab switching + send/save/schedule AJAX ── */
+/* -- admin/campaign_form.php: tab switching + send/save/schedule AJAX -- */
 (function () {
   var cfg = document.getElementById('nl-campaign-config');
   if (!cfg) return;
@@ -134,7 +134,7 @@
   }
 })();
 
-/* ── admin/subscribers.php: reset add/import modals on CRUD success ── */
+/* -- admin/subscribers.php: reset add/import modals on CRUD success -- */
 document.addEventListener('vtx:crud:success', function () {
   var addModal    = document.getElementById('nl-add-modal');
   var importModal = document.getElementById('nl-import-modal');

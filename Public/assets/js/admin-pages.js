@@ -6,7 +6,7 @@
 (function () {
     'use strict';
 
-    /* ── admin/roles/_form.php: select-all / clear-all permissions ── */
+    /* -- admin/roles/_form.php: select-all / clear-all permissions -- */
     /* Delegated on document since this form is loaded into a modal via AJAX. */
     document.addEventListener('click', function (e) {
         if (e.target.id === 'r-select-all') {
@@ -16,7 +16,7 @@
         }
     });
 
-    /* ── admin/_layouts/base.php: flash message toast ───────────── */
+    /* -- admin/_layouts/base.php: flash message toast ------------- */
     document.addEventListener('DOMContentLoaded', function () {
         var flash = document.getElementById('vtx-flash-data');
         if (flash) {
@@ -24,7 +24,7 @@
         }
     });
 
-    /* ── admin/api_keys/index.php: create-key prompt, copy-to-clipboard ── */
+    /* -- admin/api_keys/index.php: create-key prompt, copy-to-clipboard -- */
     (function () {
         var createBtn = document.getElementById('ak-create-btn');
         if (createBtn) {
@@ -67,7 +67,7 @@
         }
     })();
 
-    /* ── admin/roles/permissions.php: create/cancel panel, auto-slug, create/delete AJAX ── */
+    /* -- admin/roles/permissions.php: create/cancel panel, auto-slug, create/delete AJAX -- */
     (function () {
         var createBtn = document.getElementById('create-perm-btn');
         var cancelBtn = document.getElementById('cancel-perm-btn');
@@ -127,7 +127,7 @@
         });
     })();
 
-    /* ── admin/settings/index.php: SMTP toggle, test-mail, maintenance toggle, run-migration ── */
+    /* -- admin/settings/index.php: SMTP toggle, test-mail, maintenance toggle, run-migration -- */
     window.vtxToggleSmtp = function (val) {
         var f = document.getElementById('vtx-smtp-fields');
         if (f) f.style.display = val === 'smtp' ? '' : 'none';
@@ -231,7 +231,7 @@
         });
     })();
 
-    /* ── admin/themes/index.php: theme-activate form -> AJAX submit ── */
+    /* -- admin/themes/index.php: theme-activate form -> AJAX submit -- */
     document.querySelectorAll('.theme-activate-form').forEach(function (form) {
         form.addEventListener('submit', function (e) {
             e.preventDefault();
@@ -251,7 +251,7 @@
         });
     });
 
-    /* ── admin/translations/index.php: translation-save form -> AJAX ── */
+    /* -- admin/translations/index.php: translation-save form -> AJAX -- */
     /* Delegated on document since this view can be reloaded via AJAX (renderPartial). */
     document.addEventListener('submit', function (e) {
         if (e.target && e.target.id === 'tr-form') {
@@ -270,7 +270,7 @@
         }
     });
 
-    /* ── admin/profile/2fa.php: copy-secret-to-clipboard with fallback selection ── */
+    /* -- admin/profile/2fa.php: copy-secret-to-clipboard with fallback selection -- */
     window.copySecret = function () {
         var el  = document.getElementById('secret-display');
         var btn = document.getElementById('copy-btn');
@@ -285,7 +285,7 @@
         });
     };
 
-    /* ── admin/profile/2fa_backup_codes.php: copy-all-codes + print-codes ── */
+    /* -- admin/profile/2fa_backup_codes.php: copy-all-codes + print-codes -- */
     window.copyAllCodes = function () {
         var grid = document.getElementById('codes-grid');
         if (!grid) return;
@@ -313,7 +313,7 @@
         w.print();
     };
 
-    /* ── admin/modules/bundle_form.php: auto-slug, icon preview, module checkbox sync ── */
+    /* -- admin/modules/bundle_form.php: auto-slug, icon preview, module checkbox sync -- */
     (function () {
         var form = document.getElementById('bundle-form');
         var nameInput = document.getElementById('b-name');
@@ -368,7 +368,7 @@
     })();
 })();
 
-/* ══════════════════════════════════════════════════════════════════════ */
+/* ---------------------------------------------------------------------- */
 /* admin/modules/index.php: Module Manager (tab switching, bundle-install  */
 /* modal wizard, a-la-carte install/toggle/uninstall/sync, install-from-   */
 /* URL flow). Kept as its own top-level section (not nested in the IIFE   */
@@ -376,9 +376,9 @@
 /* inline on the page - some functions (refreshPanels, attachInstall-      */
 /* Listeners, etc.) are plain top-level declarations relied on by other    */
 /* statements later in this same block.                                    */
-/* ══════════════════════════════════════════════════════════════════════ */
+/* ---------------------------------------------------------------------- */
 
-// ── Tab switching ───────────────────────────────────────────────────────
+// -- Tab switching -------------------------------------------------------
 (function() {
   var tabs    = document.querySelectorAll('.vtx-mod-tab');
   var panes   = {'packages': document.getElementById('tab-packages'), 'modules': document.getElementById('tab-modules')};
@@ -402,7 +402,7 @@
   activateTab(stored);
 }());
 
-// ── Bundle install modal ────────────────────────────────────────────────
+// -- Bundle install modal ------------------------------------------------
 (function() {
   var overlay    = document.getElementById('bundle-modal-overlay');
   var titleEl    = document.getElementById('bundle-modal-title');
@@ -660,13 +660,13 @@
   });
 }());
 
-// ── Module tab: a la carte listeners ────────────────────────────────────
+// -- Module tab: a la carte listeners ------------------------------------
 function refreshPanels(onDone) {
   location.reload();
   if (onDone) onDone();
 }
 
-// ── A-la-carte configure modal ──────────────────────────────────────────
+// -- A-la-carte configure modal ------------------------------------------
 (function() {
   var overlay    = document.getElementById('mod-config-overlay');
   var titleEl    = document.getElementById('mod-config-title');
@@ -887,7 +887,7 @@ attachUninstallListeners();
 attachToggleListeners();
 attachSyncListeners();
 
-// ── Bundle delete ────────────────────────────────────────────────────────
+// -- Bundle delete --------------------------------------------------------
 document.querySelectorAll('.bundle-delete-btn').forEach(function(btn) {
   btn.addEventListener('click', function() {
     var name = this.dataset.name;
@@ -921,7 +921,7 @@ document.querySelectorAll('.bundle-delete-btn').forEach(function(btn) {
   });
 }());
 
-// ── Marketplace: Install from URL ────────────────────────────────────────
+// -- Marketplace: Install from URL ----------------------------------------
 (function() {
   var overlay     = document.getElementById('url-modal-overlay');
   var stepInput   = document.getElementById('url-step-input');

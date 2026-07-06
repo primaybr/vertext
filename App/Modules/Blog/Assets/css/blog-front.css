@@ -3,7 +3,7 @@
    Blog index · Category listing · Single post
    ============================================================= */
 
-/* ── front/index.php: blog list page layout/typography ── */
+/* -- front/index.php: blog list page layout/typography -- */
 .blog-page-header { margin-top: 2rem; margin-bottom: 2rem; }
 .blog-page-header p { margin: 0; color: var(--clr-muted); font-size: .9375rem; }
 
@@ -14,7 +14,7 @@
 .blog-index .post-cats { display: flex; gap: .5rem; flex-wrap: wrap; }
 .blog-index .post-cat { font-size: .75rem; background: var(--clr-surface); color: var(--clr-muted); padding: .125rem .5rem; border-radius: 999px; }
 
-/* ── front/category.php: category listing page layout/typography ── */
+/* -- front/category.php: category listing page layout/typography -- */
 .cat-breadcrumb { font-size: .875rem; margin-bottom: 2rem; color: var(--clr-muted); }
 .cat-breadcrumb a { color: var(--clr-muted); text-decoration: none; }
 .cat-breadcrumb a:hover { color: var(--clr-accent); }
@@ -28,7 +28,7 @@
 .blog-category .post-meta { font-size: .8125rem; color: var(--clr-faint); margin-bottom: .625rem; }
 .blog-category .post-excerpt { color: var(--clr-muted); margin: 0 0 .75rem; font-size: .9375rem; }
 
-/* ── front/index.php + front/category.php: shared post-list/pagination (identical rules on both pages) ── */
+/* -- front/index.php + front/category.php: shared post-list/pagination (identical rules on both pages) -- */
 .post-list { list-style: none; padding: 0; margin: 0; }
 .post-item:last-child { border-bottom: none; }
 .read-more { font-size: .875rem; font-weight: 600; }
@@ -38,7 +38,7 @@
 .pagination .current { background: var(--clr-accent-fill); color: #fff; border-color: var(--clr-accent-fill); }
 .empty { text-align: center; padding: 4rem 1rem; color: var(--clr-faint); }
 
-/* ── front/post.php: header, series box, comments, related posts ── */
+/* -- front/post.php: header, series box, comments, related posts -- */
 .post-breadcrumb { font-size:.875rem; margin-bottom:2rem; display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap; }
 .post-breadcrumb .crumbs { display:flex; align-items:center; color: var(--clr-muted); }
 .post-breadcrumb a { color:var(--clr-muted); text-decoration:none; }

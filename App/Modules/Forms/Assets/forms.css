@@ -1,10 +1,10 @@
 /* Forms Builder module styles */
 
-/* ── front/form.php: form-page wrapper ── */
+/* -- front/form.php: form-page wrapper -- */
 .vf-page { padding-top: 3rem; padding-bottom: 3rem; }
 .vf-page-wrap { max-width: 680px; }
 
-/* ── front/_embed.php: embeddable form styling ── */
+/* -- front/_embed.php: embeddable form styling -- */
 .vf-honeypot { position: absolute; left: -9999px; visibility: hidden; }
 .vf-math-input { max-width: 120px; }
 .vf-submit-wrap { margin-top: 1.5rem; }
@@ -52,79 +52,3 @@
 .vf-step.active { display: block; }
 .vf-nav { display: flex; justify-content: space-between; gap: .75rem; margin-top: 1.5rem; }
 @media (max-width: 540px) { .vf-grid { grid-template-columns: 1fr; } .vf-col-half { grid-column: 1 / -1; } }
-
-/* Field type palette buttons */
-.vtx-field-type-btn {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  padding: .45rem .65rem;
-  margin-bottom: .25rem;
-  background: none;
-  border: 1px solid transparent;
-  border-radius: 5px;
-  font-size: .875rem;
-  color: var(--ps-text);
-  cursor: pointer;
-  text-align: left;
-  transition: background .12s, border-color .12s;
-}
-.vtx-field-type-btn:hover {
-  background: var(--ps-bg-alt);
-  border-color: var(--ps-border);
-}
-.vtx-field-type-btn:last-child { margin-bottom: 0; }
-
-/* Field canvas rows */
-.vtx-field-row {
-  display: flex;
-  align-items: flex-start;
-  gap: .5rem;
-  padding: .75rem;
-  margin-bottom: .5rem;
-  background: var(--ps-bg-alt);
-  border: 1px solid var(--ps-border);
-  border-radius: 6px;
-  cursor: default;
-}
-.vtx-field-row.dragging {
-  opacity: .45;
-  border-style: dashed;
-}
-.vtx-field-row-handle {
-  flex-shrink: 0;
-  width: 20px;
-  padding-top: 4px;
-  color: var(--ps-text-muted);
-  cursor: grab;
-  cursor: -webkit-grab;
-  user-select: none;
-}
-.vtx-field-row-body { flex: 1; min-width: 0; }
-.vtx-field-row-delete {
-  flex-shrink: 0;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  background: none;
-  border: 1px solid transparent;
-  border-radius: 4px;
-  color: var(--ps-text-muted);
-  cursor: pointer;
-  font-size: .875rem;
-  transition: color .12s, background .12s, border-color .12s;
-}
-.vtx-field-row-delete:hover {
-  color: #e53e3e;
-  background: rgba(229,62,62,.08);
-  border-color: rgba(229,62,62,.25);
-}
-
-/* Breadcrumb */
-.vtx-breadcrumb {
-  font-size: .8125rem;
-  color: var(--ps-text-muted);
-  text-decoration: none;
-}
-.vtx-breadcrumb:hover { color: var(--ps-accent); }
-.vtx-breadcrumb-sep { margin: 0 .3rem; color: var(--ps-text-muted); }

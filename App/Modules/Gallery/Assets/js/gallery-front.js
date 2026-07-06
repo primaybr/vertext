@@ -1,4 +1,4 @@
-/* ── front/album.php: lightbox open/close/prev/next + keyboard nav ── */
+/* -- front/album.php: lightbox open/close/prev/next + keyboard nav -- */
 (function () {
     var items   = Array.from(document.querySelectorAll('#vtx-photo-grid .photo-item'));
     var lb      = document.getElementById('vtx-lightbox');

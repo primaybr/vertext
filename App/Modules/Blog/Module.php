@@ -17,7 +17,7 @@ class Module implements ModuleInterface
 {
     public function install(\Core\Database\Connection $db): void
     {
-        // ── Core post table ───────────────────────────────────────────────────
+        // -- Core post table ---------------------------------------------------
         // Detect users.id type so created_by/updated_by/deleted_by use a compatible type for JOINs
         $userIdType = 'UUID';
         try {
@@ -98,7 +98,7 @@ class Module implements ModuleInterface
             $db->execute();
         }
 
-        // ── Content revisions (shared with Pages module) ─────────────────────
+        // -- Content revisions (shared with Pages module) ---------------------
         $db->query("CREATE TABLE IF NOT EXISTS content_revisions (
             id               UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
             content_type     VARCHAR(20)  NOT NULL,
@@ -134,7 +134,7 @@ class Module implements ModuleInterface
             $db->execute();
         }
 
-        // ── Categories ────────────────────────────────────────────────────────
+        // -- Categories --------------------------------------------------------
         $db->query("CREATE TABLE IF NOT EXISTS post_categories (
             id          UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
             name        VARCHAR(120) UNIQUE NOT NULL,
@@ -171,7 +171,7 @@ class Module implements ModuleInterface
         )");
         $db->execute();
 
-        // ── Tags ──────────────────────────────────────────────────────────────
+        // -- Tags --------------------------------------------------------------
         $db->query("CREATE TABLE IF NOT EXISTS post_tags (
             id         UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
             name       VARCHAR(80)  UNIQUE NOT NULL,
@@ -207,7 +207,7 @@ class Module implements ModuleInterface
         )");
         $db->execute();
 
-        // ── Comments ─────────────────────────────────────────────────────────
+        // -- Comments ---------------------------------------------------------
         $db->query("CREATE TABLE IF NOT EXISTS blog_comments (
             id           UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
             post_id      UUID NOT NULL,
@@ -225,7 +225,7 @@ class Module implements ModuleInterface
         $db->query("ALTER TABLE blog_comments ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW()");
         $db->execute();
 
-        // ── Threaded comments ─────────────────────────────────────────────────
+        // -- Threaded comments -------------------------------------------------
         $db->query("ALTER TABLE blog_comments ADD COLUMN IF NOT EXISTS parent_comment_id UUID");
         $db->execute();
 
@@ -238,7 +238,7 @@ class Module implements ModuleInterface
             try { $db->query("ROLLBACK TO SAVEPOINT sp_blog_comments_parent_fk"); $db->execute(); } catch (\Exception) {}
         }
 
-        // ── Post Series ───────────────────────────────────────────────────────
+        // -- Post Series -------------------------------------------------------
         $db->query("CREATE TABLE IF NOT EXISTS post_series (
             id          UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
             title       VARCHAR(255) NOT NULL,
@@ -263,7 +263,7 @@ class Module implements ModuleInterface
         )");
         $db->execute();
 
-        // ── Permissions ───────────────────────────────────────────────────────
+        // -- Permissions -------------------------------------------------------
         $permSql = "INSERT INTO permissions (name, slug, description, module)
                     VALUES (:name, :slug, :desc, 'blog')
                     ON CONFLICT (slug) DO NOTHING";
@@ -301,7 +301,7 @@ class Module implements ModuleInterface
         );
         $db->execute();
 
-        // ── Default settings (only seed if not already present) ──────────────
+        // -- Default settings (only seed if not already present) --------------
         // Settings survive uninstall intentionally so that reinstalling
         // pre-populates the setup wizard with the user's previous values.
         foreach ([
@@ -529,7 +529,7 @@ class Module implements ModuleInterface
         $router->get('/admin/blog/setup',          $setup, 'index');
         $router->post('/admin/blog/setup/complete', $setup, 'complete');
 
-        // ── Public frontend (dynamic base path) ───────────────────────────────
+        // -- Public frontend (dynamic base path) -------------------------------
         $front    = $nsF . 'BlogController';
         $redirect = $nsF . 'BlogRedirectController';
 
@@ -546,8 +546,8 @@ class Module implements ModuleInterface
         if ($base !== '') {
             // Scoped under a path prefix, so this is safe to register here.
             // When Blog is at the site root ($base === ''), this pattern would
-            // become a global single-segment catch-all and — because modules
-            // load alphabetically in ModuleManager::loadRoutes() — could shadow
+            // become a global single-segment catch-all and - because modules
+            // load alphabetically in ModuleManager::loadRoutes() - could shadow
             // other modules' front-end routes (e.g. /contact, /events, /search).
             // In that case it is registered centrally in Config/Routes.php,
             // after all other module routes, instead. See Pages/Module.php for

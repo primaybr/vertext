@@ -2,7 +2,7 @@
 (function () {
     'use strict';
 
-    /* ── Theme ───────────────────────────────────────────────── */
+    /* -- Theme ------------------------------------------------- */
     /* Unified storage key (0.0.9) - was 'phuse-theme'; migrate once so
        existing admins keep their preference. Front-end uses the same
        'vtx-theme' key, see scripts.js. */
@@ -38,7 +38,7 @@
         el.className = t === 'dark' ? 'pi pi-sun' : 'pi pi-moon';
     }
 
-    /* ── Sidebar ─────────────────────────────────────────────── */
+    /* -- Sidebar ----------------------------------------------- */
     function initSidebar() {
         var toggle  = document.getElementById('sidebar-toggle');
         var sidebar = document.getElementById('vtx-sidebar');
@@ -53,7 +53,7 @@
         document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
     }
 
-    /* ── Nav Group (subnav toggle) ──────────────────────────── */
+    /* -- Nav Group (subnav toggle) ---------------------------- */
     function initNavGroups() {
         document.querySelectorAll('.vtx-nav-group-btn').forEach(function (btn) {
             btn.addEventListener('click', function () {
@@ -65,7 +65,7 @@
         });
     }
 
-    /* ── User Dropdown ───────────────────────────────────────── */
+    /* -- User Dropdown ----------------------------------------- */
     function initUserMenu() {
         var trigger = document.getElementById('user-menu-trigger');
         var menu    = document.getElementById('user-menu');
@@ -79,7 +79,7 @@
         document.addEventListener('click', function () { menu.classList.remove('open'); });
     }
 
-    /* ── AJAX ────────────────────────────────────────────────── */
+    /* -- AJAX -------------------------------------------------- */
     window.VtxAjax = {
         // POST JSON body (for simple payloads: module toggle, DB test)
         post: function (url, data, cb) {
@@ -123,7 +123,7 @@
         }
     };
 
-    /* ── Vtx Component Loader ────────────────────────────────── */
+    /* -- Vtx Component Loader ---------------------------------- */
     window.Vtx = (function () {
         var BASE     = (window.VTX_ASSETS_URL || '') + 'js/components/';
         var VERSIONS = { search: 1, datatable: 2, select: 1, editor: 2, tags: 3, chart: 1, upload: 1, 'media-picker': 2, slug: 1 };
@@ -183,7 +183,7 @@
         };
     }());
 
-    /* ── Shared modal helpers ────────────────────────────────── */
+    /* -- Shared modal helpers ---------------------------------- */
     function showBackdrop() {
         var bd = document.getElementById('vtx-modal-backdrop');
         if (!bd) return;
@@ -198,7 +198,7 @@
         setTimeout(function () { bd.style.display = 'none'; }, 200);
     }
 
-    /* ── Confirm Modal ───────────────────────────────────────── */
+    /* -- Confirm Modal ----------------------------------------- */
     window.vtxModalClose = function () {
         var modal = document.getElementById('vtx-confirm-modal');
         if (modal) modal.classList.remove('show');
@@ -233,7 +233,7 @@
         document.body.style.overflow = 'hidden';
     };
 
-    /* ── Prompt Modal ─────────────────────────────────────────── */
+    /* -- Prompt Modal ------------------------------------------- */
     /* Modal-based replacement for window.prompt(). Reuses the confirm
        modal's markup with its text input shown. opts.onConfirm receives
        the trimmed input value; empty submissions are rejected with a
@@ -328,7 +328,7 @@
         });
     }
 
-    /* ── CRUD Form Modal ─────────────────────────────────────── */
+    /* -- CRUD Form Modal --------------------------------------- */
     window.vtxFormModalClose = function () {
         var modal = document.getElementById('vtx-form-modal');
         if (modal) modal.classList.remove('show');
@@ -452,7 +452,7 @@
         });
     }
 
-    /* ── AJAX Panel Navigation ───────────────────────────────── */
+    /* -- AJAX Panel Navigation --------------------------------- */
     // Fetches `url`, replaces #panelId, refreshes filter tabs and any
     // [data-ajax-refreshable] panels, re-inits VtxDataTable, fires
     // vtx:panel:replaced so pages can re-attach row-level listeners.
@@ -533,7 +533,7 @@
         window.addEventListener('popstate', function () { window.location.reload(); });
     }
 
-    /* ── AJAX Forms (e.g. Settings save) ────────────────────── */
+    /* -- AJAX Forms (e.g. Settings save) ---------------------- */
     function initAjaxForms() {
         document.addEventListener('submit', function (e) {
             var form = e.target.closest('[data-ajax-form]');
@@ -556,7 +556,7 @@
         });
     }
 
-    /* ── Setup Wizard ────────────────────────────────────────── */
+    /* -- Setup Wizard ------------------------------------------ */
     function initSetup() {
         var form = document.getElementById('setup-form');
         if (!form) return;
@@ -587,15 +587,15 @@
         }
     }
 
-    /* ── Toggle Password Visibility ─────────────────────────── */
+    /* -- Toggle Password Visibility --------------------------- */
     function initPasswordToggle() {
         initPasswordTogglesIn(document);
     }
 
-    /* ── Public API (called by partial refreshes e.g. module manager nav swap) */
+    /* -- Public API (called by partial refreshes e.g. module manager nav swap) */
     window.vtxInitNavGroups = initNavGroups;
 
-    /* ── Init ────────────────────────────────────────────────── */
+    /* -- Init -------------------------------------------------- */
     applyTheme();
 
     document.addEventListener('DOMContentLoaded', function () {

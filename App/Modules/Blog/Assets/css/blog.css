@@ -3,7 +3,7 @@
    Filter tabs · Tags input · Quill editor · Featured image
    ============================================================= */
 
-/* ── Status filter tabs ──────────────────────────────────────── */
+/* -- Status filter tabs ---------------------------------------- */
 .vtx-filter-tabs {
     display: flex;
     gap: .25rem;
@@ -48,7 +48,7 @@
     font-weight: 600;
 }
 
-/* ── Tags input ──────────────────────────────────────────────── */
+/* -- Tags input ------------------------------------------------ */
 .vtx-tags-wrap {
     display: flex;
     flex-wrap: wrap;
@@ -148,7 +148,7 @@
     flex-shrink: 0;
 }
 
-/* ── Quill editor blended with CMS ──────────────────────────── */
+/* -- Quill editor blended with CMS ---------------------------- */
 .vtx-editor-wrap {
     border: 1px solid var(--ps-border);
     border-radius: var(--ps-radius);
@@ -221,7 +221,7 @@
 .vtx-editor-wrap .ql-toolbar .ql-picker-item:hover { color: var(--ps-primary); }
 .vtx-editor-wrap .ql-toolbar .ql-picker-item.ql-selected { color: var(--ps-primary); }
 
-/* ── Featured image picker trigger ──────────────────────────── */
+/* -- Featured image picker trigger ---------------------------- */
 .vtx-featured-img-wrap {
     display: flex;
     align-items: center;
@@ -240,7 +240,7 @@
 
 .vtx-featured-img-preview.has-image { display: block; }
 
-/* ── SEO character counter ────────────────────────────────────── */
+/* -- SEO character counter -------------------------------------- */
 .vtx-char-count {
     font-size: .75rem;
     color: var(--ps-text-muted);
@@ -250,7 +250,7 @@
 .vtx-char-count.warn   { color: var(--ps-warning, #D97706); }
 .vtx-char-count.danger { color: var(--ps-danger,  #DC2626); }
 
-/* ── Dark mode overrides ─────────────────────────────────────── */
+/* -- Dark mode overrides --------------------------------------- */
 [data-theme=dark] .vtx-editor-wrap .ql-toolbar { background: var(--ps-bg-surface); border-bottom-color: var(--ps-border); }
 [data-theme=dark] .vtx-editor-wrap .ql-editor  { background: var(--ps-bg-base); color: var(--ps-text-primary); }
 [data-theme=dark] .vtx-editor-wrap .ql-toolbar button,
@@ -268,7 +268,7 @@
 [data-theme=dark] .vtx-tags-option.focused { background: rgba(255,255,255,.06); }
 [data-theme=dark] .vtx-filter-tab.active  { background: rgba(96,165,250,.15); color: #93C5FD; }
 
-/* ── admin/setup/index.php: step-badge circle ── */
+/* -- admin/setup/index.php: step-badge circle -- */
 .vtx-step-badge {
     display: inline-flex;
     align-items: center;

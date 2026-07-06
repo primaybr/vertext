@@ -21,7 +21,7 @@ final class TotpHelper
     private const ALPHA  = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
     private const BCODES = 8;
 
-    // ── Public API ────────────────────────────────────────────────────────────
+    // -- Public API ------------------------------------------------------------
 
     /** Generate a 20-byte (160-bit) base32-encoded TOTP secret. */
     public static function generateSecret(): string
@@ -67,7 +67,7 @@ final class TotpHelper
 
     /**
      * Generate 8 plain-text backup codes (XXXXX-XXXXX format).
-     * Returns the plain codes — show once, then discard.
+     * Returns the plain codes - show once, then discard.
      */
     public static function generateBackupCodes(): array
     {
@@ -111,7 +111,7 @@ final class TotpHelper
         return implode(' ', str_split(rtrim($secret, '='), 4));
     }
 
-    // ── DB helpers ────────────────────────────────────────────────────────────
+    // -- DB helpers ------------------------------------------------------------
 
     /** Fetch the 2FA record for a user, or null if 2FA is not enabled. */
     public static function getRecord(string $userId): ?array
@@ -142,7 +142,7 @@ final class TotpHelper
     {
         self::ensureTable();
 
-        // Remove any prior record — UNIQUE constraint on user_id
+        // Remove any prior record - UNIQUE constraint on user_id
         self::deleteRecord($userId);
 
         (new Model('user_2fa_secrets'))->withoutTimestamps()->save([
@@ -208,7 +208,7 @@ final class TotpHelper
         } catch (\Exception) {}
     }
 
-    // ── HOTP/TOTP core ────────────────────────────────────────────────────────
+    // -- HOTP/TOTP core --------------------------------------------------------
 
     private static function hotp(string $key, int $counter): string
     {
@@ -224,7 +224,7 @@ final class TotpHelper
         return str_pad((string) $code, self::DIGITS, '0', STR_PAD_LEFT);
     }
 
-    // ── Base32 ────────────────────────────────────────────────────────────────
+    // -- Base32 ----------------------------------------------------------------
 
     private static function b32Encode(string $bytes): string
     {

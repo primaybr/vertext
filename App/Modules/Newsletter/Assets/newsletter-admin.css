@@ -1,6 +1,6 @@
 /* newsletter module admin styles */
 
-/* ── admin/campaign_form.php: tab buttons + back-link breadcrumb ── */
+/* -- admin/campaign_form.php: tab buttons + back-link breadcrumb -- */
 .nl-tab-btn {
   background: none; border: none; padding: .35rem .75rem; font-size: .8125rem;
   color: var(--ps-text-muted); cursor: pointer; border-radius: 4px;

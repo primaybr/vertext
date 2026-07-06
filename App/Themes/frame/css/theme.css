@@ -1,4 +1,4 @@
-/* ── Color tokens: light (default) ─────────────────────────── */
+/* -- Color tokens: light (default) --------------------------- */
 :root {
   /* "Frame" - minimal gallery/portfolio identity: warm ivory by day,
      charcoal by night, muted brass as the one accent color. --clr-accent
@@ -32,7 +32,7 @@
   --ps-bg-base:      var(--clr-bg);
 }
 
-/* ── Color tokens: dark (system preference) ─────────────────── */
+/* -- Color tokens: dark (system preference) ------------------- */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --clr-accent:     #D4AF7A;
@@ -47,7 +47,7 @@
   }
 }
 
-/* ── Color tokens: dark (explicit toggle) ───────────────────── */
+/* -- Color tokens: dark (explicit toggle) --------------------- */
 [data-theme="dark"] {
   --clr-accent:     #D4AF7A;
   --clr-accent-rgb: 212, 175, 122;
@@ -60,7 +60,7 @@
   --shadow-sm:   0 4px 12px rgba(0,0,0,.5);
 }
 
-/* ── Reset & base ──────────────────────────────────────────── */
+/* -- Reset & base -------------------------------------------- */
 *, *::before, *::after { box-sizing: border-box; }
 
 :focus-visible {
@@ -107,7 +107,7 @@ img {
   display: block;
 }
 
-/* ── Layout ────────────────────────────────────────────────── */
+/* -- Layout -------------------------------------------------- */
 .container {
   max-width: 1240px;
   margin: 0 auto;
@@ -133,7 +133,7 @@ main {
   min-height: 60vh;
 }
 
-/* ── Site header ───────────────────────────────────────────── */
+/* -- Site header --------------------------------------------- */
 /* Minimal chrome - a single hairline, uppercase mono nav for a gallery
    caption feel instead of a conventional sans nav bar. */
 .site-header {
@@ -189,7 +189,7 @@ main {
   text-decoration: none;
 }
 
-/* ── Nav dropdown ──────────────────────────────────────────── */
+/* -- Nav dropdown -------------------------------------------- */
 .nav-dropdown {
   position: relative;
 }
@@ -225,7 +225,7 @@ main {
   text-decoration: none;
 }
 
-/* ── Header actions (theme toggle + nav toggle) ─────────────── */
+/* -- Header actions (theme toggle + nav toggle) --------------- */
 .header-actions {
   display: flex;
   align-items: center;
@@ -264,7 +264,7 @@ main {
   :root:not([data-theme="light"]) .icon-moon { display: none; }
 }
 
-/* ── Mobile: nav toggle ────────────────────────────────────── */
+/* -- Mobile: nav toggle -------------------------------------- */
 .nav-toggle {
   display: none;
   background: none;
@@ -288,7 +288,7 @@ main {
   transition: transform .2s, opacity .2s;
 }
 
-/* ── Site footer ───────────────────────────────────────────── */
+/* -- Site footer --------------------------------------------- */
 .site-footer {
   border-top: 1px solid var(--clr-border);
   padding: 1.75rem 0;
@@ -320,7 +320,7 @@ main {
   text-decoration: none;
 }
 
-/* ── Responsive ────────────────────────────────────────────── */
+/* -- Responsive ---------------------------------------------- */
 @media (max-width: 640px) {
   .nav-toggle {
     display: flex;

@@ -1,6 +1,6 @@
 /* Events Module - Front-end scripts */
 
-/* ── front/index.php: tab switcher ── */
+/* -- front/index.php: tab switcher -- */
 function switchTab(tab, btn) {
   document.querySelectorAll('.ev-tab').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
@@ -10,7 +10,7 @@ function switchTab(tab, btn) {
   });
 }
 
-/* ── front/index.php: canvas calendar renderer ── */
+/* -- front/index.php: canvas calendar renderer -- */
 (function () {
   const canvas = document.getElementById('evCal');
   if (!canvas) return;

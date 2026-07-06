@@ -33,7 +33,7 @@
         var ajaxCache = null;
         var isOpen    = false;
 
-        /* ── Build widget DOM ─────────────────────────────────── */
+        /* -- Build widget DOM ----------------------------------- */
         var container = document.createElement('div');
         container.className = 'vtx-select';
         container.id = id;
@@ -57,7 +57,7 @@
         chevron.className = 'pi pi-chevron-down vtx-select-chevron';
         trigger.appendChild(chevron);
 
-        // Dropdown is a body-level portal — NOT inside container.
+        // Dropdown is a body-level portal - NOT inside container.
         // This means no ancestor overflow:hidden can clip it.
         var dropdown = document.createElement('div');
         dropdown.className = 'vtx-select-dropdown';
@@ -96,7 +96,7 @@
         // Mount dropdown at body level (portal) so it is never clipped
         document.body.appendChild(dropdown);
 
-        /* ── Position dropdown via trigger's bounding rect ───── */
+        /* -- Position dropdown via trigger's bounding rect ----- */
         function positionDropdown() {
             var rect  = trigger.getBoundingClientRect();
             var below = window.innerHeight - rect.bottom;
@@ -116,7 +116,7 @@
             }
         }
 
-        /* ── Read native state ────────────────────────────────── */
+        /* -- Read native state ---------------------------------- */
         function readNativeOptions() {
             options = [];
             Array.from(selectEl.options).forEach(function (opt) {
@@ -131,7 +131,7 @@
                 .filter(function (v) { return v !== ''; });
         }
 
-        /* ── Render options list ──────────────────────────────── */
+        /* -- Render options list -------------------------------- */
         function renderList(filter) {
             filter = (filter || '').toLowerCase().trim();
             listEl.innerHTML = '';
@@ -169,7 +169,7 @@
             });
         }
 
-        /* ── Render trigger label / tags ──────────────────────── */
+        /* -- Render trigger label / tags ------------------------ */
         function renderTrigger() {
             valueEl.innerHTML = '';
 
@@ -215,7 +215,7 @@
             return options.filter(function (o) { return o.value === val; })[0] || null;
         }
 
-        /* ── Sync native select ───────────────────────────────── */
+        /* -- Sync native select --------------------------------- */
         function syncNative() {
             Array.from(selectEl.options).forEach(function (opt) {
                 opt.selected = selected.indexOf(opt.value) !== -1;
@@ -227,7 +227,7 @@
             }
         }
 
-        /* ── Pick / deselect ──────────────────────────────────── */
+        /* -- Pick / deselect ------------------------------------ */
         function pickOption(value) {
             if (multiple) {
                 var idx = selected.indexOf(value);
@@ -250,7 +250,7 @@
             renderList(searchInput ? searchInput.value : '');
         }
 
-        /* ── Open / close ─────────────────────────────────────── */
+        /* -- Open / close --------------------------------------- */
         function open() {
             if (isOpen || trigger.disabled) return;
 
@@ -292,7 +292,7 @@
             if (searchInput) searchInput.value = '';
         }
 
-        /* ── Reposition on scroll / resize ───────────────────── */
+        /* -- Reposition on scroll / resize --------------------- */
         function onScrollOrResize() {
             if (isOpen) positionDropdown();
         }
@@ -300,7 +300,7 @@
         window.addEventListener('scroll', onScrollOrResize, true);
         window.addEventListener('resize', onScrollOrResize);
 
-        /* ── AJAX option loading ──────────────────────────────── */
+        /* -- AJAX option loading -------------------------------- */
         function loadAjaxOptions() {
             listEl.innerHTML = '<li class="vtx-select-no-results">Loading…</li>';
             openDropdown();
@@ -320,7 +320,7 @@
             });
         }
 
-        /* ── Keyboard navigation ──────────────────────────────── */
+        /* -- Keyboard navigation -------------------------------- */
         trigger.addEventListener('click', function (e) {
             e.stopPropagation();
             isOpen ? close() : open();
@@ -376,20 +376,20 @@
             li.scrollIntoView({ block: 'nearest' });
         }
 
-        // Close on outside click — must check both container and dropdown
+        // Close on outside click - must check both container and dropdown
         // since dropdown is no longer a descendant of container
         document.addEventListener('click', function (e) {
             if (!container.contains(e.target) && !dropdown.contains(e.target)) close();
         });
 
-        /* ── Initial render ───────────────────────────────────── */
+        /* -- Initial render ------------------------------------- */
         if (!ajaxUrl) {
             readNativeOptions();
             readNativeSelected();
         }
         renderTrigger();
 
-        /* ── Public API ───────────────────────────────────────── */
+        /* -- Public API ----------------------------------------- */
         var self = {
             el: selectEl,
             container: container,

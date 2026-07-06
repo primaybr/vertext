@@ -12,7 +12,7 @@
  *   App/Modules/Hello/Views/admin/index.php
  */
 
-// ── module.json ──────────────────────────────────────────────────────────────
+// -- module.json --------------------------------------------------------------
 //
 // "category" groups the module in the Module Manager card layout.
 // "nav.icon" must exist in Public/assets/css/styles.css (.pi-* classes).
@@ -36,7 +36,7 @@ $moduleJson = <<<'JSON'
 }
 JSON;
 
-// ── Module.php ────────────────────────────────────────────────────────────────
+// -- Module.php ----------------------------------------------------------------
 /*
 namespace App\Modules\Hello;
 
@@ -71,7 +71,7 @@ class Module implements ModuleInterface
 }
 */
 
-// ── HelloController.php ───────────────────────────────────────────────────────
+// -- HelloController.php -------------------------------------------------------
 /*
 namespace App\Modules\Hello\Controllers\Admin;
 
@@ -95,7 +95,7 @@ class HelloController extends BaseController
 }
 */
 
-// ── Views/admin/index.php (content-only, no <html>/<body>) ───────────────────
+// -- Views/admin/index.php (content-only, no <html>/<body>) -------------------
 /*
 <div class="vtx-page-head">
   <h1 class="vtx-page-title">Hello Module</h1>

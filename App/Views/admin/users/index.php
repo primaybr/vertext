@@ -156,7 +156,7 @@
       $perPage = 15;
       $from = (($page - 1) * $perPage) + 1;
       $to   = min($page * $perPage, $total);
-      echo "Showing {$from}–{$to} of {$total} users";
+      echo "Showing {$from}-{$to} of {$total} users";
       ?>
     </span>
     <div style="display:flex;gap:.25rem;">

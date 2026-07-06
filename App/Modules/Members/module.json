@@ -1,7 +1,7 @@
 {
     "name": "Members",
     "slug": "members",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "description": "Front-end visitor accounts: registration, login, email verification, and member profiles",
     "author": "Vertext",
     "category": "Core",

@@ -20,7 +20,7 @@
 </div>
 
 <?php if ($vtxTab === 'mail'): ?>
-<!-- ── Mail Settings ──────────────────────────────────────────────────── -->
+<!-- -- Mail Settings ---------------------------------------------------- -->
 <form method="POST" action="{{baseUrl}}/admin/settings/save-mail" data-ajax-form id="mail-settings-form">
   <input type="hidden" name="csrf_token" value="{{csrf_token}}">
   <div class="row g-4">

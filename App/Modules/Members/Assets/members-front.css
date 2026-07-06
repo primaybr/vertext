@@ -1,4 +1,4 @@
-/* ── front/_styles.php: Members module front-end account pages design system ──
+/* -- front/_styles.php: Members module front-end account pages design system --
    Flat, simple, professional. Uses theme --clr-* variables; no gradients. */
 
 .mb-auth-wrap {
@@ -115,11 +115,12 @@
   :root:not([data-theme="light"]) .mb-alert-info    { background: #1e3a8a; color: #bfdbfe; border-color: #1e40af; }
 }
 
-/* Account page */
-.mb-account-wrap {
+/* Account page - the head (title/meta/sign-out) spans the shared .container
+   width like every other front-end page; only the form card below it is
+   narrowed for readability. */
+.mb-account-body {
   max-width: 640px;
   margin: 0 auto;
-  padding: 3rem 1rem 4rem;
 }
 .mb-account-head {
   display: flex;

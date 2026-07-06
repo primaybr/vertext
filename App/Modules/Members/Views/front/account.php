@@ -1,4 +1,4 @@
-<div class="mb-account-wrap">
+<div class="container mb-account-page">
 
   <div class="mb-account-head">
     <div>
@@ -10,6 +10,8 @@
     </div>
     <a class="mb-btn-outline" href="<?php echo $baseUrl; ?>/account/logout">Sign out</a>
   </div>
+
+  <div class="mb-account-body">
 
   <?php if (!empty($flash['message'])): ?>
   <div class="mb-alert mb-alert-<?php echo htmlspecialchars($flash['type'] ?? 'info'); ?>">
@@ -59,6 +61,8 @@
 
       <button type="submit" class="mb-btn">Save Changes</button>
     </form>
+  </div>
+
   </div>
 
 </div>

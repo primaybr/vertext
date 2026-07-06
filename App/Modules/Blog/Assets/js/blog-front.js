@@ -1,6 +1,6 @@
 /* Blog Module - Front-end JS: reading list + comment reply toggle */
 
-/* ── post.php: reading-list localStorage toggle ── */
+/* -- post.php: reading-list localStorage toggle -- */
 (function () {
     var btn = document.getElementById('reading-list-btn');
     if (!btn) return;
@@ -21,11 +21,11 @@
     function updateBtn() {
         if (isSaved()) {
             btn.classList.add('saved');
-            icon.textContent = '✓';
+            icon.className = 'pi pi-check';
             label.textContent = 'Saved to Reading List';
         } else {
             btn.classList.remove('saved');
-            icon.textContent = '☰';
+            icon.className = 'pi pi-menu';
             label.textContent = 'Save to Reading List';
         }
     }
@@ -43,8 +43,8 @@
     });
 }());
 
-/* ── post.php: comment reply-form toggle (invoked via inline onclick attributes
-   in the server-rendered comment markup, so this stays a plain global function) ── */
+/* -- post.php: comment reply-form toggle (invoked via inline onclick attributes
+   in the server-rendered comment markup, so this stays a plain global function) -- */
 function toggleReplyForm(id) {
     var el = document.getElementById(id);
     if (el) el.classList.toggle('open');

@@ -1,4 +1,4 @@
-/* ── front/form.php: contact form + alert styling ── */
+/* -- front/form.php: contact form + alert styling -- */
 .contact-page-header { margin-top: 2rem; margin-bottom: 2rem; }
 .contact-form-wrap { max-width: 640px; }
 .req { color: red; }

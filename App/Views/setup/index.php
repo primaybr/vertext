@@ -19,7 +19,7 @@
       ?>
       <div class="vtx-step-item <?php echo $cls; ?>">
         <div class="vtx-step-dot">
-          <?php if ($i < $step): ?>✓<?php else: echo $i; endif; ?>
+          <?php if ($i < $step): ?><i class="pi pi-check"></i><?php else: echo $i; endif; ?>
         </div>
       </div>
       <?php endfor; ?>
@@ -45,7 +45,7 @@
   </div>
   <?php endif; ?>
 
-  <!-- ── Step Body ────────────────────────────────────────── -->
+  <!-- -- Step Body ------------------------------------------ -->
   <form id="setup-form" method="POST"
         action="{{baseUrl}}/setup/next"
         data-test-url="{{testDbUrl}}">

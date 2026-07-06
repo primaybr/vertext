@@ -1,4 +1,4 @@
-/* ── admin/galleries/_form.php: media-picker wiring + cover-image remove ── */
+/* -- admin/galleries/_form.php: media-picker wiring + cover-image remove -- */
 /* _form.php is loaded into the AJAX modal, so init re-runs each time via the
    'vtx:modal:loaded' event admin.js dispatches after injecting the form HTML. */
 document.addEventListener('vtx:modal:loaded', function (e) {
@@ -22,7 +22,7 @@ document.addEventListener('vtx:modal:loaded', function (e) {
     }
 });
 
-/* ── admin/galleries/items.php: media-picker overlay + drag reorder ── */
+/* -- admin/galleries/items.php: media-picker overlay + drag reorder -- */
 (function () {
     var galleryIdEl = document.getElementById('vtx-gallery-id');
     if (!galleryIdEl) return;
@@ -36,7 +36,7 @@ document.addEventListener('vtx:modal:loaded', function (e) {
 
     if (!grid) return;
 
-    // ── Add button → multi-select media picker ──────────────────────────────
+    // -- Add button → multi-select media picker ------------------------------
     var addBtn = document.getElementById('vtx-gallery-add-btn');
     if (addBtn) {
         addBtn.addEventListener('click', openGalleryPicker);
@@ -103,7 +103,7 @@ document.addEventListener('vtx:modal:loaded', function (e) {
             overlay.remove();
         }
 
-        // Event delegation on pickerBody — works even after search/pagination reloads
+        // Event delegation on pickerBody - works even after search/pagination reloads
         // because the element reference is stable; only its innerHTML changes
         pickerBody.addEventListener('click', function (e) {
             var item = e.target.closest('.vtx-picker-item');
@@ -222,7 +222,7 @@ document.addEventListener('vtx:modal:loaded', function (e) {
         grid.appendChild(div);
     }
 
-    // ── Remove buttons ──────────────────────────────────────────────────────
+    // -- Remove buttons ------------------------------------------------------
     grid.addEventListener('click', function (e) {
         var btn = e.target.closest('.vtx-gallery-remove');
         if (!btn) return;
@@ -252,7 +252,7 @@ document.addEventListener('vtx:modal:loaded', function (e) {
         });
     });
 
-    // ── Drag-to-reorder ────────────────────────────────────────────────────
+    // -- Drag-to-reorder ----------------------------------------------------
     var dragging = null;
     Array.from(grid.querySelectorAll('.vtx-gallery-item')).forEach(function (el) { makeDraggable(el); });
 

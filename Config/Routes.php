@@ -41,13 +41,13 @@ if (isset($_GET['lang'])) {
  *  get|post route, $this->get($pattern,$controller,$action) or $this->post($pattern,$controller,$action)
  */
 
-// ── Setup Wizard ─────────────────────────────────────────────────────────────
+// -- Setup Wizard -------------------------------------------------------------
 $router->get('/setup',           'Setup\WizardController', 'index');
 $router->post('/setup/next',     'Setup\WizardController', 'next');
 $router->get('/setup/back',      'Setup\WizardController', 'back');
 $router->post('/setup/test-db',  'Setup\WizardController', 'testDb');
 
-// ── Admin Auth ────────────────────────────────────────────────────────────────
+// -- Admin Auth ----------------------------------------------------------------
 $router->get('/admin/login',     'Admin\AuthController', 'login');
 $router->post('/admin/login',    'Admin\AuthController', 'processLogin');
 $router->get('/admin/logout',    'Admin\AuthController', 'logout');
@@ -58,13 +58,13 @@ $router->post('/admin/forgot-password', 'Admin\AuthController', 'processForgotPa
 $router->get('/admin/reset-password',   'Admin\AuthController', 'resetPassword');
 $router->post('/admin/reset-password',  'Admin\AuthController', 'processResetPassword');
 
-// ── Admin Redirect ────────────────────────────────────────────────────────────
+// -- Admin Redirect ------------------------------------------------------------
 $router->get('/admin',           'Admin\DashboardController', 'index');
 
-// ── Dashboard ─────────────────────────────────────────────────────────────────
+// -- Dashboard -----------------------------------------------------------------
 $router->get('/admin/dashboard', 'Admin\DashboardController', 'index');
 
-// ── Users ─────────────────────────────────────────────────────────────────────
+// -- Users ---------------------------------------------------------------------
 $router->get('/admin/users',                        'Admin\UsersController', 'index');
 $router->post('/admin/users/store',                 'Admin\UsersController', 'store');
 $router->post('/admin/users/([a-zA-Z0-9\-]+)/update',          'Admin\UsersController', 'update');
@@ -73,7 +73,7 @@ $router->get('/admin/users/form',                   'Admin\UsersController', 'cr
 $router->get('/admin/users/([a-zA-Z0-9\-]+)/form',             'Admin\UsersController', 'editForm');
 $router->post('/admin/users/([a-zA-Z0-9\-]+)/revoke-sessions', 'Admin\UsersController', 'revokeSessions');
 
-// ── Roles ─────────────────────────────────────────────────────────────────────
+// -- Roles ---------------------------------------------------------------------
 $router->get('/admin/roles',                                         'Admin\RolesController', 'index');
 $router->post('/admin/roles/store',                                  'Admin\RolesController', 'store');
 $router->post('/admin/roles/([a-zA-Z0-9\-]+)/update',               'Admin\RolesController', 'update');
@@ -84,7 +84,7 @@ $router->get('/admin/roles/permissions',                             'Admin\Role
 $router->post('/admin/roles/permissions/store',                      'Admin\RolesController', 'storePermission');
 $router->post('/admin/roles/permissions/([a-zA-Z0-9\-]+)/delete',   'Admin\RolesController', 'deletePermission');
 
-// ── Modules ───────────────────────────────────────────────────────────────────
+// -- Modules -------------------------------------------------------------------
 $router->get('/admin/modules',                                            'Admin\ModulesController', 'index');
 $router->post('/admin/modules/install-bundle',                            'Admin\ModulesController', 'installBundle');
 $router->get('/admin/modules/bundles/create',                             'Admin\ModulesController', 'bundleCreate');
@@ -99,11 +99,11 @@ $router->post('/admin/modules/([a-z0-9\-\_]+)/install',                   'Admin
 $router->post('/admin/modules/([a-z0-9\-\_]+)/uninstall',                 'Admin\ModulesController', 'uninstall');
 $router->post('/admin/modules/([a-z0-9\-\_]+)/sync-views',                'Admin\ModulesController', 'syncViews');
 
-// ── Themes ────────────────────────────────────────────────────────────────────
+// -- Themes --------------------------------------------------------------------
 $router->get('/admin/themes',                'Admin\ThemesController', 'index');
 $router->post('/admin/themes/set-theme',     'Admin\ThemesController', 'setTheme');
 
-// ── Profile ───────────────────────────────────────────────────────────────────
+// -- Profile -------------------------------------------------------------------
 $router->get('/admin/profile',                       'Admin\ProfileController', 'index');
 $router->post('/admin/profile/update',               'Admin\ProfileController', 'update');
 $router->get('/admin/profile/2fa',                   'Admin\ProfileController', 'twofa');
@@ -115,19 +115,19 @@ $router->post('/admin/profile/avatar/remove',        'Admin\ProfileController', 
 $router->post('/admin/profile/sessions/revoke-others',              'Admin\ProfileController', 'revokeOtherSessions');
 $router->post('/admin/profile/sessions/([a-zA-Z0-9\-]+)/revoke',    'Admin\ProfileController', 'revokeSession');
 
-// ── Translations ──────────────────────────────────────────────────────────────
+// -- Translations --------------------------------------------------------------
 $router->get('/admin/translations',              'Admin\TranslationsController', 'index');
 $router->post('/admin/translations/save',        'Admin\TranslationsController', 'save');
 $router->get('/admin/translations/add-locale',   'Admin\TranslationsController', 'addLocaleForm');
 $router->post('/admin/translations/add-locale',  'Admin\TranslationsController', 'addLocale');
 
-// ── API Keys ──────────────────────────────────────────────────────────────────
+// -- API Keys ------------------------------------------------------------------
 $router->get('/admin/api-keys',                              'Admin\ApiKeysController', 'index');
 $router->post('/admin/api-keys/store',                       'Admin\ApiKeysController', 'store');
 $router->post('/admin/api-keys/([a-zA-Z0-9\-]+)/revoke',     'Admin\ApiKeysController', 'revoke');
 $router->post('/admin/api-keys/([a-zA-Z0-9\-]+)/delete',     'Admin\ApiKeysController', 'delete');
 
-// ── REST API v1 (public read endpoints; Bearer key raises the rate limit) ─────
+// -- REST API v1 (public read endpoints; Bearer key raises the rate limit) -----
 $router->get('/api/v1/posts',                    'Api\V1\PostsController',  'index');
 $router->get('/api/v1/posts/([a-z0-9\-]+)',      'Api\V1\PostsController',  'show');
 $router->get('/api/v1/pages',                    'Api\V1\PagesController',  'index');
@@ -135,10 +135,10 @@ $router->get('/api/v1/pages/([a-z0-9\-]+)',      'Api\V1\PagesController',  'sho
 $router->get('/api/v1/events',                   'Api\V1\EventsController', 'index');
 $router->get('/api/v1/events/([a-z0-9\-]+)',     'Api\V1\EventsController', 'show');
 
-// ── Audit Log ─────────────────────────────────────────────────────────────────
+// -- Audit Log -----------------------------------------------------------------
 $router->get('/admin/audit-log',             'Admin\AuditController', 'index');
 
-// ── Settings ──────────────────────────────────────────────────────────────────
+// -- Settings ------------------------------------------------------------------
 $router->get('/admin/settings',              'Admin\SettingsController', 'index');
 $router->post('/admin/settings/save',        'Admin\SettingsController', 'save');
 $router->post('/admin/settings/save-mail',   'Admin\SettingsController', 'saveMail');
@@ -148,10 +148,10 @@ $router->post('/admin/settings/toggle-maintenance',     'Admin\SettingsControlle
 $router->post('/admin/settings/run-migration',          'Admin\SettingsController', 'runMigration');
 $router->post('/admin/settings/set-locale',             'Admin\SettingsController', 'setLocale');
 
-// ── Non-core module routes (loaded from DB, only when CMS is installed) ────────
+// -- Non-core module routes (loaded from DB, only when CMS is installed) --------
 \App\CMS\ModuleManager::loadRoutes($router);
 
-// ── Blog root index (only active when Blog's base path is "/") ─────────────
+// -- Blog root index (only active when Blog's base path is "/") -------------
 // Registered here instead of inside Blog/Module.php::registerRoutes() so that
 // it is placed after all other module routes, allowing more specific routes
 // (e.g. from Pages) to match first.
@@ -159,7 +159,7 @@ if (\App\CMS\ModuleLoader::isEnabled('blog') && \App\Modules\Blog\Module::basePa
     $router->get('/', 'App\Modules\Blog\Controllers\Front\BlogController', 'index');
 }
 
-// ── Blog root catch-all (only active when Blog's base path is "/") ─────────────
+// -- Blog root catch-all (only active when Blog's base path is "/") -------------
 // Registered here instead of inside Blog/Module.php::registerRoutes() so that
 // alphabetical module-load order cannot cause it to shadow other modules'
 // specific front-end routes (e.g. /contact, /events, /search, /videos).
@@ -167,14 +167,14 @@ if (\App\CMS\ModuleLoader::isEnabled('blog') && \App\Modules\Blog\Module::basePa
     $router->get('/([a-z0-9\-]+)', 'App\Modules\Blog\Controllers\Front\BlogController', 'post');
 }
 
-// ── Pages catch-all (must be last so specific module routes like /search win) ──
+// -- Pages catch-all (must be last so specific module routes like /search win) --
 // Registered here instead of inside Pages/Module.php::registerRoutes() so that
 // alphabetical module-load order cannot cause it to shadow later modules.
 if (\App\CMS\ModuleLoader::isEnabled('pages')) {
     $router->get('/([a-z0-9][a-z0-9\-]*)', 'App\Modules\Pages\Controllers\Front\PageController', 'show');
 }
 
-// ── Front-end placeholder ──────────────────────────────────────────────────────
+// -- Front-end placeholder ------------------------------------------------------
 $router->add('GET', '/', 'Web\Welcome', 'index');
 
 return $router;

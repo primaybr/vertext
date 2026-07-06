@@ -1,7 +1,7 @@
 {
     "name":        "Blog",
     "slug":        "blog",
-    "version":     "0.0.7",
+    "version":     "0.0.9",
     "description": "Full-featured blog with posts, categories, tags, comments, analytics, and public frontend",
     "setup":       "/admin/blog/setup",
     "author":      "Vertext",

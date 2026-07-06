@@ -64,7 +64,7 @@
 &lt;/div&gt;</code></pre>
         </section>
 
-        {# - 2. Button Toggle -----------------------─ #}
+        {# - 2. Button Toggle ------------------------ #}
         <section class="mb-5">
           <h2 class="h4 text-primary mb-1"><i class="pi pi-check me-1"></i> Button States &amp; Toggle</h2>
           <p class="text-secondary small mb-3">
@@ -139,7 +139,7 @@
 &lt;/div&gt;</code></pre>
         </section>
 
-        {# - 4. Offcanvas -------------------------─ #}
+        {# - 4. Offcanvas -------------------------- #}
         <section class="mb-5">
           <h2 class="h4 text-primary mb-1"><i class="pi pi-menu me-1"></i> Offcanvas</h2>
           <p class="text-secondary small mb-3">
@@ -200,7 +200,7 @@
 &lt;/div&gt;</code></pre>
         </section>
 
-        {# - 5. Popover --------------------------─ #}
+        {# - 5. Popover --------------------------- #}
         <section class="mb-5">
           <h2 class="h4 text-primary mb-1"><i class="pi pi-info me-1"></i> Popover</h2>
           <p class="text-secondary small mb-3">
@@ -235,7 +235,7 @@
 &lt;/button&gt;</code></pre>
         </section>
 
-        {# - 6. Tooltip --------------------------─ #}
+        {# - 6. Tooltip --------------------------- #}
         <section class="mb-5">
           <h2 class="h4 text-primary mb-1"><i class="pi pi-eye me-1"></i> Tooltip</h2>
           <p class="text-secondary small mb-3">
@@ -258,7 +258,7 @@
 &lt;button data-toggle="tooltip" data-placement="bottom" title="Bottom"&gt;Bottom&lt;/button&gt;</code></pre>
         </section>
 
-        {# - 7. ScrollSpy -------------------------─ #}
+        {# - 7. ScrollSpy -------------------------- #}
         <section class="mb-5">
           <h2 class="h4 text-primary mb-1"><i class="pi pi-list me-1"></i> ScrollSpy</h2>
           <p class="text-secondary small mb-3">
@@ -303,7 +303,7 @@
 &lt;/div&gt;</code></pre>
         </section>
 
-        {# - 8. Toast ---------------------------─ #}
+        {# - 8. Toast ---------------------------- #}
         <section class="mb-5">
           <h2 class="h4 text-primary mb-1"><i class="pi pi-bell me-1"></i> Toast Notifications</h2>
           <p class="text-secondary small mb-3">
@@ -331,7 +331,7 @@ Phuse.toast('Heads up!',            'info');
 Phuse.toast('Please check input.',  'warning');</code></pre>
         </section>
 
-        {# - 9. Modal ---------------------------─ #}
+        {# - 9. Modal ---------------------------- #}
         <section class="mb-5">
           <h2 class="h4 text-primary mb-1"><i class="pi pi-layers me-1"></i> Modal</h2>
           <p class="text-secondary small mb-3">
@@ -484,7 +484,7 @@ Phuse.toast('Please check input.',  'warning');</code></pre>
 &lt;div class="modal fade" data-backdrop="static"&gt;...&lt;/div&gt;</code></pre>
         </section>
 
-        {# - 10. Accordion -------------------------─ #}
+        {# - 10. Accordion -------------------------- #}
         <section class="mb-4">
           <h2 class="h4 text-primary mb-1"><i class="pi pi-chevron-down me-1"></i> Accordion</h2>
           <p class="text-secondary small mb-3">

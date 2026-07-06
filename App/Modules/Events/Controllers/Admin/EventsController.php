@@ -270,7 +270,7 @@ class EventsController extends BaseController
         $this->json(['success' => true, 'message' => "Event \"{$event['title']}\" deleted."]);
     }
 
-    // ── Attendees (v0.0.2) ─────────────────────────────────────────────────────
+    // -- Attendees (v0.0.2) -----------------------------------------------------
 
     /** GET /admin/events/{id}/attendees */
     public function attendees(string $id): void

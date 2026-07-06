@@ -1,5 +1,5 @@
 /* Events Module - Admin styles */
 
-/* ── admin/event_form.php: breadcrumb link ── */
+/* -- admin/event_form.php: breadcrumb link -- */
 .vtx-breadcrumb { font-size: .8125rem; color: var(--ps-text-muted); text-decoration: none; }
 .vtx-breadcrumb:hover { color: var(--ps-accent); }

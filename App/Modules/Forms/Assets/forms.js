@@ -1,6 +1,6 @@
 /* Forms Builder - shared utilities (admin builder logic lives in forms-admin.js) */
 
-/* ── front/_embed.php: conditional fields, multi-step nav, reCAPTCHA v3 ── */
+/* -- front/_embed.php: conditional fields, multi-step nav, reCAPTCHA v3 -- */
 (function () {
   'use strict';
 
@@ -8,7 +8,7 @@
     var form = root.querySelector('[data-vf-form]');
     if (!form) return;
 
-    /* ── Conditional logic ─────────────────────────────────────── */
+    /* -- Conditional logic --------------------------------------- */
     function fieldValue(name) {
       var els = form.querySelectorAll('[name="' + name + '"], [name="' + name + '[]"]');
       var vals = [];
@@ -55,7 +55,7 @@
     form.addEventListener('change', applyConditions);
     applyConditions();
 
-    /* ── Multi-step navigation ─────────────────────────────────── */
+    /* -- Multi-step navigation ----------------------------------- */
     var steps = Array.prototype.slice.call(root.querySelectorAll('[data-vf-step]'));
     if (steps.length > 1) {
       var current  = 0;
@@ -101,7 +101,7 @@
       show(0);
     }
 
-    /* ── reCAPTCHA v3 token on submit ──────────────────────────── */
+    /* -- reCAPTCHA v3 token on submit ---------------------------- */
     var recaptchaInput = form.querySelector('[data-vf-recaptcha]');
     if (recaptchaInput) {
       var siteKey = root.dataset.recaptchaKey || '';

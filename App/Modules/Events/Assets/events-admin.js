@@ -1,6 +1,6 @@
 /* Events Module - Admin scripts */
 
-/* ── admin/_v2_fields.php: dynamic add-ticket-row builder ── */
+/* -- admin/_v2_fields.php: dynamic add-ticket-row builder -- */
 (function () {
   var addBtn = document.getElementById('ev-add-ticket');
   if (!addBtn) return;
@@ -17,7 +17,7 @@
   });
 })();
 
-/* ── admin/attendees.php: attendee status-select → AJAX update ── */
+/* -- admin/attendees.php: attendee status-select → AJAX update -- */
 (function () {
   'use strict';
 

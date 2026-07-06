@@ -59,7 +59,7 @@ class Mailer
         return $this->lastError;
     }
 
-    // ── PHP mail() driver ─────────────────────────────────────────────────────
+    // -- PHP mail() driver -----------------------------------------------------
 
     private function sendViaMail(MailMessage $m): bool
     {
@@ -100,7 +100,7 @@ class Mailer
         return $ok;
     }
 
-    // ── Native SMTP driver ────────────────────────────────────────────────────
+    // -- Native SMTP driver ----------------------------------------------------
 
     private function sendViaSmtp(MailMessage $m): bool
     {

@@ -104,7 +104,7 @@ class WizardController extends Controller
         exit;
     }
 
-    // ── Private step processors ───────────────────────────────
+    // -- Private step processors -------------------------------
 
     private function processStep1(): array
     {
@@ -244,7 +244,7 @@ class WizardController extends Controller
         return ['success' => true];
     }
 
-    // ── Render helpers ────────────────────────────────────────
+    // -- Render helpers ----------------------------------------
 
     private function renderStep(int $step): void
     {

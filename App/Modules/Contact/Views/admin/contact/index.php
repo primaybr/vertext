@@ -62,7 +62,7 @@
                                     <a href="<?= $baseUrl ?>/admin/contact/<?= $row['id'] ?>" class="btn btn-sm btn-outline-primary">View</a>
                                     <button type="button" class="btn btn-sm btn-outline-danger ms-1"
                                             data-action="delete" data-id="<?= $row['id'] ?>"
-                                            data-base-url="<?= $baseUrl ?>" data-csrf="<?= htmlspecialchars($csrfToken ?? '') ?>">
+                                            data-base-url="<?= $baseUrl ?>" data-csrf="<?= htmlspecialchars($csrf_token ?? '') ?>">
                                         <i class="pi pi-trash"></i>
                                     </button>
                                 </td>

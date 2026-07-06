@@ -10,7 +10,7 @@
  * Both support dark/light mode with OS preference detection and a toggle button.
  */
 
-// ── 1. Render a front-end view inside the active theme ────────────────────────
+// -- 1. Render a front-end view inside the active theme ------------------------
 /*
 namespace App\Modules\MyModule\Controllers\Front;
 
@@ -63,7 +63,7 @@ class MyController extends Controller
 }
 */
 
-// ── 2. Writing a content-only front-end view ──────────────────────────────────
+// -- 2. Writing a content-only front-end view ----------------------------------
 /*
 // App/Modules/MyModule/Views/front/index.php
 // No <html>/<head>/<body> - ThemeEngine's layout.php provides those.
@@ -84,7 +84,7 @@ class MyController extends Controller
 <?php
 */
 
-// ── 3. Dark/light mode in a custom theme layout ───────────────────────────────
+// -- 3. Dark/light mode in a custom theme layout -------------------------------
 /*
 // Three things are required in layout.php for dark/light mode to work:
 //
@@ -105,7 +105,7 @@ class MyController extends Controller
 //   [data-theme="dark"] { --color-bg: #0f172a; }
 */
 
-// ── 4. Manually deploying theme assets after editing source files ──────────────
+// -- 4. Manually deploying theme assets after editing source files --------------
 /*
 // Source (git-tracked):  App/Themes/default/css/theme.css
 // Deployed (generated):  Public/themes/default/css/theme.css
@@ -119,7 +119,7 @@ ThemeEngine::deploy();             // deploy active theme
 ThemeEngine::deploy('my-theme');   // deploy a specific theme
 */
 
-// ── 5. Creating a custom theme ────────────────────────────────────────────────
+// -- 5. Creating a custom theme ------------------------------------------------
 /*
 // Required files:
 //   App/Themes/my-theme/theme.json
@@ -146,7 +146,7 @@ ThemeEngine::deploy('my-theme');   // deploy a specific theme
 // Activate: Admin -> Themes -> Activate next to your theme name.
 */
 
-// ── 6. Checking the active theme programmatically ─────────────────────────────
+// -- 6. Checking the active theme programmatically -----------------------------
 /*
 use App\Theme\ThemeEngine;
 

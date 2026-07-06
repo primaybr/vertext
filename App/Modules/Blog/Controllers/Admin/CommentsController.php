@@ -111,8 +111,8 @@ class CommentsController extends BaseController
         try {
             $settings = array_column($this->db('settings')->get() ?: [], 'value', 'key');
             $baseUrl  = $settings['site_url'] ?? $this->baseUrl;
-            $blogBase = $settings['blog_base_path'] ?? 'blog';
-            $postUrl  = rtrim($baseUrl, '/') . '/' . ltrim($blogBase, '/') . '/' . ($comment['post_slug'] ?? '');
+            $rawBlogBase = trim($settings['blog_base_path'] ?? 'blog', '/');
+            $postUrl  = rtrim($baseUrl, '/') . ($rawBlogBase !== '' ? '/' . $rawBlogBase : '') . '/' . ($comment['post_slug'] ?? '');
 
             $html = MailTemplate::render('comment_approved', [
                 'authorName'  => $comment['author_name'] ?? 'there',
@@ -165,12 +165,12 @@ class CommentsController extends BaseController
             $this->json(['success' => false, 'message' => 'No comments selected.']);
         }
 
-        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        [$inSql, $inBinds] = $this->buildInClause($ids);
 
         match ($action) {
-            'approve' => $this->db('blog_comments')->whereRaw("id IN ({$placeholders})", array_values($ids))->update(['status' => 'approved']),
-            'spam'    => $this->db('blog_comments')->whereRaw("id IN ({$placeholders})", array_values($ids))->update(['status' => 'spam']),
-            'delete'  => $this->db('blog_comments')->whereRaw("id IN ({$placeholders})", array_values($ids))->delete(),
+            'approve' => $this->db('blog_comments')->whereRaw("id IN ({$inSql})", $inBinds)->update(['status' => 'approved']),
+            'spam'    => $this->db('blog_comments')->whereRaw("id IN ({$inSql})", $inBinds)->update(['status' => 'spam']),
+            'delete'  => $this->db('blog_comments')->whereRaw("id IN ({$inSql})", $inBinds)->delete(),
             default   => null,
         };
 

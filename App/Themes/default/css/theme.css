@@ -1,4 +1,4 @@
-/* ── Color tokens: light (default) ─────────────────────────── */
+/* -- Color tokens: light (default) --------------------------- */
 :root {
   /* "Precision Ledger" (0.0.9) - shared identity with the admin panel.
      --clr-accent is foreground-safe (text/links/borders) and flips for dark
@@ -31,7 +31,7 @@
   --ps-bg-base:      var(--clr-bg);
 }
 
-/* ── Color tokens: dark (system preference) ─────────────────── */
+/* -- Color tokens: dark (system preference) ------------------- */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --clr-accent:     #60A5FA;
@@ -46,7 +46,7 @@
   }
 }
 
-/* ── Color tokens: dark (explicit toggle) ───────────────────── */
+/* -- Color tokens: dark (explicit toggle) --------------------- */
 [data-theme="dark"] {
   --clr-accent:     #60A5FA;
   --clr-accent-rgb: 96, 165, 250;
@@ -59,7 +59,7 @@
   --shadow-sm:   0 4px 12px rgba(0,0,0,.35);
 }
 
-/* ── Reset & base ──────────────────────────────────────────── */
+/* -- Reset & base -------------------------------------------- */
 *, *::before, *::after { box-sizing: border-box; }
 
 :focus-visible {
@@ -97,7 +97,7 @@ img {
   height: auto;
 }
 
-/* ── Layout ────────────────────────────────────────────────── */
+/* -- Layout -------------------------------------------------- */
 .container {
   max-width: 1240px;
   margin: 0 auto;
@@ -123,7 +123,7 @@ main {
   min-height: 60vh;
 }
 
-/* ── Site header ───────────────────────────────────────────── */
+/* -- Site header --------------------------------------------- */
 .site-header {
   border-bottom: 1px solid var(--clr-border);
   padding: .875rem 0;
@@ -172,7 +172,7 @@ main {
   text-decoration: none;
 }
 
-/* ── Nav dropdown ──────────────────────────────────────────── */
+/* -- Nav dropdown -------------------------------------------- */
 .nav-dropdown {
   position: relative;
 }
@@ -208,7 +208,7 @@ main {
   text-decoration: none;
 }
 
-/* ── Header actions (theme toggle + nav toggle) ─────────────── */
+/* -- Header actions (theme toggle + nav toggle) --------------- */
 .header-actions {
   display: flex;
   align-items: center;
@@ -247,7 +247,7 @@ main {
   :root:not([data-theme="light"]) .icon-moon { display: none; }
 }
 
-/* ── Mobile: nav toggle ────────────────────────────────────── */
+/* -- Mobile: nav toggle -------------------------------------- */
 .nav-toggle {
   display: none;
   background: none;
@@ -271,7 +271,7 @@ main {
   transition: transform .2s, opacity .2s;
 }
 
-/* ── Site footer ───────────────────────────────────────────── */
+/* -- Site footer --------------------------------------------- */
 .site-footer {
   border-top: 1px solid var(--clr-border);
   padding: 1.75rem 0;
@@ -300,7 +300,7 @@ main {
   text-decoration: none;
 }
 
-/* ── Responsive ────────────────────────────────────────────── */
+/* -- Responsive ---------------------------------------------- */
 @media (max-width: 640px) {
   .nav-toggle {
     display: flex;

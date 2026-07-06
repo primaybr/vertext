@@ -249,7 +249,7 @@ class EventsFrontController extends Controller
         $this->redirect($this->baseUrl . '/events');
     }
 
-    // ── Internal ───────────────────────────────────────────────────────────────
+    // -- Internal ---------------------------------------------------------------
 
     private function loadEvent(string $slug, bool $abort = true): ?array
     {

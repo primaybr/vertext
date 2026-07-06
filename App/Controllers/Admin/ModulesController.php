@@ -23,7 +23,7 @@ class ModulesController extends BaseController
         parent::__construct();
     }
 
-    // ── Index ──────────────────────────────────────────────────────────────────
+    // -- Index ------------------------------------------------------------------
 
     /** GET /admin/modules */
     public function index(): void
@@ -113,7 +113,7 @@ class ModulesController extends BaseController
         ], 'Module Manager', 'modules');
     }
 
-    // ── Toggle ─────────────────────────────────────────────────────────────────
+    // -- Toggle -----------------------------------------------------------------
 
     /** POST /admin/modules/([a-z0-9\-\_]+)/toggle */
     public function toggle(string $slug): void
@@ -140,7 +140,7 @@ class ModulesController extends BaseController
         $this->json(['success' => true, 'status' => $newStatus]);
     }
 
-    // ── Install ────────────────────────────────────────────────────────────────
+    // -- Install ----------------------------------------------------------------
 
     /** POST /admin/modules/([a-z0-9\-\_]+)/install */
     public function install(string $slug): void
@@ -187,7 +187,7 @@ class ModulesController extends BaseController
         $this->redirect($this->baseUrl . '/admin/modules');
     }
 
-    // ── Uninstall ──────────────────────────────────────────────────────────────
+    // -- Uninstall --------------------------------------------------------------
 
     /** POST /admin/modules/([a-z0-9\-\_]+)/uninstall */
     public function uninstall(string $slug): void
@@ -225,7 +225,7 @@ class ModulesController extends BaseController
         $this->redirect($this->baseUrl . '/admin/modules');
     }
 
-    // ── Sync Views ────────────────────────────────────────────────────────────
+    // -- Sync Views ------------------------------------------------------------
 
     /** POST /admin/modules/([a-z0-9\-\_]+)/sync-views */
     public function syncViews(string $slug): void
@@ -251,7 +251,7 @@ class ModulesController extends BaseController
         $this->redirect($this->baseUrl . '/admin/modules');
     }
 
-    // ── Bundle CRUD ───────────────────────────────────────────────────────────
+    // -- Bundle CRUD -----------------------------------------------------------
 
     /** GET /admin/modules/bundles/create */
     public function bundleCreate(): void
@@ -429,7 +429,7 @@ class ModulesController extends BaseController
         return array_map(fn($slug, $name) => ['slug' => $slug, 'name' => $name], array_keys($map), $map);
     }
 
-    // ── Install Bundle ────────────────────────────────────────────────────────
+    // -- Install Bundle --------------------------------------------------------
 
     /** POST /admin/modules/install-bundle */
     public function installBundle(): void
@@ -477,7 +477,7 @@ class ModulesController extends BaseController
         $this->json(['success' => true, 'results' => $results, 'any_installed' => $anySuccess]);
     }
 
-    // ── Marketplace: Install from URL ─────────────────────────────────────────
+    // -- Marketplace: Install from URL -----------------------------------------
 
     /**
      * POST /admin/modules/fetch-url
@@ -740,7 +740,7 @@ class ModulesController extends BaseController
         }
     }
 
-    // ── Helpers ────────────────────────────────────────────────────────────────
+    // -- Helpers ----------------------------------------------------------------
 
     private function validateCsrf(): void
     {

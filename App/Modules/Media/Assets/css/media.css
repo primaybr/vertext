@@ -3,7 +3,7 @@
    Media grid · Upload zone · Picker modal
    ============================================================= */
 
-/* ── Media grid ──────────────────────────────────────────────── */
+/* -- Media grid ------------------------------------------------ */
 .vtx-media-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -78,14 +78,14 @@
     border-top: 1px solid var(--ps-border);
 }
 
-/* ── Upload zone hover/drag state ────────────────────────────── */
+/* -- Upload zone hover/drag state ------------------------------ */
 [data-vtx-upload]:hover,
 [data-vtx-upload].vtx-upload--over {
     border-color: var(--ps-primary) !important;
     background: rgba(var(--ps-primary-rgb, 30, 58, 95), .04) !important;
 }
 
-/* ── Media Picker (inside modal) ─────────────────────────────── */
+/* -- Media Picker (inside modal) ------------------------------- */
 .vtx-media-picker-wrap {
     display: flex;
     flex-direction: column;
@@ -169,7 +169,7 @@
     border-top: 1px solid var(--ps-border);
 }
 
-/* ── Media Picker overlay (vtx-media-picker.js) ─────────────── */
+/* -- Media Picker overlay (vtx-media-picker.js) --------------- */
 #vtx-media-picker-overlay {
     position: fixed;
     inset: 0;
@@ -245,7 +245,7 @@
     margin: 0;
 }
 
-/* ── Dark mode overrides ─────────────────────────────────────── */
+/* -- Dark mode overrides --------------------------------------- */
 [data-theme=dark] .vtx-media-card        { background: var(--ps-bg-surface); border-color: var(--ps-border); }
 [data-theme=dark] .vtx-media-thumb       { background: var(--ps-bg-subtle); }
 [data-theme=dark] .vtx-picker-item       { background: var(--ps-bg-subtle); }

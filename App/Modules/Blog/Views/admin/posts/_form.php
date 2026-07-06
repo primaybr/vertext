@@ -30,7 +30,8 @@ $p       = $editing ? $post : [];
       <?php endif; ?>
     </label>
     <div style="display:flex;align-items:center;gap:.5rem;">
-      <span style="font-size:.875rem;color:var(--ps-text-muted);white-space:nowrap;">/<?php echo htmlspecialchars(ltrim($blogBase ?? 'blog', '/')); ?>/</span>
+      <?php $slugPrefix = trim($blogBase ?? 'blog', '/'); ?>
+      <span style="font-size:.875rem;color:var(--ps-text-muted);white-space:nowrap;">/<?php echo $slugPrefix !== '' ? htmlspecialchars($slugPrefix) . '/' : ''; ?></span>
       <input class="form-control" type="text" id="post-slug" name="slug"
              value="<?php echo htmlspecialchars($p['slug'] ?? ''); ?>"
              placeholder="auto-generated-from-title"
@@ -136,7 +137,7 @@ $p       = $editing ? $post : [];
                value="<?php echo htmlspecialchars($p['meta_title'] ?? ''); ?>"
                placeholder="Defaults to post title if blank">
         <div style="display:flex;justify-content:space-between;margin-top:.25rem;">
-          <span class="vtx-help">50–60 characters recommended.</span>
+          <span class="vtx-help">50-60 characters recommended.</span>
           <span class="vtx-char-count" data-target="post-meta-title" data-max="60"></span>
         </div>
       </div>
@@ -146,7 +147,7 @@ $p       = $editing ? $post : [];
                   rows="2" maxlength="320"
                   placeholder="Defaults to excerpt if blank"><?php echo htmlspecialchars($p['meta_description'] ?? ''); ?></textarea>
         <div style="display:flex;justify-content:space-between;margin-top:.25rem;">
-          <span class="vtx-help">120–160 characters recommended.</span>
+          <span class="vtx-help">120-160 characters recommended.</span>
           <span class="vtx-char-count" data-target="post-meta-desc" data-max="160"></span>
         </div>
       </div>

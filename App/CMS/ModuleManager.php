@@ -30,7 +30,7 @@ class ModuleManager
     /** Prevent loadRoutes() from querying the DB more than once per request */
     private static bool $routesLoaded = false;
 
-    // ── Discovery ──────────────────────────────────────────────────────────────
+    // -- Discovery --------------------------------------------------------------
 
     /**
      * Return manifests for modules present in App/Modules/ but not yet installed.
@@ -71,7 +71,7 @@ class ModuleManager
         return $available;
     }
 
-    // ── Bundles ────────────────────────────────────────────────────────────────
+    // -- Bundles ----------------------------------------------------------------
 
     /**
      * Return all bundle manifests from App/Bundles/, annotated with install status.
@@ -220,7 +220,7 @@ class ModuleManager
         return array_merge($sorted, array_values($remaining));
     }
 
-    // ── Install ────────────────────────────────────────────────────────────────
+    // -- Install ----------------------------------------------------------------
 
     /**
      * Install a module by its slug:
@@ -325,7 +325,7 @@ class ModuleManager
         return $result;
     }
 
-    // ── Uninstall ──────────────────────────────────────────────────────────────
+    // -- Uninstall --------------------------------------------------------------
 
     /**
      * Uninstall a module by its slug:
@@ -410,7 +410,7 @@ class ModuleManager
         return ['success' => true];
     }
 
-    // ── Route loading ──────────────────────────────────────────────────────────
+    // -- Route loading ----------------------------------------------------------
 
     /**
      * Register routes for all enabled non-core modules into $router.
@@ -468,7 +468,7 @@ class ModuleManager
         }
     }
 
-    // ── Cache ──────────────────────────────────────────────────────────────────
+    // -- Cache ------------------------------------------------------------------
 
     /**
      * Delete the route cache file.
@@ -500,7 +500,7 @@ class ModuleManager
         }
     }
 
-    // ── Dependency helpers ─────────────────────────────────────────────────────
+    // -- Dependency helpers -----------------------------------------------------
 
     /**
      * Return per-slug install status for a module manifest's requires.modules list.
@@ -584,7 +584,7 @@ class ModuleManager
         return $dependents;
     }
 
-    // ── Private helpers ────────────────────────────────────────────────────────
+    // -- Private helpers --------------------------------------------------------
 
     /** Slug: lowercase, starts with a letter, letters/digits/hyphens/underscores */
     private static function validSlug(string $slug): bool

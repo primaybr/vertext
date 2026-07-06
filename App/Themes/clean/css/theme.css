@@ -1,4 +1,4 @@
-/* ── Color tokens: light (default) ─────────────────────────── */
+/* -- Color tokens: light (default) --------------------------- */
 :root {
   --clr-accent:  #1d4ed8;
   --clr-text:    #0f0f0f;
@@ -24,7 +24,7 @@
   --ps-bg-base:      var(--clr-bg);
 }
 
-/* ── Color tokens: dark (system preference) ─────────────────── */
+/* -- Color tokens: dark (system preference) ------------------- */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --clr-accent:  #93c5fd;
@@ -40,7 +40,7 @@
   }
 }
 
-/* ── Color tokens: dark (explicit toggle) ───────────────────── */
+/* -- Color tokens: dark (explicit toggle) --------------------- */
 [data-theme="dark"] {
   --clr-accent:  #93c5fd;
   --clr-text:    #f0f0f0;
@@ -54,7 +54,7 @@
   --shadow-float: 0 4px 16px rgba(0,0,0,.50);
 }
 
-/* ── Reset & base ──────────────────────────────────────────── */
+/* -- Reset & base -------------------------------------------- */
 *, *::before, *::after { box-sizing: border-box; }
 
 :focus-visible {
@@ -90,7 +90,7 @@ img {
   height: auto;
 }
 
-/* ── Layout ────────────────────────────────────────────────── */
+/* -- Layout -------------------------------------------------- */
 .container {
   max-width: 1240px;
   margin: 0 auto;
@@ -116,7 +116,7 @@ main {
   min-height: 60vh;
 }
 
-/* ── Site header ───────────────────────────────────────────── */
+/* -- Site header --------------------------------------------- */
 .site-header {
   border-bottom: 1px solid var(--clr-border);
   padding: 1rem 0;
@@ -173,7 +173,7 @@ main {
   text-decoration: none;
 }
 
-/* ── Nav dropdown ──────────────────────────────────────────── */
+/* -- Nav dropdown -------------------------------------------- */
 .nav-dropdown {
   position: relative;
 }
@@ -216,7 +216,7 @@ main {
   color: var(--clr-text);
 }
 
-/* ── Header actions (theme toggle + nav toggle) ─────────────── */
+/* -- Header actions (theme toggle + nav toggle) --------------- */
 .header-actions {
   display: flex;
   align-items: center;
@@ -256,7 +256,7 @@ main {
   :root:not([data-theme="light"]) .icon-moon { display: none; }
 }
 
-/* ── Mobile: nav toggle ────────────────────────────────────── */
+/* -- Mobile: nav toggle -------------------------------------- */
 .nav-toggle {
   display: none;
   background: none;
@@ -284,7 +284,7 @@ main {
   margin: 2.5px 0;
 }
 
-/* ── Site footer ───────────────────────────────────────────── */
+/* -- Site footer --------------------------------------------- */
 .site-footer {
   border-top: 1px solid var(--clr-border);
   padding: 2rem 0;
@@ -314,7 +314,7 @@ main {
   color: var(--clr-text);
 }
 
-/* ── Typography ────────────────────────────────────────────── */
+/* -- Typography ---------------------------------------------- */
 h1, h2, h3, h4, h5, h6 {
   font-family: system-ui, -apple-system, sans-serif;
   font-weight: 800;
@@ -363,7 +363,7 @@ pre code {
   border-radius: 0;
 }
 
-/* ── Blog post styles ──────────────────────────────────────── */
+/* -- Blog post styles ---------------------------------------- */
 .post-meta {
   font-family: system-ui, -apple-system, sans-serif;
   font-size: .8125rem;
@@ -411,7 +411,7 @@ pre code {
   margin-bottom: .75rem;
 }
 
-/* ── Responsive ────────────────────────────────────────────── */
+/* -- Responsive ---------------------------------------------- */
 @media (max-width: 640px) {
   .nav-toggle {
     display: flex;

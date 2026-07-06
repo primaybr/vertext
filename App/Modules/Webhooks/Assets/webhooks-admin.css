@@ -1,4 +1,4 @@
-/* ── admin/webhooks/form.php: form layout, event-checkbox grid ── */
+/* -- admin/webhooks/form.php: form layout, event-checkbox grid -- */
 .wh-checkbox-label { display: flex; align-items: center; gap: .5rem; cursor: pointer; font-size: .875rem; }
 .wh-checkbox-label input[type="checkbox"] { accent-color: var(--ps-primary); }
 

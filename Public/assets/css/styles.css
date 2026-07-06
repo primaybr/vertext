@@ -1,4 +1,4 @@
-/* PHUSE CSS Framework v1.2.6 | Flat - Modern - Professional */
+/* PHUSE CSS Framework v1.2.8 | Flat - Modern - Professional */
 
 /* Icon system - .pi / .pi-* - lives in icons.css, imported here.
    @import MUST stay before all other rules per the CSS spec, or
@@ -254,6 +254,12 @@ html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
   tab-size: 4;
+  /* Always reserve the scrollbar gutter so short pages (e.g. Contact) don't
+     render a few pixels wider than tall ones (e.g. Search/Videos/Gallery) -
+     without this, the shared sticky header/container appears to shift width
+     between pages depending on whether that page's content needs to scroll. */
+  scrollbar-gutter: stable;
+  overflow-y: scroll;
 }
 
 body {
@@ -1239,7 +1245,7 @@ hr {
   position: relative;
 }
 
-/* ── Close button (used in alerts, modals, offcanvas) ───────────────────── */
+/* -- Close button (used in alerts, modals, offcanvas) --------------------- */
 .btn-close {
   display: inline-flex;
   align-items: center;
@@ -1620,6 +1626,19 @@ input[type=time].form-control::-webkit-calendar-picker-indicator:hover {
   background-color: var(--ps-bg-subtle);
   opacity: .65;
   cursor: not-allowed;
+}
+
+.form-select-sm {
+  padding: .25rem 2rem .25rem .5rem;
+  font-size: .875rem;
+  border-radius: var(--ps-radius-sm);
+  background-size: 14px 10px;
+}
+
+.form-select-lg {
+  padding: .75rem 3rem .75rem 1rem;
+  font-size: 1.125rem;
+  border-radius: var(--ps-radius-lg);
 }
 
 .form-check {
@@ -3505,7 +3524,7 @@ kbd {
    END - PHUSE CSS Framework v1.2.6
    ============================================================ */
 
-/* ── Admin locale switcher ───────────────────────────────────────────────── */
+/* -- Admin locale switcher ------------------------------------------------- */
 .vtx-locale-select {
   -webkit-appearance: none;
   appearance: none;

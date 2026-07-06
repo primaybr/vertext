@@ -1,4 +1,4 @@
-/* ── front/index.php: gallery grid/card styling ── */
+/* -- front/index.php: gallery grid/card styling -- */
 .gallery-page-header { margin-top: 2rem; margin-bottom: 2rem; }
 .gallery-page-header h1 { margin: 0; }
 .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.5rem; }
@@ -14,9 +14,9 @@
 .gallery-desc { font-size: .875rem; color: var(--clr-muted); margin: 0 0 .5rem; }
 .gallery-count { font-size: .8125rem; color: var(--clr-faint); }
 .gallery-empty { text-align: center; padding: 5rem 1rem; color: var(--clr-faint); }
-.gallery-empty .emoji { font-size: 2rem; margin-bottom: .5rem; }
+.gallery-empty .empty-icon { font-size: 2rem; margin-bottom: .5rem; }
 
-/* ── front/album.php: photo grid + always-dark lightbox styling ── */
+/* -- front/album.php: photo grid + always-dark lightbox styling -- */
 .album-breadcrumb { font-size: .875rem; margin-bottom: 2rem; color: var(--clr-muted); }
 .album-breadcrumb a { color: var(--clr-muted); text-decoration: none; }
 .album-breadcrumb a:hover { color: var(--clr-accent); }

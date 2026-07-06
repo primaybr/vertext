@@ -1,4 +1,4 @@
-/* ── admin/analytics/index.php: canvas chart renderer ── */
+/* -- admin/analytics/index.php: canvas chart renderer -- */
 (function() {
   var canvas = document.getElementById('analytics-chart');
   if (!canvas) return;

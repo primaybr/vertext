@@ -1,4 +1,4 @@
-/* ── admin/builder.php: drag-and-drop form builder engine ── */
+/* -- admin/builder.php: drag-and-drop form builder engine -- */
 (function () {
   const wrapper = document.getElementById('vtx-form-builder');
   if (!wrapper) return;
@@ -8,7 +8,7 @@
   const CSRF    = wrapper.dataset.csrf;
   let fields    = JSON.parse(wrapper.dataset.fields || '[]');
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  // -- Render ----------------------------------------------------------------
   function render() {
     const canvas = document.getElementById('vtx-field-canvas');
     const empty  = document.getElementById('vtx-canvas-empty');
@@ -190,7 +190,7 @@
     return row;
   }
 
-  // ── Drag-to-reorder ────────────────────────────────────────────────────────
+  // -- Drag-to-reorder --------------------------------------------------------
   let dragSrc = null;
 
   function initDrag() {
@@ -217,7 +217,7 @@
     });
   }
 
-  // ── Add field ──────────────────────────────────────────────────────────────
+  // -- Add field --------------------------------------------------------------
   document.querySelectorAll('[data-add-field]').forEach(btn => {
     btn.addEventListener('click', () => {
       const type = btn.dataset.addField;
@@ -229,7 +229,7 @@
     });
   });
 
-  // ── Save ───────────────────────────────────────────────────────────────────
+  // -- Save -------------------------------------------------------------------
   document.getElementById('vtx-builder-save').addEventListener('click', () => {
     const settings = {
       success_message:      document.getElementById('vtx-success-msg').value.trim(),
@@ -260,7 +260,7 @@
     .finally(() => { btn.disabled = false; });
   });
 
-  // ── Utils ─────────────────────────────────────────────────────────────────
+  // -- Utils -----------------------------------------------------------------
   function esc(str) {
     return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
@@ -276,7 +276,7 @@
   render();
 })();
 
-/* ── admin/all_submissions.php + admin/submissions.php: submission-preview modal ── */
+/* -- admin/all_submissions.php + admin/submissions.php: submission-preview modal -- */
 /* Identical markup/behavior on both pages (never loaded simultaneously), one shared handler. */
 (function () {
   var overlay = document.getElementById('vtx-sub-modal');

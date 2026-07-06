@@ -1,4 +1,4 @@
-/* ── front/single.php: click-to-load embed (poster -> iframe swap) ── */
+/* -- front/single.php: click-to-load embed (poster -> iframe swap) -- */
 (function () {
     var poster = document.getElementById('videoPoster');
     if (!poster) return;

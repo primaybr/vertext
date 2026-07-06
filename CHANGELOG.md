@@ -13,6 +13,47 @@ backup/restore tooling, security headers on the public site and API (not just ad
 upgrade/troubleshooting docs. Scoped as a public self-host beta, not enterprise-hardened -
 see the eventual release notes for what's explicitly deferred.
 
+## [0.0.9c-alpha] - 2026-07-06
+
+Five more bugs found through manual testing, plus a framework-level fix in the underlying Phuse
+engine (now v1.2.8b).
+
+- **Contact Settings crashed with a PHP parse error on every load** - a malformed method call
+  (`$this->flash('flash' => 'success', ...)`, not valid call syntax) in `ContactSettingsController`.
+- **Media Library's "move file to folder" and Blog's bulk comment moderation (approve/spam/delete)
+  always failed** - both built their `id IN (...)` SQL with mismatched positional/named parameter
+  styles, which PDO rejects. This is also why every folder's file counter always showed 0: no file
+  could ever actually be moved into one. Fixed, and found the identical root cause is itself
+  traceable to a bug in Phuse's query builder - `whereIn()` combined with `update()` or `delete()`
+  silently dropped part of the WHERE clause. Fixed at the framework level (Phuse v1.2.8b) and
+  verified against a live database.
+- **Media's bulk action toolbar was invisible to any role without delete rights** - the entire
+  bulk-select UI (including "Move to folder", which only needs edit rights) was gated behind the
+  delete permission. Each action now shows based on its own required permission.
+- **Members' Account page had a narrower layout than every other front-end page** - its title/header
+  row was never placed in the shared page container, so it sat at a different horizontal position
+  than Search, Videos, Gallery, etc. Also added a site-wide fix for a related but separate visual
+  glitch: short pages without a scrollbar rendered a few pixels wider than tall ones, making the
+  shared header look inconsistent between pages.
+- **Form Builder's field-type buttons rendered with no styling** - their CSS was declared as a
+  front-end asset instead of an admin one, so it was never loaded on the admin page that uses it.
+  Also added the project's missing `.form-select-sm` style (present for `.form-control` but never
+  defined for `.form-select`).
+
+## [0.0.9b-alpha] - 2026-07-06
+
+Two bugs found through manual testing after the 0.0.9 styling/identity pass, both fixed.
+
+- **Blog's reading-list button stopped swapping to a checkmark icon after saving a post** -
+  a regression from replacing its old emoji-based icon with the shared icon set: the module's
+  asset version wasn't bumped, so browsers kept serving the previously-cached script against the
+  new markup. Bumped Blog to `0.0.8` to bust the cache.
+- **Every save on the Videos admin page failed with "Security token invalid"** - the create/edit
+  form's hidden CSRF field referenced a variable name no controller ever provides, so the token
+  was always submitted empty and validation always failed. The identical mismatch was also found
+  and fixed in three Contact module admin views (inbox delete, single-message actions, and the
+  settings form), which had the same bug. Bumped Videos to `0.0.3` and Contact to `0.0.3`.
+
 ## [0.0.9-alpha] - 2026-07-04
 
 Styling and admin identity overhaul, plus one feature addition: a live-preview Theme Customizer.

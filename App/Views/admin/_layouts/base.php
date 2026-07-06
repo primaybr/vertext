@@ -21,7 +21,7 @@
 
 <div class="vtx-wrapper">
 
-  <!-- ── Sidebar ─────────────────────────────────────────── -->
+  <!-- -- Sidebar ------------------------------------------- -->
   <aside id="vtx-sidebar" class="vtx-sidebar">
 
     <a href="{{baseUrl}}/admin/dashboard" class="vtx-sidebar-brand text-decoration-none">
@@ -161,7 +161,7 @@
   </aside>
   <!-- /sidebar -->
 
-  <!-- ── Main ──────────────────────────────────────────────── -->
+  <!-- -- Main ------------------------------------------------ -->
   <div class="vtx-main">
 
     <!-- Top bar -->

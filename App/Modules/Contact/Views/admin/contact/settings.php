@@ -12,7 +12,7 @@
 <div class="card" style="max-width:640px">
     <div class="card-body">
         <form method="POST" action="<?= $baseUrl ?>/admin/contact/settings/save" data-crud-form>
-            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken ?? '') ?>">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
 
             <div class="mb-3">
                 <label class="form-label">Contact Page Path</label>

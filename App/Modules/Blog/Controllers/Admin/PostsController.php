@@ -28,7 +28,7 @@ class PostsController extends BaseController
         parent::__construct();
     }
 
-    // ── List ───────────────────────────────────────────────────────────────────
+    // -- List -------------------------------------------------------------------
 
     public function index(): void
     {
@@ -71,17 +71,18 @@ class PostsController extends BaseController
         $posts = $q->get() ?: [];
 
         $this->adminRender('modules/blog/admin/posts/index', [
-            'posts'   => $posts,
-            'total'   => $total,
-            'page'    => $page,
-            'pages'   => max(1, (int) ceil($total / $perPage)),
-            'search'  => $search,
-            'status'  => $status,
-            'counts'  => $counts,
+            'posts'    => $posts,
+            'total'    => $total,
+            'page'     => $page,
+            'pages'    => max(1, (int) ceil($total / $perPage)),
+            'search'   => $search,
+            'status'   => $status,
+            'counts'   => $counts,
+            'blogBase' => \App\Modules\Blog\Module::basePath(),
         ], 'Blog Posts', 'blog.posts');
     }
 
-    // ── Create form (modal partial) ────────────────────────────────────────────
+    // -- Create form (modal partial) --------------------------------------------
 
     public function createForm(): void
     {
@@ -102,7 +103,7 @@ class PostsController extends BaseController
         ]);
     }
 
-    // ── Store ──────────────────────────────────────────────────────────────────
+    // -- Store ------------------------------------------------------------------
 
     public function store(): void
     {
@@ -174,7 +175,7 @@ class PostsController extends BaseController
         $this->json(['success' => true, 'message' => "Post \"{$title}\" created."]);
     }
 
-    // ── Edit form (modal partial) ──────────────────────────────────────────────
+    // -- Edit form (modal partial) ----------------------------------------------
 
     public function editForm(string $id): void
     {
@@ -222,7 +223,7 @@ class PostsController extends BaseController
         ]);
     }
 
-    // ── Update ─────────────────────────────────────────────────────────────────
+    // -- Update -----------------------------------------------------------------
 
     public function update(string $id): void
     {
@@ -310,7 +311,7 @@ class PostsController extends BaseController
         $this->json($response);
     }
 
-    // ── Delete ─────────────────────────────────────────────────────────────────
+    // -- Delete -----------------------------------------------------------------
 
     public function delete(string $id): void
     {
@@ -327,7 +328,7 @@ class PostsController extends BaseController
         $this->json(['success' => true, 'message' => 'Post moved to trash.']);
     }
 
-    // ── Bulk ───────────────────────────────────────────────────────────────────
+    // -- Bulk -------------------------------------------------------------------
 
     public function bulk(): void
     {
@@ -369,7 +370,7 @@ class PostsController extends BaseController
         $this->json(['success' => true, 'message' => 'Bulk action applied.']);
     }
 
-    // ── Revisions ──────────────────────────────────────────────────────────────
+    // -- Revisions --------------------------------------------------------------
 
     private function ensureRevisionsTable(): void
     {
@@ -528,7 +529,7 @@ class PostsController extends BaseController
         }
     }
 
-    // ── Helpers ────────────────────────────────────────────────────────────────
+    // -- Helpers ----------------------------------------------------------------
 
     private function syncCategories(string $postId, array $categoryIds): void
     {

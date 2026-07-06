@@ -6,7 +6,7 @@
  * to protect routes and check permissions in Vertext.
  */
 
-// ── Checking authentication ───────────────────────────────────────────────────
+// -- Checking authentication ---------------------------------------------------
 
 use App\CMS\Auth;
 
@@ -26,7 +26,7 @@ echo $user->id;     // int
 // Get just the ID
 $userId = Auth::id();
 
-// ── Checking permissions ──────────────────────────────────────────────────────
+// -- Checking permissions ------------------------------------------------------
 
 // Returns bool - reads from session (no DB query)
 if (Auth::can('posts.publish')) {
@@ -38,7 +38,7 @@ if (Auth::hasRole('administrator')) {
     echo 'Full access granted';
 }
 
-// ── In a Controller (recommended approach) ────────────────────────────────────
+// -- In a Controller (recommended approach) ------------------------------------
 
 /*
 class PostsController extends BaseController
@@ -90,7 +90,7 @@ class PostsController extends BaseController
 }
 */
 
-// ── Protecting a public route ─────────────────────────────────────────────────
+// -- Protecting a public route -------------------------------------------------
 
 /*
 class ProfileController extends BaseController
@@ -106,7 +106,7 @@ class ProfileController extends BaseController
 }
 */
 
-// ── Logout ────────────────────────────────────────────────────────────────────
+// -- Logout --------------------------------------------------------------------
 
 // Auth::logout() destroys the session and redirects to /admin/login
 // It is called by Admin\AuthController::processLogout() - you don't need to call it directly

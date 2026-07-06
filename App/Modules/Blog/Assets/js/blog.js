@@ -85,7 +85,7 @@
     };
 }());
 
-/* ── admin/posts/_revision_diff.php: restore-revision confirm ── */
+/* -- admin/posts/_revision_diff.php: restore-revision confirm -- */
 /* Modal-loaded content, so bind via the 'vtx:modal:loaded' event admin.js
    dispatches after each AJAX modal load, rather than a one-time getElementById. */
 document.addEventListener('vtx:modal:loaded', function (e) {
@@ -121,7 +121,7 @@ document.addEventListener('vtx:modal:loaded', function (e) {
     });
 });
 
-/* ── admin/posts/revisions.php: generic confirm-modal delegated handler ── */
+/* -- admin/posts/revisions.php: generic confirm-modal delegated handler -- */
 /* Full top-level page, plain document-level delegation is sufficient. */
 document.addEventListener('click', function (e) {
     var btn = e.target.closest('[data-confirm-form][data-confirm-ajax="true"]');
@@ -145,7 +145,7 @@ document.addEventListener('click', function (e) {
     });
 });
 
-/* ── admin/posts/_form.php: slug, featured-image remove, char counters, editor/tags/media-picker init ── */
+/* -- admin/posts/_form.php: slug, featured-image remove, char counters, editor/tags/media-picker init -- */
 /* Modal-loaded content, re-runs each time via 'vtx:modal:loaded'. */
 document.addEventListener('vtx:modal:loaded', function (e) {
     var body = e.detail.body;
@@ -211,7 +211,7 @@ document.addEventListener('vtx:modal:loaded', function (e) {
     });
 });
 
-/* ── admin/series/_form.php: auto-slug + order-input enable/disable ── */
+/* -- admin/series/_form.php: auto-slug + order-input enable/disable -- */
 /* Modal-loaded content, re-runs each time via 'vtx:modal:loaded'. */
 document.addEventListener('vtx:modal:loaded', function (e) {
     var body    = e.detail.body;
@@ -234,7 +234,7 @@ document.addEventListener('vtx:modal:loaded', function (e) {
     });
 });
 
-/* ── admin/settings/index.php: base-path change warning banner ── */
+/* -- admin/settings/index.php: base-path change warning banner -- */
 (function () {
     var pathInput    = document.getElementById('blog_base_path');
     var warning      = document.getElementById('blog-path-seo-warning');
@@ -254,7 +254,7 @@ document.addEventListener('vtx:modal:loaded', function (e) {
     pathInput.addEventListener('input', checkChange);
 })();
 
-/* ── admin/setup/index.php: live URL-preview updater ── */
+/* -- admin/setup/index.php: live URL-preview updater -- */
 (function () {
     var input   = document.getElementById('blog_base_path');
     var preview = document.getElementById('path-preview-val');

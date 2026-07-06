@@ -1,7 +1,7 @@
 {
     "name": "Forms Builder",
     "slug": "forms",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "description": "Drag-and-drop form builder with submission inbox and CSV export",
     "author": "Vertext",
     "category": "Communication",
@@ -22,7 +22,8 @@
         "css": ["forms.css"],
         "js":  ["forms.js"],
         "admin": {
-            "js": ["forms-admin.js"]
+            "css": ["forms-admin.css"],
+            "js":  ["forms-admin.js"]
         }
     }
 }

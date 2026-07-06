@@ -7,7 +7,7 @@
     </div>
     <div class="d-flex gap-2" id="contactItemActions"
          data-id="<?= htmlspecialchars((string) $item['id']) ?>"
-         data-csrf="<?= htmlspecialchars($csrfToken ?? '') ?>"
+         data-csrf="<?= htmlspecialchars($csrf_token ?? '') ?>"
          data-base-url="<?= htmlspecialchars($baseUrl) ?>">
         <?php if ($item['status'] !== 'spam'): ?>
             <button type="button" class="btn btn-outline-warning" id="btnSpam">Mark Spam</button>

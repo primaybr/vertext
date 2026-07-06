@@ -24,7 +24,7 @@ class I18n
 
     private const FALLBACK = 'en';
 
-    // ── Locale management ─────────────────────────────────────────────────────
+    // -- Locale management -----------------------------------------------------
 
     public static function setLocale(string $locale): void
     {
@@ -68,7 +68,7 @@ class I18n
         return $locales;
     }
 
-    // ── Translation lookup ────────────────────────────────────────────────────
+    // -- Translation lookup ----------------------------------------------------
 
     /**
      * Resolve a translation key. Returns the key itself as fallback.
@@ -98,7 +98,7 @@ class I18n
         return $text;
     }
 
-    // ── Date formatting ───────────────────────────────────────────────────────
+    // -- Date formatting -------------------------------------------------------
 
     /**
      * Format a timestamp in the current locale.
@@ -138,7 +138,7 @@ class I18n
         return date($formats[$format] ?? 'd M Y', $timestamp);
     }
 
-    // ── Schema migration ──────────────────────────────────────────────────────
+    // -- Schema migration ------------------------------------------------------
 
     /**
      * Add lang column to pages and posts tables, seed default_locale setting.
@@ -186,7 +186,7 @@ class I18n
         }
     }
 
-    // ── Private helpers ───────────────────────────────────────────────────────
+    // -- Private helpers -------------------------------------------------------
 
     private static function langDir(): string
     {

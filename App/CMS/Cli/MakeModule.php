@@ -20,7 +20,7 @@ final class MakeModule
 {
     public static function run(string $name): never
     {
-        // ── Validate ──────────────────────────────────────────────────────────
+        // -- Validate ----------------------------------------------------------
         if (!preg_match('/^[A-Z][a-zA-Z0-9]+$/', $name)) {
             self::error(
                 "Module name must be PascalCase and at least 2 characters.\n" .
@@ -36,7 +36,7 @@ final class MakeModule
             self::error("Module already exists at App/Modules/{$name}/");
         }
 
-        // ── Create directories ────────────────────────────────────────────────
+        // -- Create directories ------------------------------------------------
         $dirs = [
             $destDir,
             "{$destDir}/Controllers/Admin",
@@ -51,14 +51,14 @@ final class MakeModule
             }
         }
 
-        // ── Write files ───────────────────────────────────────────────────────
+        // -- Write files -------------------------------------------------------
         self::write("{$destDir}/module.json",           self::moduleJson($name, $slug));
         self::write("{$destDir}/Module.php",            self::modulePHP($name, $slug));
         self::write("{$destDir}/Controllers/Admin/{$name}Controller.php", self::controller($name, $slug));
         self::write("{$destDir}/Views/admin/index.php", self::adminIndexView($name, $slug));
         self::write("{$destDir}/Assets/{$slug}.css",    self::css($slug));
 
-        // ── Report ────────────────────────────────────────────────────────────
+        // -- Report ------------------------------------------------------------
         self::out("\033[32mModule scaffolded:\033[0m {$name} ({$slug})\n");
         $files = [
             "App/Modules/{$name}/module.json",
@@ -80,7 +80,7 @@ final class MakeModule
         exit(0);
     }
 
-    // ── Templates ─────────────────────────────────────────────────────────────
+    // -- Templates -------------------------------------------------------------
 
     private static function moduleJson(string $name, string $slug): string
     {
@@ -245,7 +245,7 @@ HTML;
         return "/* {$slug} module styles */\n";
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
+    // -- Helpers ---------------------------------------------------------------
 
     /** PascalCase → kebab-case: ThemeCustomizer → theme-customizer */
     private static function toSlug(string $name): string

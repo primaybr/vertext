@@ -23,7 +23,7 @@ class AccountController extends Controller
         parent::__construct();
     }
 
-    // ── Registration ───────────────────────────────────────────────────────────
+    // -- Registration -----------------------------------------------------------
 
     /** GET /account/register */
     public function registerForm(): void
@@ -149,7 +149,7 @@ class AccountController extends Controller
         $this->redirect($this->baseUrl . '/account/login');
     }
 
-    // ── Login / logout ─────────────────────────────────────────────────────────
+    // -- Login / logout ---------------------------------------------------------
 
     /** GET /account/login */
     public function loginForm(): void
@@ -229,7 +229,7 @@ class AccountController extends Controller
         $this->redirect($this->baseUrl . '/account/login');
     }
 
-    // ── Profile ────────────────────────────────────────────────────────────────
+    // -- Profile ----------------------------------------------------------------
 
     /** GET /account */
     public function profile(): void
@@ -307,7 +307,7 @@ class AccountController extends Controller
         $this->redirect($this->baseUrl . '/account');
     }
 
-    // ── Internal ───────────────────────────────────────────────────────────────
+    // -- Internal ---------------------------------------------------------------
 
     private function requireVerification(): bool
     {

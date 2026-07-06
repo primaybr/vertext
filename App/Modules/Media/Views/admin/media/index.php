@@ -97,7 +97,11 @@
   </div>
 </div>
 
-<?php if (\App\CMS\Auth::can('media.delete')): ?>
+<?php
+$canBulkMove   = \App\CMS\Auth::can('media.edit');
+$canBulkDelete = \App\CMS\Auth::can('media.delete');
+?>
+<?php if ($canBulkMove || $canBulkDelete): ?>
 <!-- Hidden bulk form -->
 <form id="vtx-media-bulk-form" method="POST" action="{{baseUrl}}/admin/media/bulk" style="display:none;">
   <input type="hidden" name="csrf_token" value="{{csrf_token}}">
@@ -112,6 +116,7 @@
       <span id="vtx-media-bulk-count">0 selected</span>
     </label>
     <div style="margin-left:auto;display:flex;gap:.5rem;align-items:center;">
+      <?php if ($canBulkMove): ?>
       <select class="form-select form-select-sm" id="vtx-media-move-target" style="width:auto;">
         <option value="">Move to…</option>
         <option value="unfiled">Unfiled</option>
@@ -122,9 +127,12 @@
       <button type="button" class="btn btn-outline-secondary btn-sm" id="vtx-media-bulk-move">
         <i class="pi pi-arrow-right me-1"></i> Move
       </button>
+      <?php endif; ?>
+      <?php if ($canBulkDelete): ?>
       <button type="button" class="btn btn-danger btn-sm" id="vtx-media-bulk-delete">
         <i class="pi pi-trash me-1"></i> Delete Selected
       </button>
+      <?php endif; ?>
     </div>
   </div>
 </div>
@@ -143,7 +151,7 @@
     <div class="vtx-media-grid" id="vtx-media-grid">
       <?php foreach ($files as $f): ?>
       <div class="vtx-media-card" data-id="<?php echo $f['id']; ?>">
-        <?php if (\App\CMS\Auth::can('media.delete')): ?>
+        <?php if ($canBulkMove || $canBulkDelete): ?>
         <input type="checkbox" class="vtx-media-card-check" value="<?php echo $f['id']; ?>" title="Select">
         <?php endif; ?>
         <div class="vtx-media-thumb">
@@ -204,7 +212,7 @@
       <?php
       $from = (($page - 1) * 24) + 1;
       $to   = min($page * 24, $total);
-      echo "Showing {$from}–{$to} of {$total} files";
+      echo "Showing {$from}-{$to} of {$total} files";
       ?>
     </span>
     <div style="display:flex;gap:.25rem;">

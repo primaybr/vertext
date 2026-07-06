@@ -1,7 +1,7 @@
 {
     "name":        "Contact",
     "slug":        "contact",
-    "version":     "0.0.2",
+    "version":     "0.0.4",
     "description": "Public contact form with admin inbox and email notifications",
     "author":      "Vertext",
     "category":    "Communication",

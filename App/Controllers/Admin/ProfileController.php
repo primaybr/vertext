@@ -22,7 +22,7 @@ class ProfileController extends BaseController
         parent::__construct();
     }
 
-    // ── Account ───────────────────────────────────────────────────────────────
+    // -- Account ---------------------------------------------------------------
 
     /** GET /admin/profile */
     public function index(): void
@@ -132,7 +132,7 @@ class ProfileController extends BaseController
         $this->redirect($this->baseUrl . '/admin/profile');
     }
 
-    // ── Active sessions ────────────────────────────────────────────────────────
+    // -- Active sessions --------------------------------------------------------
 
     /** POST /admin/profile/sessions/{id}/revoke - revoke ONE of my own sessions */
     public function revokeSession(string $id): void
@@ -169,7 +169,7 @@ class ProfileController extends BaseController
         $this->redirect($this->baseUrl . '/admin/profile');
     }
 
-    // ── Two-Factor Authentication ──────────────────────────────────────────────
+    // -- Two-Factor Authentication ----------------------------------------------
 
     /** GET /admin/profile/2fa */
     public function twofa(): void

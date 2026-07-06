@@ -3,7 +3,7 @@
    shared admin.css design system. Organized by page, each section header
    names the view file it was extracted from. */
 
-/* ── admin/settings/index.php: maintenance-mode pill toggle ── */
+/* -- admin/settings/index.php: maintenance-mode pill toggle -- */
 .vtx-pill-toggle {
   width:44px;height:24px;border-radius:12px;
   background:var(--ps-border,#ccc);
@@ -27,7 +27,7 @@
 }
 .vtx-pill-toggle--on .vtx-pill-toggle__knob { transform:translateX(20px); }
 
-/* ── admin/modules/bundle_form.php: breadcrumb, module-row, checkbox styling ── */
+/* -- admin/modules/bundle_form.php: breadcrumb, module-row, checkbox styling -- */
 .vtx-breadcrumb { font-size:.8125rem;color:var(--ps-text-muted);text-decoration:none; }
 .vtx-breadcrumb:hover { color:var(--ps-accent); }
 .bf-mod-row { display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:.4rem .625rem;border-radius:5px;border:1px solid var(--ps-border);background:var(--ps-bg-subtle); }
@@ -39,12 +39,12 @@
 .bf-req-label input[type="checkbox"] { accent-color:var(--ps-primary);width:13px;height:13px; }
 .bf-req-hidden { opacity:0;pointer-events:none; }
 
-/* ══════════════════════════════════════════════════════════════════════ */
+/* ---------------------------------------------------------------------- */
 /* admin/modules/index.php: Module Manager (tabs, bundle cards, module     */
 /* cards, install-modal checklist/progress)                                */
-/* ══════════════════════════════════════════════════════════════════════ */
+/* ---------------------------------------------------------------------- */
 
-/* ── Tab switcher ──────────────────────────────────────────────────────── */
+/* -- Tab switcher -------------------------------------------------------- */
 .vtx-mod-tabs {
   display: flex;
   gap: .25rem;
@@ -73,7 +73,7 @@
   background: var(--ps-primary-light, rgba(79,70,229,.06));
 }
 
-/* ── Bundle cards ──────────────────────────────────────────────────────── */
+/* -- Bundle cards -------------------------------------------------------- */
 .vtx-bundle-card {
   border: 1px solid var(--ps-border);
   border-radius: 10px;
@@ -146,7 +146,7 @@
   font-size: .6875rem;
 }
 
-/* ── Module cards (a la carte tab) ────────────────────────────────────── */
+/* -- Module cards (a la carte tab) -------------------------------------- */
 .vtx-module-card {
   border: 1px solid var(--ps-border);
   border-radius: 8px;
@@ -204,7 +204,7 @@
   flex-wrap: wrap;
 }
 
-/* ── Bundle modal checklist item ───────────────────────────────────────── */
+/* -- Bundle modal checklist item ----------------------------------------- */
 .vtx-bundle-check-item {
   display: flex;
   align-items: center;
@@ -231,7 +231,7 @@
   gap: .25rem;
 }
 
-/* ── Bundle progress item ──────────────────────────────────────────────── */
+/* -- Bundle progress item ------------------------------------------------ */
 .vtx-bundle-progress-item {
   display: flex;
   align-items: center;

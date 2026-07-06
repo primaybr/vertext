@@ -1,4 +1,4 @@
-/* ── front/preview-demo.php: live-preview demo hero/cards/buttons markup ── */
+/* -- front/preview-demo.php: live-preview demo hero/cards/buttons markup -- */
 .tc-demo-hero { padding: 3rem 0 2.5rem; }
 .tc-demo-hero h1 { font-size: 2.25rem; margin: 0 0 .75rem; }
 .tc-demo-hero p { font-size: 1.0625rem; color: var(--clr-muted); max-width: 46ch; margin: 0 0 1.5rem; }

@@ -11,7 +11,7 @@
 <body>
   <div class="container py-5">
 
-    {# ── Hero ────────────────────────────────────────────────────────────── #}
+    {# -- Hero -------------------------------------------------------------- #}
     <div class="card mb-5">
       <div class="card-body text-center py-5 px-4">
         <div class="mb-3">
@@ -35,7 +35,7 @@
       </div>
     </div>
 
-    {# ── Feature cards ─────────────────────────────────────────────────── #}
+    {# -- Feature cards --------------------------------------------------- #}
     <h6 class="text-muted text-uppercase fw-semibold mb-3 ls-wide">Core Features</h6>
     <div class="row g-3 mb-5">
       {% foreach features as feature %}
@@ -51,7 +51,7 @@
       {% endforeach %}
     </div>
 
-    {# ── Quick-start snippets ──────────────────────────────────────────── #}
+    {# -- Quick-start snippets -------------------------------------------- #}
     <h6 class="text-muted text-uppercase fw-semibold mb-3 ls-wide">Quick Start</h6>
 
     <div class="card mb-3">
@@ -98,7 +98,7 @@ class Hello extends Controller {
       </div>
     </div>
 
-    {# ── Try it out ──────────────────────────────────────────────────────── #}
+    {# -- Try it out -------------------------------------------------------- #}
     <h6 class="text-muted text-uppercase fw-semibold mb-3 ls-wide">Try it Out</h6>
     <div class="row g-2 mb-5">
       {% foreach examples as example %}
@@ -111,7 +111,7 @@ class Hello extends Controller {
       {% endforeach %}
     </div>
 
-    {# ── Footer ──────────────────────────────────────────────────────────── #}
+    {# -- Footer ------------------------------------------------------------ #}
     <div class="text-center text-secondary small py-3 border-top">
       Phuse Framework &copy; {{date}} &nbsp;&middot;&nbsp;
       MIT License &nbsp;&middot;&nbsp;

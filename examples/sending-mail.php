@@ -8,7 +8,7 @@
  * Configure mail settings in Admin → Settings → Mail before sending.
  */
 
-// ── 1. Simple email ───────────────────────────────────────────────────────────
+// -- 1. Simple email -----------------------------------------------------------
 /*
 use App\Mail\Mailer;
 use App\Mail\MailMessage;
@@ -25,7 +25,7 @@ if (!$mailer->send($message)) {
 }
 */
 
-// ── 2. Using a template ───────────────────────────────────────────────────────
+// -- 2. Using a template -------------------------------------------------------
 /*
 use App\Mail\Mailer;
 use App\Mail\MailMessage;
@@ -47,7 +47,7 @@ $message = (new MailMessage())
 Mailer::make()->send($message);
 */
 
-// ── 3. Sending from inside a controller (non-fatal pattern) ───────────────────
+// -- 3. Sending from inside a controller (non-fatal pattern) -------------------
 /*
 namespace App\Modules\MyModule\Controllers\Admin;
 
@@ -82,7 +82,7 @@ class MyController extends BaseController
 }
 */
 
-// ── 4. Custom template ────────────────────────────────────────────────────────
+// -- 4. Custom template --------------------------------------------------------
 /*
 // Create: App/Mail/Templates/order_confirmation.php
 

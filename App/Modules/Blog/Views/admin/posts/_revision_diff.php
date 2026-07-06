@@ -120,7 +120,7 @@ $bodyChanged = $bodyDiff !== '';
         <?php elseif ($f['rev'] !== ''): ?>
           <?php echo htmlspecialchars($f['rev']); ?>
         <?php else: ?>
-          <span style="color:var(--ps-text-muted);font-style:italic;font-size:.8125rem;">—</span>
+          <span style="color:var(--ps-text-muted);font-style:italic;font-size:.8125rem;">-</span>
         <?php endif; ?>
       </span>
       <span style="word-break:break-word;">
@@ -129,7 +129,7 @@ $bodyChanged = $bodyDiff !== '';
         <?php elseif ($f['cur'] !== ''): ?>
           <?php echo htmlspecialchars($f['cur']); ?>
         <?php else: ?>
-          <span style="color:var(--ps-text-muted);font-style:italic;font-size:.8125rem;">—</span>
+          <span style="color:var(--ps-text-muted);font-style:italic;font-size:.8125rem;">-</span>
         <?php endif; ?>
         <?php if (!empty($f['note']) && $changed): ?>
         <div style="font-size:.75rem;color:var(--ps-text-muted);margin-top:.25rem;"><?php echo htmlspecialchars($f['note']); ?></div>

@@ -28,7 +28,7 @@ $uri          = $setup_uri     ?? '';
   <div class="col-lg-7 col-xl-6">
 
     <?php if ($enabled && !$setupPending): ?>
-    <!-- ── 2FA is ON ─────────────────────────────────────────────────────── -->
+    <!-- -- 2FA is ON ------------------------------------------------------- -->
     <div class="vtx-panel mb-4">
       <div class="vtx-panel-head" style="display:flex;align-items:center;gap:.75rem;">
         <span style="width:32px;height:32px;border-radius:50%;background:var(--ps-success-bg,#d1fae5);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
@@ -77,7 +77,7 @@ $uri          = $setup_uri     ?? '';
     </div>
 
     <?php elseif ($setupPending): ?>
-    <!-- ── Setup in progress ─────────────────────────────────────────────── -->
+    <!-- -- Setup in progress ----------------------------------------------- -->
     <div class="vtx-panel mb-4">
       <div class="vtx-panel-head">
         <h2 class="vtx-panel-title">Step 1 - Add to your authenticator app</h2>
@@ -144,7 +144,7 @@ $uri          = $setup_uri     ?? '';
     </div>
 
     <?php else: ?>
-    <!-- ── 2FA is OFF ─────────────────────────────────────────────────────── -->
+    <!-- -- 2FA is OFF ------------------------------------------------------- -->
     <div class="vtx-panel mb-4">
       <div class="vtx-panel-head" style="display:flex;align-items:center;gap:.75rem;">
         <span style="width:32px;height:32px;border-radius:50%;background:var(--ps-warning-bg,#fef3c7);display:flex;align-items:center;justify-content:center;flex-shrink:0;">

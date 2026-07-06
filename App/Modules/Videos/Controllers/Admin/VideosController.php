@@ -148,7 +148,7 @@ class VideosController extends BaseController
         $this->json(['success' => true, 'message' => 'Video deleted.']);
     }
 
-    // ── Helpers ──────────────────────────────────────────────────────────────
+    // -- Helpers --------------------------------------------------------------
 
     private function collectInput(): array
     {

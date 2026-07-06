@@ -1,3 +1,7 @@
+<?php
+$rawBlogBase = trim($settings['blog_base_path'] ?? 'blog', '/');
+$blogBase    = $rawBlogBase === '' ? '' : '/' . $rawBlogBase;
+?>
 <div class="container blog-index">
   <div class="blog-page-header">
     <h1><?php echo htmlspecialchars($settings['blog_title'] ?? 'Blog'); ?></h1>
@@ -15,7 +19,7 @@
     <?php foreach ($posts as $post): ?>
     <li class="post-item">
       <h2 class="post-title">
-        <a href="<?php echo $baseUrl; ?>/blog/<?php echo htmlspecialchars($post['slug']); ?>">
+        <a href="<?php echo $baseUrl . $blogBase; ?>/<?php echo htmlspecialchars($post['slug']); ?>">
           <?php echo htmlspecialchars($post['title']); ?>
         </a>
       </h2>
@@ -36,12 +40,12 @@
       <?php if (!empty($post['categories'])): ?>
       <div class="post-cats">
         <?php foreach ($post['categories'] as $cat): ?>
-        <a href="<?php echo $baseUrl; ?>/blog/category/<?php echo htmlspecialchars($cat['slug']); ?>"
+        <a href="<?php echo $baseUrl . $blogBase; ?>/category/<?php echo htmlspecialchars($cat['slug']); ?>"
            class="post-cat"><?php echo htmlspecialchars($cat['name']); ?></a>
         <?php endforeach; ?>
       </div>
       <?php endif; ?>
-      <p><a href="<?php echo $baseUrl; ?>/blog/<?php echo htmlspecialchars($post['slug']); ?>" class="read-more">Read more &rarr;</a></p>
+      <p><a href="<?php echo $baseUrl . $blogBase; ?>/<?php echo htmlspecialchars($post['slug']); ?>" class="read-more">Read more &rarr;</a></p>
     </li>
     <?php endforeach; ?>
   </ul>
@@ -52,7 +56,7 @@
     <?php if ($i === ($page ?? 1)): ?>
     <span class="current"><?php echo $i; ?></span>
     <?php else: ?>
-    <a href="<?php echo $baseUrl; ?>/blog?page=<?php echo $i; ?>"><?php echo $i; ?></a>
+    <a href="<?php echo $baseUrl . ($blogBase !== '' ? $blogBase : '/'); ?>?page=<?php echo $i; ?>"><?php echo $i; ?></a>
     <?php endif; ?>
     <?php endfor; ?>
   </nav>

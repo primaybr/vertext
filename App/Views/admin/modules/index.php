@@ -12,7 +12,7 @@
 </div>
 <?php endif; ?>
 
-<!-- ── Tab Navigation ────────────────────────────────────────────────────── -->
+<!-- -- Tab Navigation ------------------------------------------------------ -->
 <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem;">
   <div class="vtx-mod-tabs">
     <button type="button" class="vtx-mod-tab active" data-tab="packages">
@@ -30,9 +30,9 @@
   </button>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- ----------------------------------------------------------------------- -->
 <!-- TAB: PACKAGES                                                           -->
-<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- ----------------------------------------------------------------------- -->
 <div id="tab-packages">
 
 <?php if (empty($bundles)): ?>
@@ -124,12 +124,12 @@
 
 </div><!-- /tab-packages -->
 
-<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- ----------------------------------------------------------------------- -->
 <!-- TAB: MODULES (a la carte)                                               -->
-<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- ----------------------------------------------------------------------- -->
 <div id="tab-modules" style="display:none;">
 
-<!-- ── System Modules ───────────────────────────────────────────────────── -->
+<!-- -- System Modules ----------------------------------------------------- -->
 <div class="vtx-panel mb-4" id="system-section">
   <div class="vtx-panel-head" style="cursor:pointer;user-select:none;" id="system-section-toggle">
     <h2 class="vtx-panel-title" style="display:flex;align-items:center;gap:.5rem;">
@@ -161,7 +161,7 @@
   </div>
 </div>
 
-<!-- ── Add-on Modules by Category ───────────────────────────────────────── -->
+<!-- -- Add-on Modules by Category ----------------------------------------- -->
 <div id="addons-section">
 <?php if (empty($categories)): ?>
 <div class="vtx-panel">
@@ -300,9 +300,9 @@
 
 </div><!-- /tab-modules -->
 
-<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- ----------------------------------------------------------------------- -->
 <!-- BUNDLE INSTALL MODAL                                                    -->
-<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- ----------------------------------------------------------------------- -->
 <div id="bundle-modal-overlay" data-csrf="{{csrf_token}}" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1050;align-items:center;justify-content:center;">
   <div id="bundle-modal" style="background:var(--ps-bg-base);border-radius:12px;padding:1.5rem;width:100%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,.3);max-height:90vh;overflow-y:auto;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
@@ -375,9 +375,9 @@
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- ----------------------------------------------------------------------- -->
 <!-- MARKETPLACE: INSTALL FROM URL MODAL                                    -->
-<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- ----------------------------------------------------------------------- -->
 <div id="url-modal-overlay" data-csrf="{{csrf_token}}" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1070;align-items:center;justify-content:center;">
   <div id="url-modal" style="background:var(--ps-bg-base);border-radius:12px;padding:1.5rem;width:100%;max-width:500px;box-shadow:0 20px 60px rgba(0,0,0,.3);max-height:90vh;overflow-y:auto;">
 
@@ -425,7 +425,7 @@
         <div id="url-mod-desc" style="font-size:.8125rem;color:var(--ps-text-secondary);margin-bottom:.875rem;"></div>
         <div style="background:var(--ps-bg-subtle);border:1px solid var(--ps-border);border-radius:6px;padding:.625rem .75rem;">
           <div style="font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--ps-text-muted);margin-bottom:.25rem;">
-            SHA-256 Hash — compare with publisher&rsquo;s checksum
+            SHA-256 Hash - compare with publisher&rsquo;s checksum
           </div>
           <code id="url-mod-hash" style="font-size:.75rem;word-break:break-all;display:block;line-height:1.5;"></code>
         </div>

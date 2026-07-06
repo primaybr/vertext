@@ -239,7 +239,7 @@ class SettingsController extends BaseController
         $this->redirect($this->baseUrl . '/admin/settings');
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
+    // -- Helpers ---------------------------------------------------------------
 
     private function ensureMailSettings(): void
     {

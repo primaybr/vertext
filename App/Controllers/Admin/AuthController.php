@@ -124,7 +124,7 @@ class AuthController extends Controller
         $this->redirect($this->baseUrl . '/admin/login');
     }
 
-    // ── Password reset ─────────────────────────────────────────────────────────
+    // -- Password reset ---------------------------------------------------------
 
     /** GET /admin/forgot-password */
     public function forgotPassword(): void
@@ -317,7 +317,7 @@ class AuthController extends Controller
         }
     }
 
-    // ── 2FA verification ──────────────────────────────────────────────────────
+    // -- 2FA verification ------------------------------------------------------
 
     /** GET /admin/login/2fa */
     public function verify2fa(): void
@@ -405,7 +405,7 @@ class AuthController extends Controller
         $this->completePendingLogin();
     }
 
-    // ── Internal ──────────────────────────────────────────────────────────────
+    // -- Internal --------------------------------------------------------------
 
     /**
      * Finish the 2FA flow: call Auth::login() with the pending state, then clear it.

@@ -1,4 +1,4 @@
-/* ── admin/webhooks/index.php: test-webhook button ── */
+/* -- admin/webhooks/index.php: test-webhook button -- */
 function vtxTestWebhook(id) {
     var btn = document.getElementById('test-btn-' + id);
     if (btn) { btn.disabled = true; btn.querySelector('i').className = 'pi pi-spin pi-refresh'; }

@@ -76,7 +76,7 @@ class Module implements ModuleInterface
             try { $db->query("ROLLBACK TO SAVEPOINT sp_pages_users_fk"); $db->execute(); } catch (\Exception) {}
         }
 
-        // ── Content revisions (shared with Blog module) ───────────────────────
+        // -- Content revisions (shared with Blog module) -----------------------
         $db->query("CREATE TABLE IF NOT EXISTS content_revisions (
             id               UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
             content_type     VARCHAR(20)  NOT NULL,

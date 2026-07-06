@@ -1,4 +1,4 @@
-/* ── admin/search/index.php: reindex button ── */
+/* -- admin/search/index.php: reindex button -- */
 document.getElementById('reindex-form') && document.getElementById('reindex-form').addEventListener('submit', function(e) {
   e.preventDefault();
   var btn = document.getElementById('reindex-btn');

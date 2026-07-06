@@ -1,6 +1,10 @@
+<?php
+$rawBlogBase = trim($settings['blog_base_path'] ?? 'blog', '/');
+$blogBase    = $rawBlogBase === '' ? '' : '/' . $rawBlogBase;
+?>
 <div class="container blog-category">
   <nav class="cat-breadcrumb">
-    <a href="<?php echo $baseUrl; ?>/blog"><?php echo htmlspecialchars($settings['blog_title'] ?? 'Blog'); ?></a>
+    <a href="<?php echo $baseUrl . ($blogBase !== '' ? $blogBase : '/'); ?>"><?php echo htmlspecialchars($settings['blog_title'] ?? 'Blog'); ?></a>
     <span class="sep">/</span>
     <span><?php echo htmlspecialchars($category['name']); ?></span>
   </nav>
@@ -21,7 +25,7 @@
     <?php foreach ($posts as $post): ?>
     <li class="post-item">
       <h2 class="post-title">
-        <a href="<?php echo $baseUrl; ?>/blog/<?php echo htmlspecialchars($post['slug']); ?>">
+        <a href="<?php echo $baseUrl . $blogBase; ?>/<?php echo htmlspecialchars($post['slug']); ?>">
           <?php echo htmlspecialchars($post['title']); ?>
         </a>
       </h2>
@@ -36,7 +40,7 @@
       <?php if (!empty($post['excerpt'])): ?>
       <p class="post-excerpt"><?php echo htmlspecialchars($post['excerpt']); ?></p>
       <?php endif; ?>
-      <a href="<?php echo $baseUrl; ?>/blog/<?php echo htmlspecialchars($post['slug']); ?>" class="read-more">Read more &rarr;</a>
+      <a href="<?php echo $baseUrl . $blogBase; ?>/<?php echo htmlspecialchars($post['slug']); ?>" class="read-more">Read more &rarr;</a>
     </li>
     <?php endforeach; ?>
   </ul>

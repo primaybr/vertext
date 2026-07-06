@@ -157,7 +157,8 @@
           <td>
             <div style="display:flex;gap:.25rem;justify-content:flex-end;">
               <?php if ($post['status'] === 'published'): ?>
-              <a href="<?php echo $baseUrl; ?>/blog/<?php echo htmlspecialchars($post['slug'] ?? ''); ?>"
+              <?php $previewBase = !empty($blogBase) ? '/' . trim($blogBase, '/') : ''; ?>
+              <a href="<?php echo $baseUrl . $previewBase; ?>/<?php echo htmlspecialchars($post['slug'] ?? ''); ?>"
                  target="_blank" rel="noopener" class="vtx-icon-btn" title="View on site">
                 <i class="pi pi-external-link"></i>
               </a>

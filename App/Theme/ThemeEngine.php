@@ -22,7 +22,7 @@ class ThemeEngine
 {
     private static string $resolvedTheme = '';
 
-    // ── Public API ─────────────────────────────────────────────────────────────
+    // -- Public API -------------------------------------------------------------
 
     /**
      * Render a front-end view wrapped in the active theme layout.
@@ -164,7 +164,7 @@ class ThemeEngine
         return self::copyAssets($srcDir, $dstDir);
     }
 
-    // ── Internal helpers ───────────────────────────────────────────────────────
+    // -- Internal helpers -------------------------------------------------------
 
     private static function renderView(string $view, array $data): string
     {

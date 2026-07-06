@@ -9,7 +9,7 @@
   <form method="POST" action="{{baseUrl}}/admin/blog/setup/complete">
     <input type="hidden" name="csrf_token" value="{{csrf_token}}">
 
-    <!-- ── Step 1: URL path ─────────────────────────────────────────── -->
+    <!-- -- Step 1: URL path ------------------------------------------- -->
     <div class="vtx-panel-head">
       <span class="vtx-panel-title">
         <span class="vtx-step-badge">1</span> Blog URL Path
@@ -43,7 +43,7 @@
       </div>
     </div>
 
-    <!-- ── Step 2: Blog identity ────────────────────────────────────── -->
+    <!-- -- Step 2: Blog identity -------------------------------------- -->
     <div class="vtx-panel-head" style="border-top:1px solid var(--ps-border);">
       <span class="vtx-panel-title">
         <span class="vtx-step-badge">2</span> Blog Identity
@@ -66,7 +66,7 @@
 
     </div>
 
-    <!-- ── Step 3: Defaults ─────────────────────────────────────────── -->
+    <!-- -- Step 3: Defaults ------------------------------------------- -->
     <div class="vtx-panel-head" style="border-top:1px solid var(--ps-border);">
       <span class="vtx-panel-title">
         <span class="vtx-step-badge">3</span> Defaults
@@ -89,7 +89,7 @@
 
     </div>
 
-    <!-- ── Footer ────────────────────────────────────────────────────── -->
+    <!-- -- Footer ------------------------------------------------------ -->
     <div class="vtx-panel-foot" style="display:flex;align-items:center;justify-content:space-between;gap:.5rem;">
       <a href="{{baseUrl}}/admin/blog" class="btn btn-link text-muted" style="font-size:.875rem;">
         Skip for now
