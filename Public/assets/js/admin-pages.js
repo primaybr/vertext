@@ -586,7 +586,13 @@
       var row = document.createElement('div');
       row.className = 'vtx-bundle-progress-item pending';
       row.id = 'prog-' + slug;
-      row.innerHTML = '<i class="pi pi-circle"></i> <span>' + slug + '</span>';
+      var icon = document.createElement('i');
+      icon.className = 'pi pi-circle';
+      var span = document.createElement('span');
+      span.textContent = slug;
+      row.appendChild(icon);
+      row.appendChild(document.createTextNode(' '));
+      row.appendChild(span);
       progList.appendChild(row);
       items[slug] = row;
     });
