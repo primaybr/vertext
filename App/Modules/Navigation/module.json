@@ -1,11 +1,16 @@
 {
     "name":        "Navigation",
     "slug":        "navigation",
-    "version":     "0.0.2",
+    "version":     "0.0.3",
     "description": "Manage front-end navigation menus",
     "author":      "Vertext",
     "category":    "Navigation",
     "requires":    { "vertext": ">=0.0.1" },
+    "assets": {
+        "admin": {
+            "js": ["navigation-admin.js"]
+        }
+    },
     "nav": {
         "label":      "Navigation",
         "icon":       "pi-bars",

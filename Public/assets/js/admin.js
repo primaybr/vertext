@@ -3,8 +3,22 @@
     'use strict';
 
     /* ── Theme ───────────────────────────────────────────────── */
+    /* Unified storage key (0.0.9) - was 'phuse-theme'; migrate once so
+       existing admins keep their preference. Front-end uses the same
+       'vtx-theme' key, see scripts.js. */
+    function readThemePreference() {
+        var t = localStorage.getItem('vtx-theme');
+        if (t) return t;
+        var legacy = localStorage.getItem('phuse-theme');
+        if (legacy) {
+            localStorage.setItem('vtx-theme', legacy);
+            localStorage.removeItem('phuse-theme');
+        }
+        return legacy;
+    }
+
     function applyTheme() {
-        var t = localStorage.getItem('phuse-theme');
+        var t = readThemePreference();
         if (t) document.documentElement.setAttribute('data-theme', t);
         syncThemeIcon();
     }
@@ -13,7 +27,7 @@
         var cur  = document.documentElement.getAttribute('data-theme') || 'light';
         var next = cur === 'dark' ? 'light' : 'dark';
         document.documentElement.setAttribute('data-theme', next);
-        localStorage.setItem('phuse-theme', next);
+        localStorage.setItem('vtx-theme', next);
         syncThemeIcon();
     }
 
@@ -198,11 +212,13 @@
         var modal   = document.getElementById('vtx-confirm-modal');
         var titleEl = document.getElementById('vtx-confirm-title');
         var msgEl   = document.getElementById('vtx-confirm-message');
+        var inputEl = document.getElementById('vtx-confirm-input');
         var okBtn   = document.getElementById('vtx-modal-confirm');
         if (!modal) { if (typeof opts.onConfirm === 'function') opts.onConfirm(); return; }
 
         if (titleEl) titleEl.textContent = opts.title   || 'Confirm';
         if (msgEl)   msgEl.textContent   = opts.message || 'Are you sure?';
+        if (inputEl) inputEl.style.display = 'none';
         if (okBtn) {
             okBtn.textContent = opts.confirmLabel || 'Confirm';
             okBtn.className   = 'btn btn-sm ' + (opts.confirmClass || 'btn-danger');
@@ -215,6 +231,53 @@
         showBackdrop();
         modal.classList.add('show');
         document.body.style.overflow = 'hidden';
+    };
+
+    /* ── Prompt Modal ─────────────────────────────────────────── */
+    /* Modal-based replacement for window.prompt(). Reuses the confirm
+       modal's markup with its text input shown. opts.onConfirm receives
+       the trimmed input value; empty submissions are rejected with a
+       toast and the modal stays open so the user can retry. */
+    window.vtxPromptModal = function (opts) {
+        var modal   = document.getElementById('vtx-confirm-modal');
+        var titleEl = document.getElementById('vtx-confirm-title');
+        var msgEl   = document.getElementById('vtx-confirm-message');
+        var inputEl = document.getElementById('vtx-confirm-input');
+        var okBtn   = document.getElementById('vtx-modal-confirm');
+        if (!modal || !inputEl) {
+            var v = window.prompt(opts.message || '', opts.value || '');
+            if (v !== null && typeof opts.onConfirm === 'function') opts.onConfirm(v.trim());
+            return;
+        }
+
+        if (titleEl) titleEl.textContent = opts.title   || 'Enter a value';
+        if (msgEl)   msgEl.textContent   = opts.message || '';
+        inputEl.style.display = '';
+        inputEl.value          = opts.value       || '';
+        inputEl.placeholder    = opts.placeholder || '';
+
+        function submit() {
+            var val = inputEl.value.trim();
+            if (!val) {
+                Phuse.toast('This field is required.', 'error');
+                inputEl.focus();
+                return;
+            }
+            window.vtxModalClose();
+            if (typeof opts.onConfirm === 'function') opts.onConfirm(val);
+        }
+
+        if (okBtn) {
+            okBtn.textContent = opts.confirmLabel || 'Save';
+            okBtn.className   = 'btn btn-sm ' + (opts.confirmClass || 'btn-primary');
+            okBtn.onclick     = submit;
+        }
+        inputEl.onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); submit(); } };
+
+        showBackdrop();
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+        setTimeout(function () { inputEl.focus(); inputEl.select(); }, 50);
     };
 
     function initConfirmModal() {
@@ -331,6 +394,7 @@
                 body.innerHTML = html;
                 runScriptsIn(body);
                 initPasswordTogglesIn(body);
+                document.dispatchEvent(new CustomEvent('vtx:modal:loaded', { detail: { body: body } }));
                 // Auto-enhance any [data-vtx-select] elements inside the loaded form
                 if (body.querySelector('[data-vtx-select]')) {
                     Vtx.load(['select'], function () {

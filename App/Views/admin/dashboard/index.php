@@ -14,32 +14,20 @@
 <!-- Stats -->
 <div class="vtx-stats">
   <div class="vtx-stat">
-    <div class="vtx-stat-ico blue"><i class="pi pi-users pi-lg"></i></div>
-    <div>
-      <div class="vtx-stat-val">{{stats.users}}</div>
-      <div class="vtx-stat-lbl">Total Users</div>
-    </div>
+    <div class="vtx-stat-val">{{stats.users}}</div>
+    <div class="vtx-stat-lbl">Total Users</div>
   </div>
   <div class="vtx-stat">
-    <div class="vtx-stat-ico purple"><i class="pi pi-shield pi-lg"></i></div>
-    <div>
-      <div class="vtx-stat-val">{{stats.roles}}</div>
-      <div class="vtx-stat-lbl">Roles</div>
-    </div>
+    <div class="vtx-stat-val">{{stats.roles}}</div>
+    <div class="vtx-stat-lbl">Roles</div>
   </div>
   <div class="vtx-stat">
-    <div class="vtx-stat-ico green"><i class="pi pi-layers pi-lg"></i></div>
-    <div>
-      <div class="vtx-stat-val">{{stats.modules}}</div>
-      <div class="vtx-stat-lbl">Active Modules</div>
-    </div>
+    <div class="vtx-stat-val">{{stats.modules}}</div>
+    <div class="vtx-stat-lbl">Active Modules</div>
   </div>
   <div class="vtx-stat">
-    <div class="vtx-stat-ico teal"><i class="pi pi-settings pi-lg"></i></div>
-    <div>
-      <div class="vtx-stat-val">{{stats.settings}}</div>
-      <div class="vtx-stat-lbl">Settings</div>
-    </div>
+    <div class="vtx-stat-val">{{stats.settings}}</div>
+    <div class="vtx-stat-lbl">Settings</div>
   </div>
 </div>
 

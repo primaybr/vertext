@@ -46,7 +46,7 @@
   </div>
 </div>
 
-<form id="tr-form">
+<form id="tr-form" data-csrf="{{csrf_token}}" data-locale="<?php echo htmlspecialchars($locale); ?>" data-group="<?php echo htmlspecialchars($group); ?>">
   <div class="vtx-panel">
     <?php if (empty($keys)): ?>
     <div class="vtx-empty">
@@ -89,25 +89,3 @@
     <?php endif; ?>
   </div>
 </form>
-
-<script>
-(function () {
-  'use strict';
-  var form = document.getElementById('tr-form');
-  if (form) {
-    form.addEventListener('submit', function (e) {
-      e.preventDefault();
-      var fd = new FormData(form);
-      fd.append('csrf_token', '{{csrf_token}}');
-      fd.append('locale', <?php echo json_encode($locale); ?>);
-      fd.append('group', <?php echo json_encode($group); ?>);
-      fetch(window.VTX_BASE_URL + '/admin/translations/save', {
-        method: 'POST', body: fd, headers: { 'X-Requested-With': 'XMLHttpRequest' }
-      })
-      .then(function (r) { return r.json(); })
-      .then(function (res) { Phuse.toast(res.message || (res.success ? 'Saved.' : 'Failed.'), res.success ? 'success' : 'error'); })
-      .catch(function () { Phuse.toast('Network error.', 'error'); });
-    });
-  }
-})();
-</script>

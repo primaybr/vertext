@@ -1,7 +1,7 @@
 {
     "name":        "Search",
     "slug":        "search",
-    "version":     "0.0.1",
+    "version":     "0.0.2",
     "description": "Full-text search across Pages and Blog posts with a public /search endpoint and admin reindex.",
     "author":      "Vertext",
     "category":    "Content",
@@ -15,5 +15,11 @@
         "path":       "/admin/search",
         "active":     "search",
         "permission": "search.manage"
+    },
+    "assets": {
+        "css": ["search-front.css"],
+        "admin": {
+            "js": ["search-admin.js"]
+        }
     }
 }

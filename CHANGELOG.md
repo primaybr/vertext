@@ -5,6 +5,203 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Upcoming] - 0.1.0
+
+Production-readiness beta: safe defaults on install (`env` flips to `production`), CI +
+runnable test suite, feature test coverage for CMS modules, a general migration system,
+backup/restore tooling, security headers on the public site and API (not just admin), and
+upgrade/troubleshooting docs. Scoped as a public self-host beta, not enterprise-hardened -
+see the eventual release notes for what's explicitly deferred.
+
+## [0.0.9-alpha] - 2026-07-04
+
+Styling and admin identity overhaul, plus one feature addition: a live-preview Theme Customizer.
+Also includes a follow-up codebase-wide audit (2026-07-04): zero inline `<style>`/`<script>` blocks
+remain in any view file (system, theme, or module), plus a new framework capability and several
+real bugs found along the way.
+
+### Inline CSS/JS Extraction
+
+- Audited every view file under `App/Views/`, `App/Modules/*/Views/`, and `App/Themes/*/layout.php`.
+  Extracted all inline CSS into per-page/per-module `.css` files and all inline JS into `.js` files -
+  15 modules (Blog, Contact, Events, Forms, Gallery, Members, Newsletter, Pages, Search,
+  ThemeCustomizer, Videos, Analytics, Media, Navigation, Webhooks) plus system admin views
+  (`api_keys`, `roles`, `settings`, `themes`, `translations`, `profile`, `modules`) and the
+  655-line Module Manager install wizard.
+- **New: `ModuleLoader::frontAssets()`** - modules can now declare front-end CSS/JS in `module.json`
+  (top-level `assets.css`/`assets.js`, sibling to the existing admin-only `assets.admin.*`), injected
+  into all four bundled theme layouts. This didn't exist before - front-end module views had no
+  choice but to inline their CSS, which is what most of them were doing.
+- **New: `vtx:modal:loaded` event** - `admin.js`'s CRUD modal loader now dispatches this on
+  `document` (with `event.detail.body`) after injecting AJAX-fetched form HTML, so externalized
+  scripts that need to re-initialize a component (a rich-text editor, a slug generator) on every
+  modal open can listen for it instead of relying on inline `<script>` re-execution.
+- **Deduplicated 10 copies of the theme-init FOUC-prevention script** into one shared partial,
+  `App/Views/_shared/theme-init.php`, `<?php include ?>`'d by every layout. Kept inline deliberately
+  (an external file would reintroduce the flash-of-wrong-theme it exists to prevent) - centralizing
+  the source fixed a real staleness bug where `default/landing.php` and `default/welcome.php` still
+  read the pre-0.0.9 `phuse-theme` key with no migration to `vtx-theme`.
+- Two narrow, deliberate exceptions remain, both documented in code: `App/Views/maintenance.php`'s
+  CSS (fires too early in the request lifecycle for a reliable base URL, and a 503 page needs zero
+  external dependencies) and `Media/Views/admin/media/picker.php`'s script (a self-contained AJAX
+  partial pattern - both its own reload and Gallery's picker overlay re-execute its embedded
+  `<script>` tag by design; externalizing it would require rewiring every caller).
+
+### Bugs Found and Fixed During Verification
+
+- **`admin-pages.js` crashed on every admin page except Module Manager** - three IIFEs extracted
+  from `admin/modules/index.php` (tab switching, the bundle-install wizard, the a-la-carte configure
+  modal) called `document.getElementById(...)` without checking the result, which is only ever
+  non-null on that one page. Since this script now loads globally, the first crash aborted all
+  later top-level statements in the same file for the rest of that pageload. No user-facing impact
+  in practice (none of that code is needed outside Module Manager), but it spammed the console
+  everywhere else - fixed with existence guards.
+- **`tc-admin.js` (Theme Customizer) crashed on every other admin page** - same root cause,
+  `frame.dataset.previewUrl` on a null element. Fixed with a guard.
+- **`videos-admin.js`'s `vtx:crud:success` listener fired globally** - previously scoped to the
+  Videos page by virtue of being inline only there; now that it's a global script, saving or
+  deleting a record in *any* module would trigger an unwanted full-page reload. Scoped the reload
+  to only fire when `#vtx-videos-index` is present.
+- **Gallery's `_form.php` used a dead custom hook** (`window.vtxInitGalleryForm`, never called by
+  anything) instead of hooking into the modal lifecycle - replaced with `vtx:modal:loaded`.
+- **Admin dark-mode toggle silently fought a second theme system** - `scripts.js` (loaded on admin
+  pages for its shared `Phuse.toast()`/`Phuse.modal()` utilities) unconditionally ran its own
+  front-end `Phuse.darkMode()` on every page, which read the pre-0.0.9 `phuse-theme` key (not the
+  unified `vtx-theme` key `admin.js` uses), reset `data-theme` to system/legacy preference right
+  after `admin.js` had already set it, and injected a second floating toggle button. Fixed by
+  skipping `Phuse.darkMode()` entirely whenever the admin's own `#theme-toggle` button is present.
+
+### Two New Front-End Themes - Field and Frame
+
+- **Field** - warm, tactile alternative: stone-beige surfaces (`#EFEBE3`), deep pine-green accent
+  (`#2F4538`), Lora serif headings over Karla sans body text, soft rounded corners, and a dashed
+  "stitched" rule motif on the header/footer/dropdown edges instead of a plain hairline.
+- **Frame** - minimal gallery/portfolio identity: warm ivory by day / charcoal by night
+  (`#F5F0E8` / `#16181C`), muted brass-and-bronze accent, bold geometric Space Grotesk headings
+  over IBM Plex Sans body, near-flat corners, and a small-caps monospace nav/caption treatment.
+- Both follow the same structure as `default`/`clean` (`theme.json`, `layout.php`, `css/theme.css`,
+  `js/theme.js`), the same 1240px/1440px/740px container widths introduced earlier in 0.0.9, and
+  the same `--clr-accent` (flips per color scheme) / `--clr-accent-fill` (stable) split so module
+  views that fill buttons with the accent color keep working with no theme-specific changes.
+  Self-hosted Lora, Karla, and Space Grotesk (SIL OFL 1.1) added to `Public/assets/fonts/` and
+  `@font-face`-declared in `styles.css` alongside the existing IBM Plex families.
+- Vertext now ships 4 selectable themes on **Admin -> Themes** instead of 2.
+
+### Front-End Identity + Consistency Pass
+
+- **The `default` front theme now shares the admin's "Precision Ledger" identity** - navy accent
+  (was indigo `#4f46e5`), self-hosted IBM Plex Sans (was system-ui). Previously 0.0.9 only touched
+  the admin panel, so a site's public face and its own admin looked like two unrelated products.
+  `clean` theme is intentionally left as its own distinct editorial alternative (serif body,
+  uppercase nav) - not everything needs to converge on one look. `default` theme bumped to
+  `v0.0.2` in `theme.json` to reflect the identity change (shown live on **Admin -> Themes**,
+  which reads the manifest directly - no separate version store to keep in sync).
+- Front themes gained the same `--clr-accent` (flips for dark-mode contrast) / `--clr-accent-fill`
+  (stable navy, for solid button/badge fills) split introduced for the admin panel, for the same
+  reason: a dozen-plus module views (Contact, Forms, Search, Blog pagination, Events RSVP/date
+  badges) fill buttons with `var(--clr-accent)`, which would otherwise wash out in dark mode once
+  the default stopped being a bright, uniformly-legible indigo.
+- `ThemeCustomizerHelper::getCss()` now also sets `--clr-accent-fill`/`--clr-accent-rgb` when an
+  admin picks a custom accent color, so the picker's choice is what actually renders on buttons in
+  both light and dark mode, not just the theme's own unconfigured default.
+- Fixed three more stale hardcoded `rgba(79,70,229,...)` focus-ring glows (leftover from the old
+  indigo default, dating to before this project's Vertext branding even existed) in Contact,
+  Search, and the embedded Forms widget - same class of bug as the `#2563EB` sweep earlier in
+  0.0.9, just missed because these were focus states, not visible without clicking into a field.
+- Theme Customizer's two-column live-preview layout didn't collapse on narrow viewports - below
+  900px it now stacks controls above a fixed-height preview instead of squeezing both columns
+  into unusable widths.
+- Analytics' dashboard stat numbers were colored with `--ps-primary` (glows bright blue in dark
+  mode); changed to the same neutral `--ps-text-primary` treatment as the Dashboard's stat ledger,
+  so the two "big number" patterns in the admin panel read as one system instead of two.
+
+### Theme Customizer - Live Preview Builder
+
+- **Live preview iframe** - the customizer now renders an actual preview page (representative
+  hero, buttons, cards) through the active theme, updating ~350ms after any change instead of the
+  old static color-swatch mockup; nothing is saved until "Save Changes"
+- **New: Corner Style** - Sharp / Subtle / Rounded, controlling `--radius-sm`/`--radius-md` across
+  buttons, cards, and menus; `default` theme gained these radius tokens to match `clean` (it
+  previously hardcoded its one `border-radius` value with no variable)
+- `ThemeCustomizerHelper::getCss()` now accepts an overrides array (and a `setPreviewOverrides()`
+  static setter the preview route uses) so the same code path renders both the saved site CSS and
+  the iframe's pending, unsaved state
+- **Fixed a real save bug** - `Model::save($data, $update)` defaults to an INSERT unless `$update`
+  is explicitly passed `true`; the customizer's update branch never passed it, so calling Save a
+  *second* time on any already-existing setting threw a 500 (`Invalid parameter number: :where_0`)
+  - the WHERE clause's bind survived into an INSERT query that never referenced it. First save
+    always looked fine (it takes the insert path), which is why this had gone unnoticed.
+
+### Real Logo
+
+- Vertext's first real logomark (a vertex/"V" mark) replaces the placeholder "V" letter used in
+  the sidebar brand, login/reset/forgot-password screens, and the setup wizard, and now backs the
+  browser favicon on both the admin panel and the public site (previously there was none)
+- Vectorized from the source artwork with a one-off GD-based tracer (binary mask -> Moore-neighbor
+  boundary trace -> Ramer-Douglas-Peucker simplification) rather than hand-redrawn, so the SVG
+  path is measured from the actual artwork; three transparent-background variants live under
+  `Public/assets/images/logo/`: `logo-light.svg` (navy, light backgrounds), `logo-dark.svg`
+  (white, dark backgrounds), `favicon.svg` (navy, square). Each is ~450-480 bytes versus the
+  746 KB source PNG
+
+### Admin Identity - "Precision Ledger"
+
+- **New accent color** - retired the stock Tailwind-blue-600 `--ps-primary` (`#2563EB`) for a
+  deeper enterprise navy (`#1E3A5F`); semantic colors (success/danger/warning/info) unchanged
+- **Self-hosted typography** - `--ps-font-sans`/`--ps-font-mono` now use IBM Plex Sans/Mono
+  (vendored under `Public/assets/fonts/`, SIL Open Font License - no Google Fonts CDN call)
+- **Vertex-tick motif** - a small filled square replaces the tinted-background active state on
+  top-level sidebar navigation; the same treatment replaces the setup wizard's colored step-dots
+- **Stat ledger strip** - dashboard and module stat tiles dropped the icon-chip + big-number card
+  pattern for a flat horizontal strip (mono uppercase label, large number, hairline dividers)
+- **Flat status badges** - `.vtx-tag` dropped the tinted pill shape for a flat label with a small
+  colored dot prefix
+- **Dark-mode contrast fix** - splitting `--ps-primary` (now brightens to `#60A5FA` in dark mode,
+  used for text/icon/border foregrounds) from the new `--ps-primary-fill` (stays navy in both
+  modes, used for solid fills like buttons/avatars/logo marks) after the navy swap made icons,
+  links, and tab indicators unreadable against dark surfaces across the whole framework
+
+### Width System
+
+- Front-end `.container` 760px -> 1240px, new `.container-prose` (~740px, used by blog posts and
+  the default page template) preserves reading measure, `.container-wide` -> 1440px; fluid gutters
+  via `clamp()` on both themes (`default` and `clean`)
+- Admin `.vtx-content` capped at 1584px centered on ultrawide displays; `.modal-lg`/`.modal-xl`
+  widened; new `.vtx-table--dense` modifier; spacing scale tokens `--sp-1` through `--sp-8`
+
+### Token Unification
+
+- Bridged `--ps-*`/`--clr-*` naming with alias custom properties in both front themes
+- Unified the two dark-mode localStorage keys (admin `phuse-theme`, front `vtx-theme`) into one
+  (`vtx-theme`), with a one-time migration read of the old admin key
+- `ThemeCustomizer`'s accent color and font settings now also drive `--clr-accent`/`--clr-link`
+  and `body{font-family}` on the front-end - previously they only set `--ps-*` variables that no
+  front-end theme ever reads, so the customizer's color picker silently did nothing on the public
+  site
+
+### Fixes
+
+- `.vtx-main` had no `min-width: 0`, so wide tables (e.g. Recent Activity) forced the whole admin
+  page to overflow horizontally on mobile instead of scrolling within their own panel
+- `App/Views/setup/layout.php` had hardcoded `?v=142`/`?v=4` cache-bust query strings (dating back
+  to 0.0.7b) instead of the version-hash pattern used everywhere else, so setup wizard CSS could
+  never cache-bust across releases
+- Several front-end module pages (Events, Videos, Contact, Forms) combined `.container` with their
+  own page-level class that set a `padding` shorthand (e.g. `padding: 3rem 0`), which zeroed out
+  the new fluid side padding due to equal CSS specificity - page titles on those pages sat flush
+  against the viewport edge instead of aligning with the header/footer; fixed by switching those
+  rules to `padding-top`/`padding-bottom` only
+- Contact, the embedded Forms page, and Search each wrapped their entire page (title included) in
+  an independently-centered narrower column, so their titles landed at a different horizontal
+  position than every other top-level page (Events, Gallery, Videos, Blog index); titles now stay
+  on the same full-width `.container` as the rest of the site, with only the actual form/input
+  width constrained below the title - `.container-prose` is reserved for genuine long-form reading
+  content (blog posts, the Pages default template), not utility pages
+- Page titles also disagreed on font size: Search rendered its `<h1>` at 1.75rem while everything
+  else used the shared `h1 { font-size: 2rem }` from `styles.css`, and Blog's index/category pages
+  and both Gallery pages each set their own smaller size (1.5rem-1.75rem) on top of it - all of
+  them now inherit the shared default instead of redeclaring their own
+
 ## [0.0.8-alpha] - 2026-07-03
 
 ### Core - Accounts & Security
@@ -310,14 +507,3 @@ all fixed here and verified against the live `vertext` database and running site
   `UploadConfig::forImages()` (`App/Modules/Media/Controllers/Admin/MediaController.php`), so
   neither Upload bug was hit in production today, but both would have blocked a future
   "Documents" upload type immediately.
-
----
-
-## [0.0.7b-alpha] - 2026-07-01
-
-### Phuse Framework Sync (1.2.5 -> 1.2.6)
-
-- **Icon system split** - `.pi` / `.pi-*` rules moved out of `styles.css` into a dedicated `Public/assets/css/icons.css`, matching upstream Phuse 1.2.6; `styles.css` now pulls it in with `@import url("icons.css?v=1")` placed before all other rules (a mid-file `@import` is silently ignored by browsers per the CSS spec - verified in-browser after the fix)
-- **25 new icons** available: `pi-clipboard`, `pi-spinner`, `pi-circle`, `pi-map`, `pi-verified`, `pi-shopping-cart`, `pi-print`, `pi-play-circle`, `pi-minus-circle`, `pi-key`, `pi-puzzle`, `pi-package`, `pi-languages`, `pi-send`, `pi-log-in`, `pi-log-out`, `pi-help-circle`, `pi-rss`, `pi-share-2`, `pi-thumbs-up`, `pi-flag`, `pi-server`, `pi-cloud`, `pi-wrench`, `pi-building` - fixes several icons that were already referenced in admin views (Forms, ModuleLoader fallback, webhook logs) but rendered blank because the icon didn't exist yet
-- Vertext's own manually-added `pi-clipboard` (added locally as a stopgap before upstream had one) is now superseded by upstream's - same shape, no visual change
-- `Version::PHUSE` bumped to `1.2.6`; `styles.css?v=` cache-bust query bumped to `142` across all views

@@ -1,7 +1,7 @@
 <div class="vtx-auth-box">
 
   <div class="vtx-auth-top">
-    <div class="vtx-auth-mark" style="background:var(--ps-primary);color:#fff;font-size:1.25rem;">
+    <div class="vtx-auth-mark" style="background:var(--ps-primary-fill);color:#fff;font-size:1.25rem;">
       <i class="pi pi-shield"></i>
     </div>
     <h1 class="vtx-auth-h1">Two-Factor Authentication</h1>

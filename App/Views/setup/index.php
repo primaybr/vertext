@@ -3,7 +3,7 @@
   <!-- Header + Steps -->
   <div class="vtx-setup-top">
     <div class="vtx-setup-brand">
-      <div class="vtx-setup-logo">V</div>
+      <div class="vtx-setup-logo"><img src="{{assetsUrl}}images/logo/logo-dark.svg" alt="" style="width:60%;height:auto;"></div>
       <div>
         <div style="font-size:.9375rem;font-weight:700;color:var(--ps-text-primary);">Vertext CMS</div>
         <div style="font-size:.6875rem;color:var(--ps-text-muted);">Installation Wizard</div>

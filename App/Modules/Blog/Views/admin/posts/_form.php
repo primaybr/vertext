@@ -5,7 +5,8 @@ $p       = $editing ? $post : [];
 <form method="POST"
       action="<?php echo htmlspecialchars($action ?? ''); ?>"
       data-crud-form
-      id="post-editor-form">
+      id="post-editor-form"
+      data-media-enabled="<?php echo !empty($mediaEnabled) ? '1' : '0'; ?>">
   <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token ?? ''); ?>">
   <input type="hidden" name="reading_time" id="post-reading-time" value="<?php echo (int) ($p['reading_time'] ?? 0); ?>">
   <input type="hidden" name="featured_image_id"  id="post-img-id"  value="<?php echo htmlspecialchars($p['featured_image_id'] ?? ''); ?>">
@@ -205,69 +206,3 @@ $p       = $editing ? $post : [];
     </button>
   </div>
 </form>
-
-<script>
-(function () {
-    // Load slug component
-    Vtx.load(['slug'], function () {
-        if (window.vtxSlug) window.vtxSlug.init();
-    });
-
-    // Featured image remove button
-    var removeBtn = document.getElementById('post-featured-remove');
-    if (removeBtn) {
-        removeBtn.addEventListener('click', function () {
-            document.getElementById('post-img-id').value  = '';
-            document.getElementById('post-img-url').value = '';
-            var wrap = document.getElementById('post-featured-preview');
-            if (wrap) wrap.style.display = 'none';
-        });
-    }
-
-    // Character counters
-    function initCharCounter(inputId, max) {
-        var el  = document.getElementById(inputId);
-        var ctr = document.querySelector('.vtx-char-count[data-target="' + inputId + '"]');
-        if (!el || !ctr) return;
-        function upd() {
-            var n = el.value.length;
-            ctr.textContent = n + ' / ' + max;
-            ctr.style.color = n > max ? 'var(--ps-danger)' : 'var(--ps-text-muted)';
-        }
-        el.addEventListener('input', upd); upd();
-    }
-    initCharCounter('post-meta-title', 60);
-    initCharCounter('post-meta-desc', 160);
-
-    // Load editor, tags, and (when available) media picker together so the
-    // inline image handler has VtxMediaPicker ready before it can be triggered
-    var _editorComponents = ['editor', 'tags'<?php echo !empty($mediaEnabled) ? ", 'media-picker'" : ''; ?>];
-    Vtx.load(_editorComponents, function () {
-        var editorEl = document.getElementById('post-body-editor');
-        var hiddenEl = document.getElementById('post-body-hidden');
-        if (editorEl && hiddenEl && window.VtxEditor) {
-            var vtxEd = new VtxEditor({
-                container:   editorEl,
-                textarea:    hiddenEl,
-                mediaPicker: <?php echo !empty($mediaEnabled) ? 'true' : 'false'; ?>,
-                onWordCount: function (words) {
-                    var mins = Math.max(1, Math.round(words / 200));
-                    var rt = document.getElementById('post-reading-time');
-                    if (rt) rt.value = mins;
-                    var lbl = document.getElementById('post-read-time-label');
-                    if (lbl) lbl.textContent = mins + ' min read · ' + words + ' words';
-                }
-            });
-            if (hiddenEl.value) vtxEd.setHTML(hiddenEl.value);
-        }
-
-        var tagsEl = document.querySelector('[data-vtx-tags]');
-        if (tagsEl && window.VtxTags) new VtxTags({ el: tagsEl });
-
-        <?php if (!empty($mediaEnabled)): ?>
-        var pickerBtn = document.querySelector('[data-vtx-media-picker]');
-        if (pickerBtn && window.VtxMediaPicker) new VtxMediaPicker({ btn: pickerBtn });
-        <?php endif; ?>
-    });
-}());
-</script>

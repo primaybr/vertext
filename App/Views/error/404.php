@@ -35,7 +35,7 @@ try {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Page Not Found - <?php echo htmlspecialchars($_errSiteName); ?></title>
-  <script>(function(){var t=localStorage.getItem('vtx-theme');if(t)document.documentElement.setAttribute('data-theme',t);}());</script>
+  <?php include ROOT . 'App' . DS . 'Views' . DS . '_shared' . DS . 'theme-init.php'; ?>
   <link rel="stylesheet" href="<?php echo htmlspecialchars($_errAssetsUrl . 'css/styles.css'); ?>">
   <link rel="stylesheet" href="<?php echo htmlspecialchars($_errThemeUrl . '/css/theme.css'); ?>">
 </head>

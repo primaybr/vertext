@@ -1,12 +1,14 @@
 {
     "name":        "Gallery",
     "slug":        "gallery",
-    "version":     "0.0.1",
+    "version":     "0.0.2",
     "description": "Public-facing photo albums using the Media library as the image source",
     "author":      "Vertext",
     "category":    "Media",
     "requires":    { "vertext": ">=0.0.2" },
     "assets": {
+        "css": ["css/gallery-front.css"],
+        "js":  ["js/gallery-front.js"],
         "admin": {
             "css": ["css/gallery-admin.css"],
             "js":  ["js/gallery-admin.js"]

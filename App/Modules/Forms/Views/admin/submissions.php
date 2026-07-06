@@ -119,23 +119,3 @@
     <div id="vtx-sub-modal-body" style="overflow-y:auto;padding:1.25rem;flex:1;"></div>
   </div>
 </div>
-<script>
-(function () {
-    var overlay = document.getElementById('vtx-sub-modal');
-    var body    = document.getElementById('vtx-sub-modal-body');
-    document.getElementById('vtx-sub-modal-close').addEventListener('click', close);
-    overlay.addEventListener('click', function (e) { if (e.target === overlay) close(); });
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
-    function close() { overlay.style.display = 'none'; body.innerHTML = ''; }
-    document.querySelectorAll('.vtx-sub-preview-link').forEach(function (a) {
-        a.addEventListener('click', function (e) {
-            e.preventDefault();
-            body.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--ps-text-muted);">Loading…</div>';
-            overlay.style.display = 'flex';
-            VtxAjax.get(a.dataset.url, function (ok, html) {
-                body.innerHTML = ok ? html : '<p style="color:var(--ps-danger);padding:1rem;">Failed to load submission.</p>';
-            });
-        });
-    });
-}());
-</script>

@@ -1,7 +1,7 @@
 {
     "name": "Newsletter",
     "slug": "newsletter",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "description": "Subscriber list management, segments, scheduled campaigns, and open/click tracking",
     "author": "Vertext",
     "category": "Communication",
@@ -21,7 +21,11 @@
         ]
     },
     "assets": {
-        "css": ["Assets/newsletter.css"]
+        "css": ["newsletter.css"],
+        "admin": {
+            "css": ["newsletter-admin.css"],
+            "js": ["newsletter-admin.js"]
+        }
     },
     "install_settings": [
         { "name": "newsletter_from_name",  "label": "From Name",  "type": "text",  "required": true,  "default": "", "placeholder": "My Site Newsletter" },

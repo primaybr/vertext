@@ -13,9 +13,10 @@ namespace App\CMS;
 class ModuleLoader
 {
     /** Per-request cache: null = not loaded yet */
-    private static ?array $enabled  = null;
-    private static ?array $navItems = null;
-    private static ?array $assets   = null;
+    private static ?array $enabled     = null;
+    private static ?array $navItems    = null;
+    private static ?array $assets      = null;
+    private static ?array $frontAssets = null;
 
     /** Load enabled module data from DB into the static cache */
     private static function load(): void
@@ -80,7 +81,8 @@ class ModuleLoader
                 ];
             }
             // Build module asset URL paths (css/js relative to assetsUrl)
-            self::$assets = ['css' => [], 'js' => []];
+            self::$assets      = ['css' => [], 'js' => []];
+            self::$frontAssets = ['css' => [], 'js' => []];
             foreach ($rows as $assetRow) {
                 $assetDir  = $assetRow['directory'] ?? '';
                 $assetSlug = $assetRow['slug']      ?? '';
@@ -94,12 +96,9 @@ class ModuleLoader
                 }
 
                 $assetManifest = json_decode(file_get_contents($assetManifestFile), true);
-                $adminAssets   = $assetManifest['assets']['admin'] ?? [];
-                if (empty($adminAssets)) {
-                    continue;
-                }
+                $ver           = rawurlencode($assetManifest['version'] ?? '1');
 
-                $ver = rawurlencode($assetManifest['version'] ?? '1');
+                $adminAssets = $assetManifest['assets']['admin'] ?? [];
                 foreach ((array) ($adminAssets['css'] ?? []) as $p) {
                     $p = ltrim((string) $p, '/');
                     if ($p) self::$assets['css'][] = "modules/{$assetSlug}/{$p}?v={$ver}";
@@ -108,13 +107,25 @@ class ModuleLoader
                     $p = ltrim((string) $p, '/');
                     if ($p) self::$assets['js'][] = "modules/{$assetSlug}/{$p}?v={$ver}";
                 }
+
+                // Front-end assets live at the top level of "assets" (sibling to "admin"),
+                // deployed the same way, but injected into theme layouts instead of the admin layout.
+                foreach ((array) ($assetManifest['assets']['css'] ?? []) as $p) {
+                    $p = ltrim((string) $p, '/');
+                    if ($p) self::$frontAssets['css'][] = "modules/{$assetSlug}/{$p}?v={$ver}";
+                }
+                foreach ((array) ($assetManifest['assets']['js'] ?? []) as $p) {
+                    $p = ltrim((string) $p, '/');
+                    if ($p) self::$frontAssets['js'][] = "modules/{$assetSlug}/{$p}?v={$ver}";
+                }
             }
 
         } catch (\Exception) {
             // If DB is unavailable, allow everything (install/setup state)
-            self::$enabled  = [];
-            self::$navItems = [];
-            self::$assets   = ['css' => [], 'js' => []];
+            self::$enabled      = [];
+            self::$navItems     = [];
+            self::$assets       = ['css' => [], 'js' => []];
+            self::$frontAssets  = ['css' => [], 'js' => []];
         }
     }
 
@@ -161,14 +172,27 @@ class ModuleLoader
     }
 
     /**
+     * Return front-end asset URL paths (relative to assetsUrl) for all enabled modules.
+     * Reads the top-level "css"/"js" keys of module.json's "assets" (sibling to "admin"),
+     * e.g. {"assets": {"css": [...], "js": [...], "admin": {"css": [...], "js": [...]}}}.
+     * Injected into theme layouts (App/Themes/*\/layout.php), not the admin layout.
+     */
+    public static function frontAssets(): array
+    {
+        self::load();
+        return self::$frontAssets ?? ['css' => [], 'js' => []];
+    }
+
+    /**
      * Reset the per-request cache.
      * Call this immediately after a module status is toggled so that
      * subsequent isEnabled() calls within the same request see the new state.
      */
     public static function refresh(): void
     {
-        self::$enabled  = null;
-        self::$navItems = null;
-        self::$assets   = null;
+        self::$enabled      = null;
+        self::$navItems     = null;
+        self::$assets       = null;
+        self::$frontAssets  = null;
     }
 }

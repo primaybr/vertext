@@ -70,15 +70,3 @@ $tickets = json_decode((string) ($event['tickets'] ?? '[]'), true) ?: [];
     </button>
   </div>
 </div>
-
-<script>
-document.getElementById('ev-add-ticket').addEventListener('click', function () {
-  var row = document.createElement('div');
-  row.className = 'ev-ticket-row';
-  row.style.cssText = 'display:flex;gap:.5rem;margin-bottom:.5rem;';
-  row.innerHTML = '<input class="form-control form-control-sm" type="text" name="ticket_name[]" maxlength="100" placeholder="Ticket name (e.g. General)" style="flex:2;">' +
-    '<input class="form-control form-control-sm" type="number" name="ticket_price[]" min="0" step="0.01" placeholder="0.00" style="flex:1;">' +
-    '<button type="button" class="vtx-icon-btn danger" onclick="this.parentElement.remove()" title="Remove"><i class="pi pi-trash"></i></button>';
-  document.getElementById('ev-ticket-rows').appendChild(row);
-});
-</script>

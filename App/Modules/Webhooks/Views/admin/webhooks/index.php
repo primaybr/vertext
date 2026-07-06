@@ -1,3 +1,5 @@
+<div id="webhooks-index-wrap" data-csrf="{{csrf_token}}" data-base-url="{{baseUrl}}">
+
 <!-- Page Header -->
 <div class="vtx-page-head">
   <div>
@@ -130,16 +132,4 @@
   </div>
 </div>
 
-<script>
-function vtxTestWebhook(id) {
-    var btn = document.getElementById('test-btn-' + id);
-    if (btn) { btn.disabled = true; btn.querySelector('i').className = 'pi pi-spin pi-refresh'; }
-    var fd = new FormData();
-    fd.append('csrf_token', '{{csrf_token}}');
-    VtxAjax.postForm('{{baseUrl}}/admin/webhooks/' + id + '/test', fd, function (res) {
-        if (btn) { btn.disabled = false; btn.querySelector('i').className = 'pi pi-refresh'; }
-        Phuse.toast(res.message, res.success ? 'success' : 'error');
-        if (res.success) setTimeout(function() { window.location.reload(); }, 1200);
-    });
-}
-</script>
+</div>

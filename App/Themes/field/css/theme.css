@@ -1,0 +1,361 @@
+/* ── Color tokens: light (default) ─────────────────────────── */
+:root {
+  /* "Field" - warm, tactile alternative to the navy "Precision Ledger"
+     identity. --clr-accent is foreground-safe (text/links/borders) and
+     flips to a lighter sage for dark mode below; --clr-accent-fill stays a
+     stable deep pine in both modes for solid fills with white text
+     (buttons, badges) - same split used by the `default` theme, for the
+     same reason: pine reads fine as a fill regardless of page background,
+     but is too dark to use as text on a dark background. */
+  --clr-accent:      #2F4538;
+  --clr-accent-fill: #2F4538;
+  --clr-accent-rgb:  47, 69, 56;
+  --clr-text:    #2A2620;
+  --clr-muted:   #6B6558;
+  --clr-faint:   #A39C8C;
+  --clr-border:  #DDD6C7;
+  --clr-surface: #F7F4EC;
+  --clr-bg:      #EFEBE3;
+  --shadow-sm:   0 4px 14px rgba(47,69,56,.1);
+  --radius-sm:   0.75rem;
+  --radius-md:   1rem;
+
+  /* --ps-/--clr-* bridge - front themes and the admin panel are separate
+     CSS systems; these aliases let shared/imported component CSS written
+     against either naming resolve sensibly in this theme. */
+  --ps-primary:      var(--clr-accent);
+  --ps-text-primary: var(--clr-text);
+  --ps-text-muted:   var(--clr-muted);
+  --ps-border:       var(--clr-border);
+  --ps-bg-surface:   var(--clr-surface);
+  --ps-bg-base:      var(--clr-bg);
+}
+
+/* ── Color tokens: dark (system preference) ─────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --clr-accent:     #8FBC94;
+    --clr-accent-rgb: 143, 188, 148;
+    --clr-text:    #EDE8DC;
+    --clr-muted:   #B5AE9C;
+    --clr-faint:   #7D7768;
+    --clr-border:  #3A362C;
+    --clr-surface: #262319;
+    --clr-bg:      #1C1A14;
+    --shadow-sm:   0 4px 14px rgba(0,0,0,.4);
+  }
+}
+
+/* ── Color tokens: dark (explicit toggle) ───────────────────── */
+[data-theme="dark"] {
+  --clr-accent:     #8FBC94;
+  --clr-accent-rgb: 143, 188, 148;
+  --clr-text:    #EDE8DC;
+  --clr-muted:   #B5AE9C;
+  --clr-faint:   #7D7768;
+  --clr-border:  #3A362C;
+  --clr-surface: #262319;
+  --clr-bg:      #1C1A14;
+  --shadow-sm:   0 4px 14px rgba(0,0,0,.4);
+}
+
+/* ── Reset & base ──────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+:focus-visible {
+  outline: 2px solid var(--clr-accent);
+  outline-offset: 2px;
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+body {
+  margin: 0;
+  /* Karla - self-hosted, @font-face declared in styles.css (loaded before
+     this file on every front-end page) so no extra font loading needed. */
+  font-family: 'Karla', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--clr-text);
+  background: var(--clr-bg);
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Lora', Georgia, 'Times New Roman', serif;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+a {
+  color: var(--clr-accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-sm);
+}
+
+blockquote {
+  margin: 1.5rem 0;
+  padding: .25rem 0 .25rem 1.25rem;
+  border-left: 3px dashed var(--clr-accent);
+  color: var(--clr-muted);
+  font-style: italic;
+}
+
+hr {
+  border: none;
+  border-top: 2px dashed var(--clr-border);
+  margin: 2.5rem 0;
+}
+
+/* ── Layout ────────────────────────────────────────────────── */
+.container {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 clamp(1rem, 4vw, 2.5rem);
+}
+
+.container-wide {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 clamp(1rem, 4vw, 2.5rem);
+}
+
+/* Reading measure for long-form content (blog posts, default page template) -
+   kept narrow regardless of the wider shell width above. */
+.container-prose {
+  max-width: 740px;
+  margin: 0 auto;
+  padding: 0 clamp(1rem, 4vw, 2.5rem);
+}
+
+main {
+  padding: 2.5rem 0 4rem;
+  min-height: 60vh;
+}
+
+/* ── Site header ───────────────────────────────────────────── */
+/* Dashed rule - the "stitched" signature motif carried through header,
+   footer, and nav-dropdown edges instead of a plain solid hairline. */
+.site-header {
+  border-bottom: 2px dashed var(--clr-border);
+  padding: 1rem 0;
+  background: var(--clr-surface);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.site-header .container {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.site-name {
+  font-family: 'Lora', Georgia, serif;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--clr-text);
+  flex-shrink: 0;
+}
+
+.site-name:hover {
+  text-decoration: none;
+  color: var(--clr-accent);
+}
+
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.site-nav a {
+  font-size: .9375rem;
+  color: var(--clr-muted);
+  transition: color .15s;
+  white-space: nowrap;
+}
+
+.site-nav a:hover {
+  color: var(--clr-accent);
+  text-decoration: none;
+}
+
+/* ── Nav dropdown ──────────────────────────────────────────── */
+.nav-dropdown {
+  position: relative;
+}
+
+.nav-dropdown-menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + .5rem);
+  left: 0;
+  background: var(--clr-bg);
+  border: 2px dashed var(--clr-border);
+  border-radius: var(--radius-sm);
+  min-width: 160px;
+  box-shadow: var(--shadow-sm);
+  z-index: 200;
+  padding: .375rem 0;
+}
+
+.nav-dropdown:hover .nav-dropdown-menu {
+  display: block;
+}
+
+.nav-dropdown-menu a {
+  display: block;
+  padding: .4rem .875rem;
+  font-size: .875rem;
+  color: var(--clr-muted);
+}
+
+.nav-dropdown-menu a:hover {
+  background: var(--clr-surface);
+  color: var(--clr-accent);
+  text-decoration: none;
+}
+
+/* ── Header actions (theme toggle + nav toggle) ─────────────── */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: .375rem;
+  flex-shrink: 0;
+}
+
+.theme-toggle {
+  background: none;
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  padding: .3125rem;
+  color: var(--clr-muted);
+  display: flex;
+  align-items: center;
+  line-height: 1;
+  transition: color .15s, border-color .15s;
+}
+
+.theme-toggle:hover {
+  color: var(--clr-text);
+  border-color: var(--clr-muted);
+}
+
+/* Light mode: show moon (click to go dark) */
+.icon-sun  { display: none; }
+.icon-moon { display: block; }
+
+/* Dark mode: show sun (click to go light) */
+[data-theme="dark"] .icon-sun  { display: block; }
+[data-theme="dark"] .icon-moon { display: none; }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .icon-sun  { display: block; }
+  :root:not([data-theme="light"]) .icon-moon { display: none; }
+}
+
+/* ── Mobile: nav toggle ────────────────────────────────────── */
+.nav-toggle {
+  display: none;
+  background: none;
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  padding: .3125rem .375rem;
+  color: var(--clr-muted);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+}
+
+.nav-toggle span {
+  display: block;
+  width: 18px;
+  height: 2px;
+  background: currentColor;
+  margin: 2.5px 0;
+  transition: transform .2s, opacity .2s;
+}
+
+/* ── Site footer ───────────────────────────────────────────── */
+.site-footer {
+  border-top: 2px dashed var(--clr-border);
+  padding: 1.75rem 0;
+  background: var(--clr-surface);
+}
+
+.site-footer-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+
+.site-footer p {
+  margin: 0;
+  font-size: .8125rem;
+  color: var(--clr-faint);
+}
+
+.site-footer a {
+  color: var(--clr-faint);
+}
+
+.site-footer a:hover {
+  color: var(--clr-accent);
+  text-decoration: none;
+}
+
+/* ── Responsive ────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .nav-toggle {
+    display: flex;
+  }
+
+  .site-nav {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--clr-surface);
+    border-bottom: 2px dashed var(--clr-border);
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+    padding: .5rem 0;
+    flex: none;
+    justify-content: flex-start;
+  }
+
+  .site-nav.is-open {
+    display: flex;
+  }
+
+  .site-nav a {
+    padding: .625rem 1.5rem;
+    width: 100%;
+  }
+
+  .site-header {
+    position: sticky;
+    top: 0;
+  }
+}

@@ -100,37 +100,3 @@
     </div>
   </form>
 </div>
-
-<style>
-.vtx-step-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.5rem;
-  height: 1.5rem;
-  border-radius: 50%;
-  background: var(--ps-primary, #5A67D8);
-  color: #fff;
-  font-size: .75rem;
-  font-weight: 700;
-  margin-right: .5rem;
-  flex-shrink: 0;
-}
-</style>
-
-<script>
-(function () {
-  var input   = document.getElementById('blog_base_path');
-  var preview = document.getElementById('path-preview-val');
-
-  function update() {
-    var val = (input.value || '').trim().replace(/^\/+|\/+$/g, '');
-    preview.textContent = val ? window.location.origin + '/' + val + '/' : window.location.origin + '/';
-  }
-
-  if (input && preview) {
-    input.addEventListener('input', update);
-    update();
-  }
-})();
-</script>

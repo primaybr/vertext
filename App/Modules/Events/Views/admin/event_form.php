@@ -226,7 +226,3 @@ $isModal = $isModal ?? false;
 <script>
 Vtx.load(['slug'], function () { if (window.vtxSlug) window.vtxSlug.init(); });
 </script>
-<style>
-.vtx-breadcrumb { font-size:.8125rem;color:var(--ps-text-muted);text-decoration:none; }
-.vtx-breadcrumb:hover { color:var(--ps-accent); }
-</style>

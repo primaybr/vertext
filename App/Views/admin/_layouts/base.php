@@ -4,12 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{pageTitle}} - Vertext CMS</title>
+  <link rel="icon" type="image/svg+xml" href="{{assetsUrl}}images/logo/favicon.svg">
   <link rel="stylesheet" href="{{assetsUrl}}css/styles.css?v=<?php echo substr(hash('crc32b', \App\CMS\Version::APP), 0, 8); ?>">
   <link rel="stylesheet" href="{{assetsUrl}}css/admin.css?v=<?php echo substr(hash('crc32b', \App\CMS\Version::APP), 0, 8); ?>">
+  <link rel="stylesheet" href="{{assetsUrl}}css/admin-pages.css?v=<?php echo substr(hash('crc32b', \App\CMS\Version::APP), 0, 8); ?>">
   <?php foreach (\App\CMS\ModuleLoader::assets()['css'] as $__mAsset): ?>
   <link rel="stylesheet" href="<?php echo htmlspecialchars(($assetsUrl ?? '') . $__mAsset); ?>">
   <?php endforeach; ?>
-  <script>(function(){try{var t=localStorage.getItem('phuse-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})()</script>
+  <?php include ROOT . 'App' . DS . 'Views' . DS . '_shared' . DS . 'theme-init.php'; ?>
   <script>window.VTX_ASSETS_URL = '{{assetsUrl}}'; window.VTX_BASE_URL = '{{baseUrl}}';</script>
   <script src="{{assetsUrl}}js/admin.js?v=<?php echo substr(hash('crc32b', \App\CMS\Version::APP), 0, 8); ?>"></script>
 </head>
@@ -23,7 +25,7 @@
   <aside id="vtx-sidebar" class="vtx-sidebar">
 
     <a href="{{baseUrl}}/admin/dashboard" class="vtx-sidebar-brand text-decoration-none">
-      <div class="vtx-sidebar-logo">V</div>
+      <div class="vtx-sidebar-logo"><img src="{{assetsUrl}}images/logo/logo-dark.svg" alt="" style="width:60%;height:auto;"></div>
       <div>
         <div class="vtx-sidebar-name">Vertext</div>
         <div class="vtx-sidebar-ver">CMS v<?php echo \App\CMS\Version::APP; ?></div>
@@ -246,6 +248,7 @@
 </div>
 
 <script src="{{assetsUrl}}js/scripts.js?v=<?php echo substr(hash('crc32b', \App\CMS\Version::APP), 0, 8); ?>"></script>
+<script src="{{assetsUrl}}js/admin-pages.js?v=<?php echo substr(hash('crc32b', \App\CMS\Version::APP), 0, 8); ?>"></script>
 <?php foreach (\App\CMS\ModuleLoader::assets()['js'] as $__mAsset): ?>
 <script src="<?php echo htmlspecialchars(($assetsUrl ?? '') . $__mAsset); ?>"></script>
 <?php endforeach; ?>
@@ -275,6 +278,7 @@
       </div>
       <div class="modal-body">
         <p id="vtx-confirm-message" style="margin:0;font-size:.9375rem;color:var(--ps-text-secondary);"></p>
+        <input type="text" id="vtx-confirm-input" class="form-control form-control-sm" style="display:none;margin-top:.875rem;">
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-outline-secondary btn-sm" id="vtx-modal-cancel">Cancel</button>
@@ -286,11 +290,7 @@
 <div id="vtx-modal-backdrop" class="modal-backdrop fade" style="display:none;"></div>
 
 <?php if (!empty($flash['message'])): ?>
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    Phuse.toast(<?php echo json_encode($flash['message']); ?>, <?php echo json_encode($flash['type'] ?? 'info'); ?>);
-});
-</script>
+<div id="vtx-flash-data" data-message="<?php echo htmlspecialchars($flash['message'], ENT_QUOTES); ?>" data-type="<?php echo htmlspecialchars($flash['type'] ?? 'info', ENT_QUOTES); ?>" hidden></div>
 <?php endif; ?>
 </body>
 </html>

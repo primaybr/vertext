@@ -1,7 +1,7 @@
 <div class="vtx-auth-box">
 
   <div class="vtx-auth-top">
-    <div class="vtx-auth-mark">V</div>
+    <div class="vtx-auth-mark"><img src="{{assetsUrl}}images/logo/logo-dark.svg" alt="" style="width:55%;height:auto;"></div>
     <h1 class="vtx-auth-h1">Reset Password</h1>
     <p class="vtx-auth-sub">Choose a new password for your account</p>
   </div>

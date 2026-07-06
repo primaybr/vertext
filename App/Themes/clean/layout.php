@@ -14,12 +14,16 @@
   <?php if ($pageDesc): ?>
   <meta property="og:description" content="<?php echo htmlspecialchars($pageDesc); ?>">
   <?php endif; ?>
-  <script>(function(){var t=localStorage.getItem('vtx-theme');if(t)document.documentElement.setAttribute('data-theme',t);}());</script>
+  <?php include ROOT . 'App' . DS . 'Views' . DS . '_shared' . DS . 'theme-init.php'; ?>
+  <link rel="icon" type="image/svg+xml" href="<?php echo htmlspecialchars($baseUrl . '/assets/images/logo/favicon.svg'); ?>">
   <?php if (!empty($feedUrl)): ?>
   <link rel="alternate" type="application/rss+xml" title="<?php echo htmlspecialchars($siteName . ' RSS Feed'); ?>" href="<?php echo htmlspecialchars($feedUrl); ?>">
   <?php endif; ?>
   <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl . '/assets/css/styles.css'); ?>?v=<?php echo substr(hash('crc32b', \App\CMS\Version::APP), 0, 8); ?>">
   <link rel="stylesheet" href="<?php echo htmlspecialchars($themeUrl . '/css/theme.css'); ?>?v=<?php echo substr(hash('crc32b', \App\CMS\Version::APP), 0, 8); ?>">
+  <?php foreach (\App\CMS\ModuleLoader::frontAssets()['css'] as $__mAsset): ?>
+  <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl . '/assets/' . $__mAsset); ?>">
+  <?php endforeach; ?>
   <?php // hreflang alternates for locale path-prefix routing (i18n v0.0.2) ?>
   <?php foreach (\App\CMS\I18n::getSupportedLocales() as $__hl): ?>
   <link rel="alternate" hreflang="<?php echo htmlspecialchars($__hl); ?>" href="<?php echo htmlspecialchars($baseUrl . '/' . $__hl . ($_SERVER['REQUEST_URI'] ?? '/')); ?>">
@@ -92,5 +96,8 @@
 </footer>
 
 <script src="<?php echo htmlspecialchars($themeUrl . '/js/theme.js'); ?>?v=<?php echo substr(hash('crc32b', \App\CMS\Version::APP), 0, 8); ?>"></script>
+<?php foreach (\App\CMS\ModuleLoader::frontAssets()['js'] as $__mAsset): ?>
+<script src="<?php echo htmlspecialchars($baseUrl . '/assets/' . $__mAsset); ?>"></script>
+<?php endforeach; ?>
 </body>
 </html>

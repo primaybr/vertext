@@ -1,7 +1,7 @@
 {
     "name": "Events",
     "slug": "events",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "description": "Event listings with calendar view and RSVP counter",
     "author": "Vertext",
     "category": "Content",
@@ -17,6 +17,11 @@
         "permission": "events.view"
     },
     "assets": {
-        "css": ["Assets/events.css"]
+        "css": ["events.css"],
+        "js": ["events.js"],
+        "admin": {
+            "css": ["events-admin.css"],
+            "js": ["events-admin.js"]
+        }
     }
 }

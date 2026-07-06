@@ -1,4 +1,3 @@
-<?php include __DIR__ . '/_styles.php'; ?>
 <div class="mb-auth-wrap">
   <div class="mb-card">
     <h1 class="mb-title">Create Account</h1>
@@ -14,7 +13,7 @@
       <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
 
       <!-- Honeypot: humans never see or fill this -->
-      <div style="position:absolute;left:-9999px;" aria-hidden="true">
+      <div class="mb-honeypot" aria-hidden="true">
         <label>Website <input type="text" name="website" tabindex="-1" autocomplete="off"></label>
       </div>
 

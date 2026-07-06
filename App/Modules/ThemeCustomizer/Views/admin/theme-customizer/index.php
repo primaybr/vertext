@@ -1,7 +1,11 @@
 <?php
 $s = $settings ?? [];
-$primaryColor = htmlspecialchars($s['primary_color'] ?? '#2563EB');
+$primaryColor = htmlspecialchars($s['primary_color'] ?? '#1E3A5F');
 $fontFamily   = htmlspecialchars($s['font_family']   ?? 'system');
+$cornerStyle  = $s['corner_style'] ?? 'subtle';
+if (!in_array($cornerStyle, ['sharp', 'subtle', 'rounded'], true)) {
+    $cornerStyle = 'subtle';
+}
 $logoUrl      = htmlspecialchars($s['logo_url']      ?? '');
 $customCss    = htmlspecialchars($s['custom_css']    ?? '');
 
@@ -12,11 +16,23 @@ $fonts = [
     "'Courier New', Courier, monospace"      => 'Courier (Mono)',
     "'Helvetica Neue', Helvetica, sans-serif" => 'Helvetica',
 ];
+
+$corners = [
+    'sharp'   => 'Sharp',
+    'subtle'  => 'Subtle',
+    'rounded' => 'Rounded',
+];
+$previewSrc = htmlspecialchars(
+    $baseUrl . '/admin/theme-customizer/preview'
+    . '?primary_color=' . urlencode($s['primary_color'] ?? '#1E3A5F')
+    . '&font_family=' . urlencode($fontFamily === 'system' ? '' : ($s['font_family'] ?? ''))
+    . '&corner_style=' . urlencode($cornerStyle)
+);
 ?>
 <div class="vtx-page-head">
   <div>
     <h1 class="vtx-page-title"><i class="pi pi-palette me-2 text-primary"></i>Theme Customizer</h1>
-    <p class="vtx-page-desc">Adjust the public site appearance. Changes apply immediately after saving.</p>
+    <p class="vtx-page-desc">Adjust the public site appearance - the preview updates as you type, nothing changes on the live site until you save.</p>
   </div>
 </div>
 
@@ -30,7 +46,7 @@ $fonts = [
 <form method="POST" action="<?php echo $baseUrl; ?>/admin/theme-customizer/save">
   <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token ?? ''); ?>">
 
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:start;">
+  <div class="tc-layout" style="display:grid;grid-template-columns:1fr 1.2fr;gap:1.5rem;align-items:start;">
 
     <div>
       <div class="vtx-panel mb-4">
@@ -40,15 +56,13 @@ $fonts = [
             <label class="form-label" for="primary_color">Primary Accent Color</label>
             <div style="display:flex;align-items:center;gap:.75rem;">
               <input type="color" id="primary_color_picker" value="<?php echo $primaryColor; ?>"
-                     style="width:44px;height:36px;padding:2px;border:1px solid var(--ps-border);border-radius:var(--ps-radius-sm);cursor:pointer;"
-                     oninput="document.getElementById('primary_color').value=this.value;document.getElementById('primary_color_preview').style.background=this.value;">
+                     style="width:44px;height:36px;padding:2px;border:1px solid var(--ps-border);border-radius:var(--ps-radius-sm);cursor:pointer;">
               <input type="text" id="primary_color" name="primary_color"
                      value="<?php echo $primaryColor; ?>"
                      class="form-control"
-                     placeholder="#2563EB"
+                     placeholder="#1E3A5F"
                      pattern="^#[0-9A-Fa-f]{6}$"
-                     style="width:120px;font-family:var(--ps-font-mono);"
-                     oninput="syncColorPicker(this.value)">
+                     style="width:120px;font-family:var(--ps-font-mono);">
               <span id="primary_color_preview" style="width:36px;height:36px;border-radius:var(--ps-radius-sm);border:1px solid var(--ps-border);background:<?php echo $primaryColor; ?>;"></span>
             </div>
             <div class="form-text">Used for buttons, links, and accents on the public site.</div>
@@ -74,6 +88,22 @@ $fonts = [
       </div>
 
       <div class="vtx-panel mb-4">
+        <div class="vtx-panel-head"><h6 class="vtx-panel-title">Corner Style</h6></div>
+        <div class="vtx-panel-body" style="padding:1.25rem;">
+          <div class="tc-corner-group">
+            <?php foreach ($corners as $val => $label): ?>
+            <label class="tc-corner-option" data-corner="<?php echo $val; ?>">
+              <input type="radio" name="corner_style" value="<?php echo $val; ?>"
+                     class="tc-corner-input"<?php echo $cornerStyle === $val ? ' checked' : ''; ?>>
+              <span><span class="tc-corner-swatch"></span><?php echo $label; ?></span>
+            </label>
+            <?php endforeach; ?>
+          </div>
+          <div class="form-text">Controls the roundness of buttons, cards, and menus on the public site.</div>
+        </div>
+      </div>
+
+      <div class="vtx-panel mb-4">
         <div class="vtx-panel-head"><h6 class="vtx-panel-title">Logo</h6></div>
         <div class="vtx-panel-body" style="padding:1.25rem;">
           <div class="mb-3">
@@ -90,38 +120,28 @@ $fonts = [
           <?php endif; ?>
         </div>
       </div>
-    </div>
 
-    <div>
       <div class="vtx-panel mb-4">
         <div class="vtx-panel-head"><h6 class="vtx-panel-title">Custom CSS</h6></div>
         <div class="vtx-panel-body" style="padding:1.25rem;">
           <textarea id="custom_css" name="custom_css" class="form-control"
-                    rows="16"
+                    rows="10"
                     placeholder="/* Add any custom CSS here */&#10;&#10;.site-header { background: #fff; }&#10;"
                     style="font-family:var(--ps-font-mono);font-size:.8125rem;"><?php echo $customCss; ?></textarea>
-          <div class="form-text">Injected into <code>&lt;style&gt;</code> on every public page. Overrides theme defaults.</div>
+          <div class="form-text">Injected into <code>&lt;style&gt;</code> on every public page. Overrides theme defaults - not reflected in the live preview.</div>
         </div>
       </div>
+    </div>
 
-      <div class="vtx-panel" style="background:var(--ps-bg-subtle);">
-        <div class="vtx-panel-body" style="padding:1.25rem;">
-          <h6 style="margin:0 0 .5rem;font-weight:600;font-size:.875rem;">Live preview</h6>
-          <p style="font-size:.8125rem;color:var(--ps-text-muted);margin:0 0 .75rem;">
-            Your primary color applied to sample elements:
-          </p>
-          <div id="preview-area" style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;">
-            <button type="button" id="preview-btn" style="padding:.4rem .9rem;border:none;border-radius:var(--ps-radius-sm);color:#fff;font-size:.875rem;cursor:default;background:<?php echo $primaryColor; ?>;">
-              Button
-            </button>
-            <a id="preview-link" href="#" onclick="return false" style="font-size:.875rem;color:<?php echo $primaryColor; ?>;">
-              Link example
-            </a>
-            <span id="preview-badge" style="display:inline-block;padding:.2em .6em;border-radius:.25rem;font-size:.75rem;font-weight:600;color:#fff;background:<?php echo $primaryColor; ?>;">
-              Badge
-            </span>
-          </div>
-        </div>
+    <div class="vtx-panel tc-preview-panel">
+      <div class="vtx-panel-head">
+        <h6 class="vtx-panel-title"><i class="pi pi-eye"></i> Live Preview</h6>
+        <span id="tc-preview-status" style="font-size:.75rem;color:var(--ps-text-muted);"></span>
+      </div>
+      <div class="tc-preview-frame-wrap">
+        <iframe id="tc-preview-frame" src="<?php echo $previewSrc; ?>"
+                data-preview-url="<?php echo htmlspecialchars($baseUrl . '/admin/theme-customizer/preview', ENT_QUOTES); ?>"
+                title="Site preview"></iframe>
       </div>
     </div>
 
@@ -136,19 +156,3 @@ $fonts = [
     </a>
   </div>
 </form>
-
-<script>
-function syncColorPicker(val) {
-  if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
-    document.getElementById('primary_color_picker').value = val;
-    document.getElementById('primary_color_preview').style.background = val;
-    document.getElementById('preview-btn').style.background = val;
-    document.getElementById('preview-link').style.color = val;
-    document.getElementById('preview-badge').style.background = val;
-  }
-}
-document.getElementById('primary_color_picker').addEventListener('input', function() {
-  document.getElementById('primary_color').value = this.value;
-  syncColorPicker(this.value);
-});
-</script>

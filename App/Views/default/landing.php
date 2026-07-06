@@ -5,45 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{siteName}}</title>
   <link rel="stylesheet" href="{{assetsUrl}}css/styles.css">
-  <script>(function(){try{var t=localStorage.getItem('phuse-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})()</script>
-  <style>
-    .vtx-landing {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 2rem;
-    }
-    .vtx-landing-card {
-      max-width: 520px;
-      width: 100%;
-      text-align: center;
-    }
-    .vtx-landing-badge {
-      display: inline-block;
-      font-size: .75rem;
-      font-weight: 600;
-      letter-spacing: .06em;
-      text-transform: uppercase;
-      padding: .25rem .75rem;
-      border-radius: 999px;
-      background: var(--vtx-primary-soft, rgba(99,102,241,.1));
-      color: var(--vtx-primary, #6366f1);
-      margin-bottom: 1.25rem;
-    }
-    .vtx-landing-footer {
-      margin-top: 3rem;
-      font-size: .8125rem;
-      color: var(--bs-secondary-color, #6c757d);
-    }
-    .vtx-landing-footer a {
-      color: inherit;
-      text-decoration: none;
-      opacity: .75;
-    }
-    .vtx-landing-footer a:hover { opacity: 1; }
-  </style>
+  <link rel="stylesheet" href="{{assetsUrl}}css/landing.css">
+  <?php include ROOT . 'App' . DS . 'Views' . DS . '_shared' . DS . 'theme-init.php'; ?>
 </head>
 <body>
 

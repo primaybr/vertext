@@ -47,24 +47,3 @@
     <?php endif; ?>
   </div>
 </div>
-
-<script>
-document.querySelectorAll('.theme-activate-form').forEach(function(form) {
-  form.addEventListener('submit', function(e) {
-    e.preventDefault();
-    var btn = this.querySelector('button[type=submit]');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Activating...';
-    window.VtxAjax.postForm(this.action, this, function(ok, res) {
-      if (ok && res && res.success) {
-        window.Phuse.toast(res.message || 'Theme activated.', 'success');
-        setTimeout(function() { location.reload(); }, 600);
-      } else {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="pi pi-check-circle me-1"></i>Activate';
-        window.Phuse.toast((res && res.message) || 'Failed to activate theme.', 'error');
-      }
-    });
-  });
-});
-</script>

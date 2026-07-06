@@ -26,6 +26,7 @@
       <div class="vtx-panel-body">
 
         <div id="codes-grid"
+             data-codes='<?php echo htmlspecialchars(json_encode($backup_codes), ENT_QUOTES); ?>'
              style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:1.5rem;">
           <?php foreach ($backup_codes as $code): ?>
           <code style="display:block;padding:.5rem .75rem;background:var(--ps-bg);border:1px solid var(--ps-border);border-radius:6px;font-size:.95rem;letter-spacing:.1em;text-align:center;font-family:monospace;">
@@ -63,28 +64,3 @@
 
   </div>
 </div>
-
-<script>
-function copyAllCodes() {
-  const codes = <?php echo json_encode($backup_codes); ?>;
-  navigator.clipboard.writeText(codes.join('\n')).then(() => {
-    Phuse.toast('Backup codes copied to clipboard.', 'success');
-  });
-}
-function printCodes() {
-  const codes = <?php echo json_encode($backup_codes); ?>;
-  const w = window.open('', '_blank', 'width=400,height=500');
-  w.document.write(
-    '<html><head><title>Vertext CMS - Backup Codes</title>' +
-    '<style>body{font-family:monospace;padding:2rem;}h2{margin-bottom:1rem;}' +
-    'code{display:block;padding:.3rem;border:1px solid #ccc;border-radius:4px;' +
-    'margin:.25rem 0;font-size:1rem;letter-spacing:.08em;}</style></head><body>' +
-    '<h2>Vertext CMS - 2FA Backup Codes</h2>' +
-    '<p>Each code can only be used once.</p>' +
-    codes.map(c => '<code>' + c + '</code>').join('') +
-    '</body></html>'
-  );
-  w.document.close();
-  w.print();
-}
-</script>

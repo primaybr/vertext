@@ -54,9 +54,3 @@
         </form>
     </div>
 </div>
-
-<script>
-document.getElementById('autoReply').addEventListener('change', function () {
-    document.getElementById('autoReplyMsg').style.display = this.checked ? '' : 'none';
-});
-</script>

@@ -7,7 +7,7 @@
       Public GET endpoints work without a key; a key raises your rate limit from 30 to 100 requests/minute.
     </p>
   </div>
-  <button type="button" class="btn btn-primary" id="ak-create-btn">
+  <button type="button" class="btn btn-primary" id="ak-create-btn" data-csrf="{{csrf_token}}">
     <i class="pi pi-plus me-1"></i> New Key
   </button>
 </div>
@@ -127,40 +127,3 @@
     </table>
   </div>
 </div>
-
-<script>
-(function () {
-  'use strict';
-
-  document.getElementById('ak-create-btn').addEventListener('click', function () {
-    var name = window.prompt('Name for the new API key (e.g. "Mobile app", "Zapier"):', '');
-    if (name === null) return;
-    name = name.trim();
-    if (!name) { Phuse.toast('A key name is required.', 'error'); return; }
-
-    var fd = new FormData();
-    fd.append('csrf_token', '{{csrf_token}}');
-    fd.append('name', name);
-    fetch(window.VTX_BASE_URL + '/admin/api-keys/store', {
-      method: 'POST', body: fd, headers: { 'X-Requested-With': 'XMLHttpRequest' }
-    })
-    .then(function (r) { return r.json(); })
-    .then(function (res) {
-      if (!res.success) { Phuse.toast(res.message || 'Failed.', 'error'); return; }
-      document.getElementById('ak-reveal-key').textContent = res.key;
-      document.getElementById('ak-reveal').style.display = '';
-      Phuse.toast(res.message, 'success');
-      // Show the new row without losing the revealed key: append to table lazily
-      // (full list refresh happens on next navigation)
-    })
-    .catch(function () { Phuse.toast('Network error.', 'error'); });
-  });
-
-  document.getElementById('ak-copy-btn').addEventListener('click', function () {
-    var key = document.getElementById('ak-reveal-key').textContent;
-    navigator.clipboard.writeText(key).then(function () {
-      Phuse.toast('Key copied to clipboard.', 'success');
-    });
-  });
-})();
-</script>

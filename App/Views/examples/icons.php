@@ -36,12 +36,12 @@
 
     .icon-item:hover {
       background: var(--ps-bg-surface, #F8FAFC);
-      border-color: var(--ps-primary, #2563EB);
+      border-color: var(--ps-primary, #1E3A5F);
     }
 
     .icon-item .pi {
       font-size: 1.5rem;
-      color: var(--ps-primary, #2563EB);
+      color: var(--ps-primary, #1E3A5F);
     }
 
     .icon-item .icon-name {

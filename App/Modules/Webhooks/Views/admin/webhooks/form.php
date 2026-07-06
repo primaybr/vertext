@@ -50,13 +50,12 @@ $isModal       = $isModal ?? false;
       </div>
       <div class="vtx-field mt-3">
         <label class="vtx-label" for="wh-secret">Secret</label>
-        <div style="display:flex;gap:.5rem;">
-          <input type="text" id="wh-secret" name="secret" class="form-control"
+        <div class="wh-inline-group">
+          <input type="text" id="wh-secret" name="secret" class="form-control wh-mono-input"
                  value="<?php echo htmlspecialchars($currentSecret); ?>"
-                 placeholder="Random secret for HMAC verification" required
-                 style="font-family:monospace;font-size:.875rem;">
+                 placeholder="Random secret for HMAC verification" required>
           <?php if (!$isEdit): ?>
-          <button type="button" class="btn btn-outline-secondary btn-sm" style="flex-shrink:0;"
+          <button type="button" class="btn btn-outline-secondary btn-sm wh-shrink-0"
                   onclick="document.getElementById('wh-secret').value = Array.from(crypto.getRandomValues(new Uint8Array(20))).map(b=>b.toString(16).padStart(2,'0')).join('')">
             Regenerate
           </button>
@@ -65,11 +64,10 @@ $isModal       = $isModal ?? false;
         <div class="vtx-hint">Used to compute <code>X-Vertext-Signature</code>.</div>
       </div>
       <div class="vtx-field mt-3">
-        <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;font-size:.875rem;">
+        <label class="wh-checkbox-label">
           <input type="hidden" name="enabled" value="0">
           <input type="checkbox" name="enabled" value="1"
-                 <?php echo $isEnabled ? 'checked' : ''; ?>
-                 style="accent-color:var(--ps-primary);">
+                 <?php echo $isEnabled ? 'checked' : ''; ?>>
           <span>Active - deliver events to this endpoint</span>
         </label>
       </div>
@@ -79,29 +77,28 @@ $isModal       = $isModal ?? false;
   <div class="vtx-panel mb-3">
     <div class="vtx-panel-head"><h2 class="vtx-panel-title">Events</h2></div>
     <div class="vtx-panel-body">
-      <p style="font-size:.8125rem;color:var(--ps-text-muted);margin-bottom:.875rem;">
+      <p class="wh-events-desc">
         Select the events this endpoint should receive.
       </p>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.625rem;">
+      <div class="wh-events-grid">
         <?php foreach ($availableEvents as $slug => $label):
             if ($slug === 'ping') continue;
             $checked = in_array($slug, $savedEvents, true) ? 'checked' : '';
         ?>
-        <label style="display:flex;align-items:center;gap:.5rem;font-size:.875rem;cursor:pointer;
-                      padding:.5rem .75rem;border:1px solid var(--ps-border);border-radius:6px;
-                      transition:border-color .12s,background .12s;"
-               class="vtx-event-label">
+        <label class="vtx-event-label">
           <input type="checkbox" name="events[]" value="<?php echo htmlspecialchars($slug); ?>"
-                 <?php echo $checked; ?> style="accent-color:var(--ps-primary);">
-          <span><?php echo htmlspecialchars($label); ?></span>
-          <code style="font-size:.6875rem;color:var(--ps-text-muted);margin-left:auto;"><?php echo htmlspecialchars($slug); ?></code>
+                 <?php echo $checked; ?>>
+          <span class="vtx-event-label-text">
+            <span><?php echo htmlspecialchars($label); ?></span>
+            <code><?php echo htmlspecialchars($slug); ?></code>
+          </span>
         </label>
         <?php endforeach; ?>
       </div>
     </div>
   </div>
 
-  <div style="display:flex;justify-content:flex-end;">
+  <div class="wh-actions-end">
     <button type="submit" class="btn btn-primary">
       <?php echo $isEdit ? 'Save Changes' : 'Create Endpoint'; ?>
     </button>
@@ -109,7 +106,7 @@ $isModal       = $isModal ?? false;
 
   <?php else: ?>
   <!-- Full-page: two-column layout -->
-  <div style="display:grid;grid-template-columns:1fr 360px;gap:1.25rem;align-items:start;">
+  <div class="wh-two-col">
 
     <div>
       <div class="vtx-panel mb-3">
@@ -130,13 +127,12 @@ $isModal       = $isModal ?? false;
           </div>
           <div class="vtx-field mt-3">
             <label class="vtx-label" for="wh-secret">Secret</label>
-            <div style="display:flex;gap:.5rem;">
-              <input type="text" id="wh-secret" name="secret" class="form-control"
+            <div class="wh-inline-group">
+              <input type="text" id="wh-secret" name="secret" class="form-control wh-mono-input"
                      value="<?php echo htmlspecialchars($currentSecret); ?>"
-                     placeholder="Random secret for HMAC verification" required
-                     style="font-family:monospace;font-size:.875rem;">
+                     placeholder="Random secret for HMAC verification" required>
               <?php if (!$isEdit): ?>
-              <button type="button" class="btn btn-outline-secondary btn-sm" style="flex-shrink:0;"
+              <button type="button" class="btn btn-outline-secondary btn-sm wh-shrink-0"
                       onclick="document.getElementById('wh-secret').value = Array.from(crypto.getRandomValues(new Uint8Array(20))).map(b=>b.toString(16).padStart(2,'0')).join('')">
                 Regenerate
               </button>
@@ -150,22 +146,21 @@ $isModal       = $isModal ?? false;
       <div class="vtx-panel">
         <div class="vtx-panel-head"><h2 class="vtx-panel-title">Events</h2></div>
         <div class="vtx-panel-body">
-          <p style="font-size:.8125rem;color:var(--ps-text-muted);margin-bottom:.875rem;">
+          <p class="wh-events-desc">
             Select the events this endpoint should receive.
           </p>
-          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.625rem;">
+          <div class="wh-events-grid">
             <?php foreach ($availableEvents as $slug => $label):
                 if ($slug === 'ping') continue;
                 $checked = in_array($slug, $savedEvents, true) ? 'checked' : '';
             ?>
-            <label style="display:flex;align-items:center;gap:.5rem;font-size:.875rem;cursor:pointer;
-                          padding:.5rem .75rem;border:1px solid var(--ps-border);border-radius:6px;
-                          transition:border-color .12s,background .12s;"
-                   class="vtx-event-label">
+            <label class="vtx-event-label">
               <input type="checkbox" name="events[]" value="<?php echo htmlspecialchars($slug); ?>"
-                     <?php echo $checked; ?> style="accent-color:var(--ps-primary);">
-              <span><?php echo htmlspecialchars($label); ?></span>
-              <code style="font-size:.6875rem;color:var(--ps-text-muted);margin-left:auto;"><?php echo htmlspecialchars($slug); ?></code>
+                     <?php echo $checked; ?>>
+              <span class="vtx-event-label-text">
+                <span><?php echo htmlspecialchars($label); ?></span>
+                <code><?php echo htmlspecialchars($slug); ?></code>
+              </span>
             </label>
             <?php endforeach; ?>
           </div>
@@ -177,18 +172,17 @@ $isModal       = $isModal ?? false;
       <div class="vtx-panel mb-3">
         <div class="vtx-panel-head"><h2 class="vtx-panel-title">Options</h2></div>
         <div class="vtx-panel-body">
-          <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;font-size:.875rem;">
+          <label class="wh-checkbox-label">
             <input type="hidden" name="enabled" value="0">
             <input type="checkbox" name="enabled" value="1"
-                   <?php echo $isEnabled ? 'checked' : ''; ?>
-                   style="accent-color:var(--ps-primary);">
+                   <?php echo $isEnabled ? 'checked' : ''; ?>>
             <span>Active - deliver events to this endpoint</span>
           </label>
         </div>
       </div>
 
       <div class="vtx-panel">
-        <div class="vtx-panel-body" style="display:flex;flex-direction:column;gap:.5rem;">
+        <div class="vtx-panel-body wh-actions-stack">
           <button type="submit" class="btn btn-primary">
             <?php echo $isEdit ? 'Save Changes' : 'Create Endpoint'; ?>
           </button>
@@ -201,8 +195,3 @@ $isModal       = $isModal ?? false;
   <?php endif; ?>
 
 </form>
-
-<style>
-.vtx-event-label:hover { border-color: var(--ps-primary); background: var(--ps-bg-subtle); }
-.vtx-event-label:has(input:checked) { border-color: var(--ps-primary); background: color-mix(in srgb, var(--ps-primary) 6%, transparent); }
-</style>

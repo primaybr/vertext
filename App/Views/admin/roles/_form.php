@@ -77,13 +77,3 @@
     </button>
   </div>
 </form>
-
-<script>
-(function () {
-    var cbs = document.querySelectorAll('.r-perm-cb');
-    var selAll = document.getElementById('r-select-all');
-    var clrAll = document.getElementById('r-clear-all');
-    if (selAll) selAll.addEventListener('click', function () { cbs.forEach(function (cb) { cb.checked = true; }); });
-    if (clrAll) clrAll.addEventListener('click', function () { cbs.forEach(function (cb) { cb.checked = false; }); });
-})();
-</script>

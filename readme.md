@@ -1,6 +1,6 @@
 # Vertext CMS
 
-![Version](https://img.shields.io/badge/version-0.0.8--alpha-blue)
+![Version](https://img.shields.io/badge/version-0.0.9--alpha-blue)
 ![PHP](https://img.shields.io/badge/PHP-8.2%2B-777BB4)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -17,7 +17,7 @@ Vertext is a lightweight, extensible content management system written in PHP 8.
 - **Modular architecture** - install, enable, disable, and uninstall modules without touching core code; modules declare inter-dependencies enforced at install/uninstall time
 - **Role-based access control** - fine-grained permissions per resource and action; custom roles
 - **Admin panel** - responsive sidebar UI with dark/light theme, flash messages, and audit trail
-- **Public theme system** - `ThemeEngine` wraps all front-end module views in a shared theme layout; both bundled themes (Default, Clean) support dark/light mode with OS preference detection and a toggle button
+- **Public theme system** - `ThemeEngine` wraps all front-end module views in a shared theme layout; 4 bundled themes (Default, Clean, Field, Frame) support dark/light mode with OS preference detection and a toggle button
 - **Email notifications** - built-in Mailer (PHP mail + SMTP); contact notifications, comment approvals, auto-replies, welcome emails
 - **Slug auto-generation** - `vtx-slug` component generates URL slugs from titles across all module forms
 - **Navigation module** - build front-end menus with custom links, page slugs, module routes, and dropdown support; modules auto-register nav items on install; renders automatically in theme layouts via `NavHelper`
@@ -94,7 +94,7 @@ vertext/
 │   ├── Models/           # Database models
 │   ├── Modules/          # Installable modules (Blog, Media, Pages, ...)
 │   ├── Theme/            # ThemeEngine - wraps front-end views in a theme layout
-│   ├── Themes/           # Theme source files (default/, clean/)
+│   ├── Themes/           # Theme source files (default/, clean/, field/, frame/)
 │   └── Views/            # Templates (admin + deployed module views)
 ├── Core/                 # Framework internals - do not modify
 ├── Config/               # Routes, Database, Paths config

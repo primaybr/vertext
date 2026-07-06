@@ -1,7 +1,7 @@
 {
     "name":        "Videos",
     "slug":        "videos",
-    "version":     "0.0.1",
+    "version":     "0.0.2",
     "description": "YouTube and Vimeo embed management with public video grid",
     "author":      "Vertext",
     "category":    "Media",
@@ -17,7 +17,11 @@
         "permission": "videos.view"
     },
     "assets": {
-        "css": ["css/videos-admin.css"],
-        "js":  ["js/videos-admin.js"]
+        "css": ["css/videos-front.css"],
+        "js":  ["js/videos-front.js"],
+        "admin": {
+            "css": ["css/videos-admin.css"],
+            "js":  ["js/videos-admin.js"]
+        }
     }
 }

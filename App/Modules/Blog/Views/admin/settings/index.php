@@ -114,26 +114,3 @@
     </div>
   </form>
 </div>
-
-<script>
-(function () {
-  var pathInput    = document.getElementById('blog_base_path');
-  var warning      = document.getElementById('blog-path-seo-warning');
-  var oldPathLabel = document.getElementById('old-path-label');
-  var originalPath = pathInput ? pathInput.value.trim() : '';
-
-  function checkChange() {
-    if (!pathInput || !warning) return;
-    var current = pathInput.value.trim().replace(/^\/+|\/+$/g, '');
-    var changed  = current !== originalPath;
-    warning.style.display = changed ? '' : 'none';
-    if (changed && oldPathLabel) {
-      oldPathLabel.textContent = originalPath ? '/' + originalPath : '/';
-    }
-  }
-
-  if (pathInput) {
-    pathInput.addEventListener('input', checkChange);
-  }
-})();
-</script>

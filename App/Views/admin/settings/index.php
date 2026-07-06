@@ -135,31 +135,6 @@
   </div>
 </form>
 
-<script>
-function vtxToggleSmtp(val) {
-  var f = document.getElementById('vtx-smtp-fields');
-  if (f) f.style.display = val === 'smtp' ? '' : 'none';
-}
-document.getElementById('vtx-test-mail-btn').addEventListener('click', function () {
-  var res = document.getElementById('vtx-test-mail-result');
-  res.style.display = 'block';
-  res.style.background = 'var(--ps-bg-subtle)';
-  res.textContent = 'Sending…';
-  fetch('{{baseUrl}}/admin/settings/test-mail', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: 'csrf_token=' + encodeURIComponent(document.querySelector('[name=csrf_token]').value)
-  })
-  .then(r => r.json())
-  .then(d => {
-    res.style.background = d.success ? '#dcfce7' : '#fee2e2';
-    res.style.color      = d.success ? '#166534' : '#991b1b';
-    res.textContent = d.message;
-  })
-  .catch(() => { res.textContent = 'Request failed.'; });
-});
-</script>
-
 <?php else: ?>
 <form method="POST" action="{{baseUrl}}/admin/settings/save" data-ajax-form id="vtx-settings-form">
   <input type="hidden" name="csrf_token" value="{{csrf_token}}">
@@ -379,107 +354,6 @@ document.getElementById('vtx-test-mail-btn').addEventListener('click', function 
 <form id="vtx-clear-cache-form" method="POST" action="{{baseUrl}}/admin/settings/clear-cache" style="display:none;">
   <input type="hidden" name="csrf_token" value="{{csrf_token}}">
 </form>
-
-<style>
-.vtx-pill-toggle {
-  width:44px;height:24px;border-radius:12px;
-  background:var(--ps-border,#ccc);
-  border:none;cursor:pointer;position:relative;
-  padding:0;flex-shrink:0;
-  transition:background .2s ease;
-  outline-offset:2px;
-  display:inline-block;
-  vertical-align:middle;
-}
-.vtx-pill-toggle--on { background:var(--ps-primary,#3b82f6); }
-.vtx-pill-toggle:focus-visible { outline:2px solid var(--ps-primary,#3b82f6); }
-.vtx-pill-toggle--loading { opacity:.5;cursor:wait; }
-.vtx-pill-toggle__knob {
-  position:absolute;top:3px;left:3px;
-  width:18px;height:18px;border-radius:50%;
-  background:#fff;
-  box-shadow:0 1px 2px rgba(0,0,0,.2);
-  transition:transform .2s ease;
-  display:block;pointer-events:none;
-}
-.vtx-pill-toggle--on .vtx-pill-toggle__knob { transform:translateX(20px); }
-</style>
-<script>
-(function () {
-  var btn = document.getElementById('vtx-maint-toggle');
-  if (!btn) return;
-  btn.addEventListener('click', function () {
-    if (btn.disabled) return;
-    btn.disabled = true;
-    btn.classList.add('vtx-pill-toggle--loading');
-    var fd = new FormData();
-    fd.append('csrf_token', btn.dataset.csrf);
-    fetch('{{baseUrl}}/admin/settings/toggle-maintenance', { method: 'POST', body: fd })
-      .then(function (r) { return r.json(); })
-      .then(function (d) {
-        btn.disabled = false;
-        btn.classList.remove('vtx-pill-toggle--loading');
-        if (d.success) {
-          var on = d.enabled;
-          btn.classList.toggle('vtx-pill-toggle--on', on);
-          btn.setAttribute('aria-pressed', on ? 'true' : 'false');
-          var lbl = document.getElementById('vtx-maint-status');
-          if (lbl) lbl.textContent = on ? 'On' : 'Off';
-          var banner = document.getElementById('vtx-maint-banner');
-          if (banner) banner.style.display = on ? 'flex' : 'none';
-          Phuse.toast(d.message, 'success');
-          setTimeout(function () { window.location.reload(); }, 1200);
-        } else {
-          Phuse.toast(d.message || 'Failed to save.', 'error');
-        }
-      })
-      .catch(function () {
-        btn.disabled = false;
-        btn.classList.remove('vtx-pill-toggle--loading');
-        Phuse.toast('Request failed.', 'error');
-      });
-  });
-}());
-
-(function () {
-  var btn = document.getElementById('vtx-run-migration-btn');
-  var result = document.getElementById('vtx-migration-result');
-  if (!btn) return;
-  btn.addEventListener('click', function () {
-    if (btn.disabled) return;
-    btn.disabled = true;
-    btn.innerHTML = '<i class="pi pi-spinner me-1"></i> Running...';
-    result.style.display = 'none';
-    var fd = new FormData();
-    fd.append('csrf_token', btn.dataset.csrf);
-    fetch('{{baseUrl}}/admin/settings/run-migration', { method: 'POST', body: fd })
-      .then(function (r) { return r.json(); })
-      .then(function (d) {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="pi pi-database me-1"></i> Run Migration';
-        result.style.display = 'block';
-        if (d.success) {
-          result.style.background = 'color-mix(in srgb,var(--ps-success,#22c55e) 12%,transparent)';
-          result.style.border = '1px solid color-mix(in srgb,var(--ps-success,#22c55e) 40%,transparent)';
-          result.style.color = 'var(--ps-success,#16a34a)';
-          result.textContent = d.message;
-          Phuse.toast(d.message, 'success');
-        } else {
-          result.style.background = 'color-mix(in srgb,var(--ps-danger,#ef4444) 12%,transparent)';
-          result.style.border = '1px solid color-mix(in srgb,var(--ps-danger,#ef4444) 40%,transparent)';
-          result.style.color = 'var(--ps-danger,#dc2626)';
-          result.textContent = d.message;
-          Phuse.toast(d.message || 'Migration failed.', 'error');
-        }
-      })
-      .catch(function () {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="pi pi-database me-1"></i> Run Migration';
-        Phuse.toast('Request failed.', 'error');
-      });
-  });
-}());
-</script>
 
 <?php endif; ?>
 

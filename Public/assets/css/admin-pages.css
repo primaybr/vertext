@@ -1,0 +1,257 @@
+/* Vertext CMS - Admin Page-Specific Styles
+   One-off styling for individual core admin pages that doesn't belong in the
+   shared admin.css design system. Organized by page, each section header
+   names the view file it was extracted from. */
+
+/* ── admin/settings/index.php: maintenance-mode pill toggle ── */
+.vtx-pill-toggle {
+  width:44px;height:24px;border-radius:12px;
+  background:var(--ps-border,#ccc);
+  border:none;cursor:pointer;position:relative;
+  padding:0;flex-shrink:0;
+  transition:background .2s ease;
+  outline-offset:2px;
+  display:inline-block;
+  vertical-align:middle;
+}
+.vtx-pill-toggle--on { background:var(--ps-primary-fill,#1E3A5F); }
+.vtx-pill-toggle:focus-visible { outline:2px solid var(--ps-primary,#1E3A5F); }
+.vtx-pill-toggle--loading { opacity:.5;cursor:wait; }
+.vtx-pill-toggle__knob {
+  position:absolute;top:3px;left:3px;
+  width:18px;height:18px;border-radius:50%;
+  background:#fff;
+  box-shadow:0 1px 2px rgba(0,0,0,.2);
+  transition:transform .2s ease;
+  display:block;pointer-events:none;
+}
+.vtx-pill-toggle--on .vtx-pill-toggle__knob { transform:translateX(20px); }
+
+/* ── admin/modules/bundle_form.php: breadcrumb, module-row, checkbox styling ── */
+.vtx-breadcrumb { font-size:.8125rem;color:var(--ps-text-muted);text-decoration:none; }
+.vtx-breadcrumb:hover { color:var(--ps-accent); }
+.bf-mod-row { display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:.4rem .625rem;border-radius:5px;border:1px solid var(--ps-border);background:var(--ps-bg-subtle); }
+.bf-mod-label { display:flex;align-items:center;gap:.5rem;cursor:pointer;flex:1;min-width:0; }
+.bf-mod-label input[type="checkbox"] { accent-color:var(--ps-primary);width:15px;height:15px;flex-shrink:0; }
+.bf-mod-name { font-size:.8125rem;font-weight:600; }
+.bf-mod-slug { font-size:.7rem;margin-left:.25rem; }
+.bf-req-label { display:flex;align-items:center;gap:.3rem;font-size:.75rem;white-space:nowrap;cursor:pointer;flex-shrink:0; }
+.bf-req-label input[type="checkbox"] { accent-color:var(--ps-primary);width:13px;height:13px; }
+.bf-req-hidden { opacity:0;pointer-events:none; }
+
+/* ══════════════════════════════════════════════════════════════════════ */
+/* admin/modules/index.php: Module Manager (tabs, bundle cards, module     */
+/* cards, install-modal checklist/progress)                                */
+/* ══════════════════════════════════════════════════════════════════════ */
+
+/* ── Tab switcher ──────────────────────────────────────────────────────── */
+.vtx-mod-tabs {
+  display: flex;
+  gap: .25rem;
+  border-bottom: 2px solid var(--ps-border);
+  padding-bottom: 0;
+}
+.vtx-mod-tab {
+  background: none;
+  border: none;
+  padding: .5rem 1rem;
+  font-size: .875rem;
+  font-weight: 500;
+  color: var(--ps-text-secondary);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  border-radius: 4px 4px 0 0;
+  transition: color .15s, border-color .15s;
+}
+.vtx-mod-tab:hover {
+  color: var(--ps-text);
+}
+.vtx-mod-tab.active {
+  color: var(--ps-primary);
+  border-bottom-color: var(--ps-primary);
+  background: var(--ps-primary-light, rgba(79,70,229,.06));
+}
+
+/* ── Bundle cards ──────────────────────────────────────────────────────── */
+.vtx-bundle-card {
+  border: 1px solid var(--ps-border);
+  border-radius: 10px;
+  padding: 1.125rem;
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+  background: var(--ps-bg-base);
+}
+.vtx-bundle-card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: .75rem;
+}
+.vtx-bundle-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: var(--ps-primary-light, rgba(79,70,229,.12));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.vtx-bundle-icon .pi {
+  font-size: 1.125rem;
+  color: var(--ps-primary);
+}
+.vtx-bundle-icon--done {
+  background: rgba(34,197,94,.12);
+}
+.vtx-bundle-icon--done .pi {
+  color: #16a34a;
+}
+.vtx-bundle-name {
+  font-size: .9375rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: .2rem;
+}
+.vtx-bundle-desc {
+  font-size: .8125rem;
+  color: var(--ps-text-secondary);
+  line-height: 1.45;
+}
+.vtx-bundle-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .3rem;
+}
+.vtx-bundle-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .2rem;
+  font-size: .6875rem;
+  padding: .15rem .45rem;
+  border-radius: 4px;
+  background: var(--ps-bg-subtle);
+  color: var(--ps-text-secondary);
+  border: 1px solid var(--ps-border);
+}
+.vtx-bundle-chip--on {
+  background: rgba(34,197,94,.1);
+  color: #15803d;
+  border-color: rgba(34,197,94,.3);
+}
+.vtx-bundle-chip-req {
+  color: var(--ps-primary);
+  font-weight: 700;
+  font-size: .6875rem;
+}
+
+/* ── Module cards (a la carte tab) ────────────────────────────────────── */
+.vtx-module-card {
+  border: 1px solid var(--ps-border);
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: .625rem;
+  background: var(--ps-bg-base);
+}
+.vtx-module-card--available {
+  opacity: .85;
+  border-style: dashed;
+}
+.vtx-module-card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: .625rem;
+}
+.vtx-module-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--ps-primary-light, rgba(79,70,229,.12));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.vtx-module-icon .pi {
+  font-size: 1rem;
+  color: var(--ps-primary);
+}
+.vtx-module-icon--muted {
+  background: var(--ps-bg-subtle);
+}
+.vtx-module-icon--muted .pi {
+  color: var(--ps-text-muted);
+}
+.vtx-module-name {
+  font-size: .875rem;
+  font-weight: 600;
+  line-height: 1.2;
+  margin-bottom: .2rem;
+}
+.vtx-module-desc {
+  font-size: .8125rem;
+  color: var(--ps-text-secondary);
+  line-height: 1.4;
+}
+.vtx-module-actions {
+  display: flex;
+  gap: .375rem;
+  margin-top: auto;
+  padding-top: .375rem;
+  flex-wrap: wrap;
+}
+
+/* ── Bundle modal checklist item ───────────────────────────────────────── */
+.vtx-bundle-check-item {
+  display: flex;
+  align-items: center;
+  gap: .625rem;
+  padding: .5rem .625rem;
+  border-radius: 6px;
+  border: 1px solid var(--ps-border);
+  background: var(--ps-bg-subtle);
+}
+.vtx-bundle-check-item input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--ps-primary);
+}
+.vtx-bundle-check-item label {
+  flex: 1;
+  font-size: .8125rem;
+  color: var(--ps-text);
+  cursor: pointer;
+}
+.vtx-bundle-check-item .vtx-bundle-check-badges {
+  display: flex;
+  gap: .25rem;
+}
+
+/* ── Bundle progress item ──────────────────────────────────────────────── */
+.vtx-bundle-progress-item {
+  display: flex;
+  align-items: center;
+  gap: .625rem;
+  padding: .4rem .625rem;
+  border-radius: 6px;
+  font-size: .8125rem;
+}
+.vtx-bundle-progress-item.pending {
+  color: var(--ps-text-muted);
+}
+.vtx-bundle-progress-item.installing {
+  color: var(--ps-primary);
+}
+.vtx-bundle-progress-item.success {
+  color: #16a34a;
+}
+.vtx-bundle-progress-item.error {
+  color: #dc2626;
+}
+.vtx-bundle-progress-item.skipped {
+  color: var(--ps-text-muted);
+}

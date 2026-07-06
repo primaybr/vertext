@@ -194,6 +194,41 @@ class ProjectsController extends BaseController
 </form>
 ```
 
+## 5b. Add CSS/JS Assets (optional)
+
+Never write inline `<style>`/`<script>` blocks in a view file. Instead, put CSS/JS in the module's
+`Assets/` folder and declare it in `module.json`:
+
+```
+App/Modules/Portfolio/
+├── Assets/
+│   ├── portfolio.css        # front-end (if the module has public views)
+│   └── portfolio-admin.js   # admin-only
+```
+
+```json
+{
+    "assets": {
+        "css": ["portfolio.css"],
+        "admin": { "js": ["portfolio-admin.js"] }
+    }
+}
+```
+
+- Top-level `assets.css` / `assets.js` are injected into the active front-end theme's `layout.php`
+  (all bundled themes already call `ModuleLoader::frontAssets()` for this).
+- `assets.admin.css` / `assets.admin.js` are injected into the admin layout via `ModuleLoader::assets()`.
+- Paths are relative to the `Assets/` folder itself - never prefix with `Assets/`. The whole folder
+  is deployed verbatim to `Public/assets/modules/{slug}/` on install/redeploy.
+- If a script needs a value only PHP knows (a CSRF token, an ID, JSON data), put it in a `data-*`
+  attribute on an element in the view and read it from `dataset` in the external script - `{{ }}`
+  template placeholders and raw `<?php ?>` don't get processed once the code lives in a static
+  `.js` file.
+- If a view can be loaded into the admin CRUD modal (an AJAX-fetched `_form.php` partial), bind
+  behavior via the `vtx:modal:loaded` event (dispatched on `document`, with `event.detail.body`
+  set to the freshly-injected content) rather than `getElementById(...).addEventListener(...)` at
+  script-load time - the modal's content doesn't exist yet when a globally-loaded script first runs.
+
 ## 6. Install the Module
 
 1. Go to **Admin → Modules**.
@@ -213,6 +248,7 @@ Tables are created, permissions seeded, views deployed, and the Portfolio nav it
 - [ ] Controller calls `$this->validateCsrf()` on all POST handlers
 - [ ] Controller calls `$this->audit()` for state-changing operations
 - [ ] Views are in `Views/admin/` inside the module folder (not directly in `App/Views/`)
+- [ ] No inline `<style>`/`<script>` in views - CSS/JS lives in `Assets/` and is declared in `module.json`
 
 ## BaseController Methods You'll Use
 

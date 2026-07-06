@@ -92,6 +92,7 @@ $uri          = $setup_uri     ?? '';
           <label class="vtx-label">Secret Key (manual entry)</label>
           <div style="display:flex;align-items:center;gap:.5rem;">
             <code id="secret-display"
+                  data-secret="<?php echo htmlspecialchars($rawSecret ?? '', ENT_QUOTES); ?>"
                   style="flex:1;padding:.5rem .75rem;background:var(--ps-bg);border:1px solid var(--ps-border);border-radius:6px;font-size:1rem;letter-spacing:.12em;word-break:break-all;">
               <?php echo htmlspecialchars($secret); ?>
             </code>
@@ -196,18 +197,3 @@ $uri          = $setup_uri     ?? '';
   </div>
 
 </div>
-
-<script>
-function copySecret() {
-  const el  = document.getElementById('secret-display');
-  const btn = document.getElementById('copy-btn');
-  const raw = <?php echo json_encode($rawSecret ?? ''); ?>;
-  navigator.clipboard.writeText(raw.replace(/=+$/, '')).then(() => {
-    btn.innerHTML = '<i class="pi pi-check"></i>';
-    setTimeout(() => { btn.innerHTML = '<i class="pi pi-copy"></i>'; }, 2000);
-  }).catch(() => {
-    el.style.outline = '2px solid var(--ps-primary)';
-    window.getSelection().selectAllChildren(el);
-  });
-}
-</script>

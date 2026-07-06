@@ -5,7 +5,10 @@
         </a>
         <h1 class="page-title"><?= htmlspecialchars($item['name']) ?></h1>
     </div>
-    <div class="d-flex gap-2">
+    <div class="d-flex gap-2" id="contactItemActions"
+         data-id="<?= htmlspecialchars((string) $item['id']) ?>"
+         data-csrf="<?= htmlspecialchars($csrfToken ?? '') ?>"
+         data-base-url="<?= htmlspecialchars($baseUrl) ?>">
         <?php if ($item['status'] !== 'spam'): ?>
             <button type="button" class="btn btn-outline-warning" id="btnSpam">Mark Spam</button>
         <?php endif; ?>
@@ -72,33 +75,3 @@
         </div>
     </div>
 </div>
-
-<script>
-const id = <?= json_encode($item['id']) ?>;
-const token = <?= json_encode($csrfToken ?? '') ?>;
-const base = <?= json_encode($baseUrl) ?>;
-
-function doAction(action, cb) {
-    fetch(`${base}/admin/contact/${id}/${action}`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: 'csrf_token=' + encodeURIComponent(token)
-    })
-    .then(r => r.json())
-    .then(d => { if (d.success) cb(); else Phuse.toast(d.message, 'error'); })
-    .catch(() => Phuse.toast('Request failed.', 'error'));
-}
-
-document.getElementById('btnDelete')?.addEventListener('click', function () {
-    if (!confirm('Permanently delete this submission?')) return;
-    doAction('delete', () => { window.location.href = base + '/admin/contact'; });
-});
-
-document.getElementById('btnSpam')?.addEventListener('click', function () {
-    doAction('mark-spam', () => { this.remove(); });
-});
-
-document.getElementById('btnRead')?.addEventListener('click', function () {
-    doAction('mark-read', () => { this.remove(); });
-});
-</script>

@@ -1,28 +1,9 @@
-<style>
-  .cat-back { font-size: .875rem; margin-bottom: 2rem; }
-  .cat-back a { color: var(--clr-muted); }
-  .cat-back a:hover { color: var(--clr-accent); }
-  .cat-header { margin-bottom: 2.5rem; }
-  .cat-header h1 { font-size: 1.75rem; font-weight: 800; margin: 0 0 .375rem; }
-  .cat-header p { color: var(--clr-muted); margin: 0; }
-  .post-list { list-style: none; padding: 0; margin: 0; }
-  .post-item { padding: 1.5rem 0; border-bottom: 1px solid var(--clr-border); }
-  .post-item:last-child { border-bottom: none; }
-  .post-title { font-size: 1.25rem; font-weight: 700; margin: 0 0 .375rem; }
-  .post-meta { font-size: .8125rem; color: var(--clr-faint); margin-bottom: .625rem; }
-  .post-excerpt { color: var(--clr-muted); margin: 0 0 .75rem; font-size: .9375rem; }
-  .read-more { font-size: .875rem; font-weight: 600; }
-  .pagination { display: flex; gap: .5rem; justify-content: center; padding: 2.5rem 0; }
-  .pagination a, .pagination span { display: inline-flex; align-items: center; justify-content: center;
-    width: 36px; height: 36px; border-radius: 6px; font-size: .875rem; border: 1px solid var(--clr-border); }
-  .pagination .current { background: var(--clr-accent); color: #fff; border-color: var(--clr-accent); }
-  .empty { text-align: center; padding: 4rem 1rem; color: var(--clr-faint); }
-</style>
-
-<div class="container">
-  <div class="cat-back">
-    <a href="<?php echo $baseUrl; ?>/blog">&larr; <?php echo htmlspecialchars($settings['blog_title'] ?? 'Blog'); ?></a>
-  </div>
+<div class="container blog-category">
+  <nav class="cat-breadcrumb">
+    <a href="<?php echo $baseUrl; ?>/blog"><?php echo htmlspecialchars($settings['blog_title'] ?? 'Blog'); ?></a>
+    <span class="sep">/</span>
+    <span><?php echo htmlspecialchars($category['name']); ?></span>
+  </nav>
 
   <div class="cat-header">
     <h1><?php echo htmlspecialchars($category['name']); ?></h1>

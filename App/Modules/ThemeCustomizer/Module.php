@@ -34,8 +34,9 @@ class Module implements ModuleInterface
 
         // Seed default settings (idempotent)
         $defaults = [
-            ['primary_color', '#2563EB', 'text',     'Primary Accent Color'],
+            ['primary_color', '#1E3A5F', 'text',     'Primary Accent Color'],
             ['font_family',   'system',  'text',     'Font Family'],
+            ['corner_style',  'subtle',  'text',     'Corner Style'],
             ['logo_url',      '',        'text',     'Logo URL'],
             ['custom_css',    '',        'textarea', 'Custom CSS'],
         ];
@@ -68,7 +69,8 @@ class Module implements ModuleInterface
     public function registerRoutes(\Core\Router $router): void
     {
         $c = 'App\Modules\ThemeCustomizer\Controllers\Admin\ThemeCustomizerController';
-        $router->get('/admin/theme-customizer',       $c, 'index');
-        $router->post('/admin/theme-customizer/save', $c, 'save');
+        $router->get('/admin/theme-customizer',         $c, 'index');
+        $router->post('/admin/theme-customizer/save',   $c, 'save');
+        $router->get('/admin/theme-customizer/preview', $c, 'preview');
     }
 }

@@ -1,4 +1,3 @@
-<?php include __DIR__ . '/_styles.php'; ?>
 <div class="mb-account-wrap">
 
   <div class="mb-account-head">

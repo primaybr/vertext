@@ -1,11 +1,15 @@
 {
     "name": "Members",
     "slug": "members",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "Front-end visitor accounts: registration, login, email verification, and member profiles",
     "author": "Vertext",
     "category": "Core",
     "requires": { "vertext": ">=0.0.8" },
+    "assets": {
+        "css": ["members-front.css"],
+        "admin": { "js": ["members-admin.js"] }
+    },
     "nav": {
         "label":      "Members",
         "icon":       "pi-users",

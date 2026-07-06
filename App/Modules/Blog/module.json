@@ -1,13 +1,15 @@
 {
     "name":        "Blog",
     "slug":        "blog",
-    "version":     "0.0.6",
+    "version":     "0.0.7",
     "description": "Full-featured blog with posts, categories, tags, comments, analytics, and public frontend",
     "setup":       "/admin/blog/setup",
     "author":      "Vertext",
     "category":    "Content",
     "requires":    { "vertext": ">=0.0.1" },
     "assets": {
+        "css": ["css/blog-front.css"],
+        "js":  ["js/blog-front.js"],
         "admin": {
             "css": ["css/blog.css"],
             "js":  ["js/blog.js"]

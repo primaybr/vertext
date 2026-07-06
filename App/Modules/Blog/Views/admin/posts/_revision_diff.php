@@ -174,37 +174,3 @@ $bodyChanged = $bodyDiff !== '';
     <?php endif; ?>
   </div>
 </div>
-
-<script>
-(function () {
-    var btn  = document.getElementById('vtx-diff-restore-btn');
-    var form = document.getElementById('vtx-diff-restore-form');
-    if (!btn || !form) return;
-    btn.addEventListener('click', function () {
-        var me = btn;
-        window.vtxConfirmModal({
-            title:        'Restore Revision',
-            message:      'Restore this revision? The current version will be saved as a new revision first.',
-            confirmLabel: 'Restore',
-            confirmClass: 'btn-primary',
-            onConfirm: function () {
-                me.disabled = true;
-                window.VtxAjax.postForm(form.action, form, function (ok, res) {
-                    window.Phuse.toast(
-                        res && res.message ? res.message : (ok ? 'Done.' : 'Failed.'),
-                        ok && res && res.success ? 'success' : 'error'
-                    );
-                    if (ok && res && res.success) {
-                        setTimeout(function () {
-                            if (window.vtxFormModalClose) window.vtxFormModalClose();
-                            location.reload();
-                        }, 600);
-                    } else {
-                        me.disabled = false;
-                    }
-                });
-            }
-        });
-    });
-}());
-</script>

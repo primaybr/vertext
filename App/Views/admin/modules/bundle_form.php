@@ -41,7 +41,7 @@ $categories = ['Business', 'Community', 'Complete', 'Content', 'Custom', 'E-Comm
 </div>
 <?php endif; ?>
 
-<form id="bundle-form" method="POST" action="<?php echo htmlspecialchars($action); ?>">
+<form id="bundle-form" method="POST" action="<?php echo htmlspecialchars($action); ?>" data-editing="<?php echo $editing ? '1' : '0'; ?>">
   <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token ?? ''); ?>">
 
   <div style="display:grid;grid-template-columns:1fr 280px;gap:1.25rem;align-items:start;">
@@ -170,62 +170,3 @@ $categories = ['Business', 'Community', 'Complete', 'Content', 'Custom', 'E-Comm
 
   </div>
 </form>
-
-<style>
-.vtx-breadcrumb { font-size:.8125rem;color:var(--ps-text-muted);text-decoration:none; }
-.vtx-breadcrumb:hover { color:var(--ps-accent); }
-.bf-mod-row { display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:.4rem .625rem;border-radius:5px;border:1px solid var(--ps-border);background:var(--ps-bg-subtle); }
-.bf-mod-label { display:flex;align-items:center;gap:.5rem;cursor:pointer;flex:1;min-width:0; }
-.bf-mod-label input[type="checkbox"] { accent-color:var(--ps-primary);width:15px;height:15px;flex-shrink:0; }
-.bf-mod-name { font-size:.8125rem;font-weight:600; }
-.bf-mod-slug { font-size:.7rem;margin-left:.25rem; }
-.bf-req-label { display:flex;align-items:center;gap:.3rem;font-size:.75rem;white-space:nowrap;cursor:pointer;flex-shrink:0; }
-.bf-req-label input[type="checkbox"] { accent-color:var(--ps-primary);width:13px;height:13px; }
-.bf-req-hidden { opacity:0;pointer-events:none; }
-</style>
-
-<script>
-// Auto-slug from name (create mode only)
-<?php if (!$editing): ?>
-document.getElementById('b-name').addEventListener('input', function() {
-  var s = this.value.toLowerCase().replace(/[^a-z0-9\s\-]/g,'').trim().replace(/\s+/g,'-');
-  document.getElementById('b-slug').value = s;
-  document.getElementById('prev-name').textContent = this.value || 'Bundle Name';
-});
-<?php else: ?>
-document.getElementById('b-name').addEventListener('input', function() {
-  document.getElementById('prev-name').textContent = this.value || 'Bundle Name';
-});
-<?php endif; ?>
-
-// Icon preview
-document.getElementById('b-icon-select').addEventListener('change', function() {
-  var ic = this.value;
-  document.querySelector('#b-icon-preview i').className = 'pi ' + ic;
-  document.getElementById('prev-icon-i').className       = 'pi ' + ic + ' pi-1x';
-});
-
-// Module checkboxes -> show/hide required toggle + update preview chips
-var checkboxes = document.querySelectorAll('.bf-mod-cb');
-function updatePreview() {
-  var chips    = document.getElementById('prev-chips');
-  var countEl  = document.getElementById('prev-count');
-  chips.innerHTML = '';
-  var count = 0;
-  checkboxes.forEach(function(cb) {
-    var req = document.getElementById('bf-req-' + cb.dataset.slug);
-    if (req) req.classList.toggle('bf-req-hidden', !cb.checked);
-    if (cb.checked) {
-      count++;
-      var span = document.createElement('span');
-      span.className = 'vtx-tag';
-      span.style.fontSize = '.65rem';
-      span.textContent = cb.dataset.slug;
-      chips.appendChild(span);
-    }
-  });
-  countEl.textContent = count + ' module' + (count !== 1 ? 's' : '');
-}
-checkboxes.forEach(function(cb) { cb.addEventListener('change', updatePreview); });
-updatePreview();
-</script>

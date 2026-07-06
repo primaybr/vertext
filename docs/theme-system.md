@@ -13,10 +13,12 @@ Vertext's public-facing pages are rendered through a **ThemeEngine** (`App\Theme
 
 | Theme | Slug | Description |
 | --- | --- | --- |
-| Default | `default` | Clean, modern layout with indigo accent; responsive header with mobile hamburger nav |
+| Default | `default` | Clean, modern layout sharing the admin panel's navy "Precision Ledger" identity (IBM Plex Sans); responsive header with mobile hamburger nav |
 | Clean | `clean` | Typographic/editorial: Georgia serif body, black borders, uppercase navigation |
+| Field | `field` | Warm, tactile: stone-beige surfaces, forest-green accent, Lora serif headings over Karla sans body, dashed "stitched" dividers |
+| Frame | `frame` | Minimal gallery/portfolio: warm ivory by day / charcoal by night, muted brass accent, Space Grotesk display headings, small-caps mono nav |
 
-Both themes ship with full dark/light mode support.
+All four themes ship with full dark/light mode support.
 
 ## Directory Structure
 
@@ -29,7 +31,17 @@ App/Themes/
 │   │   └── theme.css     Theme stylesheet (layered on top of styles.css)
 │   └── js/
 │       └── theme.js      Theme JavaScript (toggle + mobile nav + smooth scroll)
-└── clean/
+├── clean/
+│   ├── theme.json
+│   ├── layout.php
+│   ├── css/theme.css
+│   └── js/theme.js
+├── field/
+│   ├── theme.json
+│   ├── layout.php
+│   ├── css/theme.css
+│   └── js/theme.js
+└── frame/
     ├── theme.json
     ├── layout.php
     ├── css/theme.css
@@ -43,7 +55,13 @@ Public/themes/
 ├── default/
 │   ├── css/theme.css
 │   └── js/theme.js
-└── clean/
+├── clean/
+│   ├── css/theme.css
+│   └── js/theme.js
+├── field/
+│   ├── css/theme.css
+│   └── js/theme.js
+└── frame/
     ├── css/theme.css
     └── js/theme.js
 ```
@@ -61,7 +79,7 @@ Every theme layout loads two stylesheets in this order:
 
 ## Dark/Light Mode
 
-Both bundled themes implement three CSS layers:
+All bundled themes implement three CSS layers:
 
 ```css
 /* Layer 1: light mode defaults */
@@ -85,13 +103,18 @@ Both bundled themes implement three CSS layers:
 }
 ```
 
-**FOUC prevention** - an inline `<script>` in `<head>` applies the saved preference before CSS renders:
+**FOUC prevention** - a shared partial (`App/Views/_shared/theme-init.php`) is `<?php include ?>`'d
+at the top of every layout's `<head>` and applies the saved preference before CSS renders. It's
+kept as an inline `<script>` (not moved to an external file) so it runs before first paint with no
+extra network request:
 
 ```html
-<script>(function(){
-  var t = localStorage.getItem('vtx-theme');
-  if (t) document.documentElement.setAttribute('data-theme', t);
-}());</script>
+<?php include ROOT . 'App' . DS . 'Views' . DS . '_shared' . DS . 'theme-init.php'; ?>
+```
+
+```html
+<!-- theme-init.php contents -->
+<script>(function(){try{var t=localStorage.getItem('vtx-theme');if(!t){var l=localStorage.getItem('phuse-theme');if(l){localStorage.setItem('vtx-theme',l);localStorage.removeItem('phuse-theme');t=l;}}if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})()</script>
 ```
 
 **Toggle** - `theme.js` reads the current effective theme, flips it, saves to `localStorage` under key `vtx-theme`, and sets `data-theme` on `<html>`.
@@ -116,6 +139,23 @@ ThemeEngine::deploy(string $theme = ''): bool
 // Discover all available themes (reads App/Themes/*/theme.json)
 ThemeEngine::discover(): array
 ```
+
+## Module Front-End Assets
+
+Modules can ship their own front-end CSS/JS (e.g. a blog post's styling, a gallery's lightbox
+script) via `\App\CMS\ModuleLoader::frontAssets()`, which reads the top-level `assets.css`/`assets.js`
+keys of each enabled module's `module.json` (sibling to the admin-only `assets.admin.*` keys) and
+returns versioned URL paths relative to `assetsUrl`. All four bundled themes call it in `layout.php`:
+
+```php
+<?php foreach (\App\CMS\ModuleLoader::frontAssets()['css'] as $__mAsset): ?>
+<link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl . '/assets/' . $__mAsset); ?>">
+<?php endforeach; ?>
+```
+
+with the equivalent `<script src>` loop before `</body>`. A custom theme's `layout.php` should
+include both loops (after its own `theme.css`/`theme.js`) so installed modules' front-end styling
+and behavior actually reach the public site.
 
 ## Variables Available in layout.php
 
@@ -171,7 +211,9 @@ The view file lives at `App/Modules/MyModule/Views/front/index.php` (source) and
 }
 ```
 
-**2.** Create `App/Themes/my-theme/layout.php`. Include the FOUC script, load `styles.css` first, then your theme CSS:
+**2.** Create `App/Themes/my-theme/layout.php`. Include the shared FOUC-prevention partial, load
+`styles.css` first, then your theme CSS, then the `frontAssets()` loops so installed modules'
+front-end CSS/JS actually reach the page:
 
 ```html
 <!DOCTYPE html>
@@ -179,13 +221,19 @@ The view file lives at `App/Modules/MyModule/Views/front/index.php` (source) and
 <head>
   <meta charset="UTF-8">
   <title><?= htmlspecialchars($pageTitle ?: $siteName) ?></title>
-  <script>(function(){var t=localStorage.getItem('vtx-theme');if(t)document.documentElement.setAttribute('data-theme',t);}());</script>
+  <?php include ROOT . 'App' . DS . 'Views' . DS . '_shared' . DS . 'theme-init.php'; ?>
   <link rel="stylesheet" href="<?= htmlspecialchars($baseUrl . '/assets/css/styles.css') ?>">
   <link rel="stylesheet" href="<?= htmlspecialchars($themeUrl . '/css/theme.css') ?>">
+  <?php foreach (\App\CMS\ModuleLoader::frontAssets()['css'] as $__mAsset): ?>
+  <link rel="stylesheet" href="<?= htmlspecialchars($baseUrl . '/assets/' . $__mAsset) ?>">
+  <?php endforeach; ?>
 </head>
 <body>
   <?= $content ?>
   <script src="<?= htmlspecialchars($themeUrl . '/js/theme.js') ?>"></script>
+  <?php foreach (\App\CMS\ModuleLoader::frontAssets()['js'] as $__mAsset): ?>
+  <script src="<?= htmlspecialchars($baseUrl . '/assets/' . $__mAsset) ?>"></script>
+  <?php endforeach; ?>
 </body>
 </html>
 ```
@@ -207,6 +255,45 @@ The active theme is stored in the `settings` table under key `active_theme`.
 <link rel="stylesheet" href="<?= $themeUrl ?>/css/theme.css">
 <script src="<?= $themeUrl ?>/js/theme.js" defer></script>
 ```
+
+## Width System (0.0.9)
+
+Both bundled themes share the same container scale, defined per-theme in `theme.css` so each can
+tune its own gutter/padding feel:
+
+| Class | Max width | Use for |
+| --- | --- | --- |
+| `.container` | 1240px | Page shell - header, footer, listing pages |
+| `.container-wide` | 1440px | Full-width templates (Pages `full-width` template) |
+| `.container-prose` | 740px | Long-form reading content - blog posts, the Pages `default` template |
+
+All three use fluid `clamp()` side padding rather than a fixed value, so gutters scale smoothly
+between mobile and desktop instead of jumping at a breakpoint.
+
+Templates that mix prose with wider elements (e.g. a blog post's body text next to a related-posts
+grid) should wrap only the prose-bearing markup in `.container-prose`; don't force an entire mixed
+layout into the narrow measure just because part of it is body copy.
+
+## `--ps-*` / `--clr-*` Token Bridge (0.0.9)
+
+The admin panel (`Public/assets/css/styles.css` + `admin.css`, tokens prefixed `--ps-*`) and the
+front-end themes (`--clr-*`) are separate CSS systems - a front-end page never loads `styles.css`'s
+admin styles, and vice versa. Each theme's `:root` block now also aliases the common `--ps-*` names
+to its own `--clr-*` values (e.g. `--ps-primary: var(--clr-accent);`) so that any future shared or
+imported component CSS written against either naming convention still resolves sensibly, without
+requiring the two systems to be merged.
+
+The admin panel has its own distinct visual identity ("Precision Ledger" - navy accent, IBM Plex
+typography, a vertex-tick motif) that intentionally does not extend to the front-end themes, which
+remain independently brandable per-site via **Admin → Theme Customizer**.
+
+### Theme Customizer
+
+The Theme Customizer module's accent color and font settings drive **both** systems at once:
+`ThemeCustomizerHelper::getCss()` emits `--ps-primary`/`--ps-font-sans` overrides (for any admin
+surface that reads them) *and* `--clr-accent`/`--clr-link`/`body{font-family}` overrides (for the
+active front-end theme) from the same saved settings, so the color picker actually changes the
+public site.
 
 ## Graceful Degradation
 

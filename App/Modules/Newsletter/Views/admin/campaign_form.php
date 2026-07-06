@@ -26,6 +26,14 @@
 <?php return; ?>
 <?php endif; ?>
 
+<!-- Config data for newsletter-admin.js (tab switching + send/save/schedule AJAX) -->
+<div id="nl-campaign-config"
+     data-base-url="<?php echo htmlspecialchars($baseUrl); ?>"
+     data-csrf="<?php echo htmlspecialchars($csrf_token ?? ''); ?>"
+     data-campaign-id="<?php echo htmlspecialchars($campaign['id'] ?? ''); ?>"
+     data-editable="<?php echo ($editing && !$isSent) ? '1' : '0'; ?>"
+     hidden></div>
+
 <!-- Page Header -->
 <div class="vtx-page-head">
   <div>
@@ -242,145 +250,3 @@
   </div>
 </div>
 <?php endif; ?>
-
-<script>
-(function () {
-  const BASE     = <?php echo json_encode($baseUrl); ?>;
-  const CSRF     = <?php echo json_encode($csrf_token ?? ''); ?>;
-  const CAMP_ID  = <?php echo json_encode($campaign['id'] ?? ''); ?>;
-
-  // Tab switching
-  document.querySelectorAll('.nl-tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.nl-tab-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const tab = btn.dataset.tab;
-      document.getElementById('nl-tab-html').style.display = tab === 'html' ? '' : 'none';
-      document.getElementById('nl-tab-text').style.display = tab === 'text' ? '' : 'none';
-    });
-  });
-
-  <?php if ($editing && !$isSent): ?>
-  // Auto-save on form submit via fetch if action differs from page (AJAX update)
-  const form = document.getElementById('nl-campaign-form');
-  if (form && CAMP_ID) {
-    form.addEventListener('submit', function (e) {
-      e.preventDefault();
-      const data = new URLSearchParams(new FormData(form));
-      fetch(form.action, { method: 'POST', body: data })
-        .then(r => r.json())
-        .then(res => showApiMsg(res.success ? 'success' : 'error', res.message || 'Saved.'))
-        .catch(() => showApiMsg('error', 'Network error.'));
-    });
-  }
-
-  // Send campaign
-  const sendBtn = document.getElementById('nl-send-btn');
-  if (sendBtn) {
-    sendBtn.addEventListener('click', () => {
-      const count = parseInt(sendBtn.dataset.subCount, 10);
-      if (!confirm('Send this campaign to ' + count + ' active subscriber(s)? This cannot be undone.')) return;
-      sendBtn.disabled = true;
-      fetch(BASE + '/admin/newsletter/campaigns/' + CAMP_ID + '/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ csrf_token: CSRF }),
-      })
-      .then(r => r.json())
-      .then(res => {
-        showApiMsg(res.success ? 'success' : 'error', res.message || '');
-        if (res.success) setTimeout(() => location.reload(), 1500);
-        else sendBtn.disabled = false;
-      })
-      .catch(() => { showApiMsg('error', 'Network error.'); sendBtn.disabled = false; });
-    });
-  }
-
-  // Test send
-  const testBtn = document.getElementById('nl-test-btn');
-  if (testBtn) {
-    testBtn.addEventListener('click', () => {
-      document.getElementById('nl-test-modal').style.display = 'flex';
-    });
-    document.getElementById('nl-test-confirm').addEventListener('click', () => {
-      const email = document.getElementById('nl-test-email').value.trim();
-      if (!email) return;
-      document.getElementById('nl-test-confirm').disabled = true;
-      fetch(BASE + '/admin/newsletter/campaigns/' + CAMP_ID + '/test-send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ csrf_token: CSRF, test_email: email }),
-      })
-      .then(r => r.json())
-      .then(res => {
-        const msgEl = document.getElementById('nl-test-msg');
-        msgEl.className = 'vtx-alert vtx-alert-' + (res.success ? 'success' : 'error');
-        msgEl.textContent = res.message || '';
-        msgEl.style.display = 'block';
-        document.getElementById('nl-test-confirm').disabled = false;
-        if (res.success) setTimeout(() => { document.getElementById('nl-test-modal').style.display = 'none'; }, 2000);
-      })
-      .catch(() => { document.getElementById('nl-test-confirm').disabled = false; });
-    });
-  }
-  // Schedule / unschedule
-  const schedBtn = document.getElementById('nl-schedule-btn');
-  if (schedBtn) {
-    schedBtn.addEventListener('click', () => {
-      const when = document.getElementById('nl-schedule-at').value;
-      if (!when) { showApiMsg('error', 'Choose a date and time first.'); return; }
-      schedBtn.disabled = true;
-      fetch(BASE + '/admin/newsletter/campaigns/' + CAMP_ID + '/schedule', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ csrf_token: CSRF, scheduled_at: when }),
-      })
-      .then(r => r.json())
-      .then(res => {
-        showApiMsg(res.success ? 'success' : 'error', res.message || '');
-        if (res.success) setTimeout(() => location.reload(), 1200);
-        else schedBtn.disabled = false;
-      })
-      .catch(() => { showApiMsg('error', 'Network error.'); schedBtn.disabled = false; });
-    });
-  }
-  const unschedBtn = document.getElementById('nl-unschedule-btn');
-  if (unschedBtn) {
-    unschedBtn.addEventListener('click', () => {
-      unschedBtn.disabled = true;
-      fetch(BASE + '/admin/newsletter/campaigns/' + CAMP_ID + '/unschedule', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ csrf_token: CSRF }),
-      })
-      .then(r => r.json())
-      .then(res => {
-        showApiMsg(res.success ? 'success' : 'error', res.message || '');
-        if (res.success) setTimeout(() => location.reload(), 1200);
-        else unschedBtn.disabled = false;
-      })
-      .catch(() => { showApiMsg('error', 'Network error.'); unschedBtn.disabled = false; });
-    });
-  }
-  <?php endif; ?>
-
-  function showApiMsg(type, msg) {
-    const el = document.getElementById('nl-api-msg');
-    el.className = 'vtx-alert vtx-alert-' + type + ' mb-3';
-    el.textContent = msg;
-    el.style.display = 'block';
-    setTimeout(() => { el.style.display = 'none'; }, 5000);
-  }
-})();
-</script>
-
-<style>
-.nl-tab-btn {
-  background: none; border: none; padding: .35rem .75rem; font-size: .8125rem;
-  color: var(--ps-text-muted); cursor: pointer; border-radius: 4px;
-  transition: background .1s, color .1s;
-}
-.nl-tab-btn.active { background: var(--ps-bg-alt); color: var(--ps-text); font-weight: 600; }
-.vtx-breadcrumb { font-size:.8125rem;color:var(--ps-text-muted);text-decoration:none; }
-.vtx-breadcrumb:hover { color:var(--ps-accent); }
-</style>

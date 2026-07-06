@@ -76,25 +76,3 @@
     </button>
   </div>
 </form>
-
-<script>
-(function() {
-  // Auto-slug
-  var titleEl = document.getElementById('series-title');
-  var slugEl  = document.getElementById('series-slug');
-  if (titleEl && slugEl && !slugEl.value) {
-    titleEl.addEventListener('input', function() {
-      slugEl.value = this.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-    });
-  }
-
-  // Enable/disable order input based on checkbox
-  document.querySelectorAll('.series-post-check').forEach(function(cb) {
-    var row  = cb.closest('tr');
-    var num  = row ? row.querySelector('input[type="number"]') : null;
-    cb.addEventListener('change', function() {
-      if (num) num.disabled = !this.checked;
-    });
-  });
-}());
-</script>

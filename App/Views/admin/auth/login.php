@@ -1,7 +1,7 @@
 <div class="vtx-auth-box">
 
   <div class="vtx-auth-top">
-    <div class="vtx-auth-mark">V</div>
+    <div class="vtx-auth-mark"><img src="{{assetsUrl}}images/logo/logo-dark.svg" alt="" style="width:55%;height:auto;"></div>
     <h1 class="vtx-auth-h1">Vertext CMS</h1>
     <p class="vtx-auth-sub">Sign in to the admin panel</p>
   </div>

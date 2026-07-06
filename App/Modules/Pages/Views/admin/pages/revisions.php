@@ -91,27 +91,3 @@ $pageId = $page['id'] ?? '';
   </div>
   <?php endif; ?>
 </div>
-
-<script>
-document.querySelectorAll('[data-confirm-form][data-confirm-ajax="true"]').forEach(function(btn) {
-  btn.addEventListener('click', function() {
-    var form = document.getElementById(this.dataset.confirmForm);
-    var me   = this;
-    window.vtxConfirmModal({
-      title:        this.dataset.confirmTitle,
-      message:      this.dataset.confirmMessage,
-      confirmLabel: this.dataset.confirmLabel,
-      confirmClass: this.dataset.confirmClass,
-      onConfirm: function() {
-        me.disabled = true;
-        window.VtxAjax.postForm(form.action, form, function(ok, res) {
-          window.Phuse.toast(res && res.message ? res.message : (ok ? 'Done.' : 'Failed.'),
-            ok && res && res.success ? 'success' : 'error');
-          if (ok && res && res.success) setTimeout(function() { location.reload(); }, 600);
-          else me.disabled = false;
-        });
-      }
-    });
-  });
-});
-</script>

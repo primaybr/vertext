@@ -1,11 +1,17 @@
 {
     "name":        "Contact",
     "slug":        "contact",
-    "version":     "0.0.1",
+    "version":     "0.0.2",
     "description": "Public contact form with admin inbox and email notifications",
     "author":      "Vertext",
     "category":    "Communication",
     "requires":    { "vertext": ">=0.0.2" },
+    "assets": {
+        "css": ["contact.css"],
+        "admin": {
+            "js": ["contact-admin.js"]
+        }
+    },
     "nav_routes": [
         {"label": "Contact", "path": "/contact"}
     ],

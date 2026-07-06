@@ -10,55 +10,9 @@ foreach ($fields as $vfF) {
     if (($vfF['type'] ?? '') === 'step') { $vfHasSteps = true; break; }
 }
 $vfUid = 'vf-' . htmlspecialchars($form['slug']);
+$vfRecaptchaKey = htmlspecialchars($vfSettings['recaptcha_site_key'] ?? '');
 ?>
-<style>
-.vf-card { background: var(--clr-surface); border: 1px solid var(--clr-border); border-radius: 8px; padding: 2rem; }
-.vf-card h1 { margin-bottom: .5rem; font-size: 1.625rem; }
-.vf-card p.desc { color: var(--clr-text-muted, #6b7280); margin-bottom: 1.5rem; }
-.vf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1rem; }
-.vf-col-full { grid-column: 1 / -1; }
-.vf-col-half { grid-column: span 1; }
-.vf-field { margin-bottom: 1.25rem; }
-.vf-field label { display: block; font-size: .875rem; font-weight: 600; margin-bottom: .35rem; }
-.vf-field input[type="text"],
-.vf-field input[type="email"],
-.vf-field input[type="number"],
-.vf-field input[type="date"],
-.vf-field input[type="file"],
-.vf-field textarea,
-.vf-field select {
-  width: 100%; padding: .6rem .85rem; border: 1px solid var(--clr-border); border-radius: 6px;
-  font-size: 1rem; font-family: inherit; background: var(--clr-bg); color: var(--clr-text);
-  box-sizing: border-box;
-}
-.vf-field input:focus, .vf-field textarea:focus, .vf-field select:focus {
-  outline: none; border-color: var(--clr-accent); box-shadow: 0 0 0 3px rgba(79,70,229,.15);
-}
-.vf-field .vf-options { display: flex; flex-direction: column; gap: .4rem; }
-.vf-field .vf-options label { display: flex; gap: .5rem; align-items: center; font-weight: 400; cursor: pointer; }
-.vf-required { color: #e53e3e; }
-.vf-submit, .vf-nav-btn { background: var(--clr-accent); color: #fff; border: none; border-radius: 6px; padding: .65rem 1.75rem; font-size: 1rem; font-weight: 600; cursor: pointer; }
-.vf-submit:hover, .vf-nav-btn:hover { opacity: .88; }
-.vf-nav-btn.vf-back { background: transparent; color: var(--clr-text-muted, #6b7280); border: 1px solid var(--clr-border); }
-.vf-alert { padding: .9rem 1.25rem; border-radius: 6px; margin-bottom: 1.5rem; font-size: .95rem; }
-.vf-alert-success { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
-.vf-alert-error   { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
-[data-theme="dark"] .vf-alert-success { background: rgba(16,185,129,.15); color: #6ee7b7; border-color: rgba(110,231,183,.3); }
-[data-theme="dark"] .vf-alert-error   { background: rgba(239,68,68,.15);  color: #fca5a5; border-color: rgba(252,165,165,.3); }
-.vf-progress { display: flex; gap: .5rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
-.vf-progress-item { display: flex; align-items: center; gap: .4rem; font-size: .8125rem; color: var(--clr-text-muted, #6b7280); }
-.vf-progress-item .num { width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--clr-border);
-  display: flex; align-items: center; justify-content: center; font-size: .7rem; font-weight: 700; }
-.vf-progress-item.active { color: var(--clr-text); font-weight: 600; }
-.vf-progress-item.active .num { background: var(--clr-accent); border-color: var(--clr-accent); color: #fff; }
-.vf-progress-item.done .num { background: var(--clr-accent); border-color: var(--clr-accent); color: #fff; opacity: .55; }
-.vf-step { display: none; }
-.vf-step.active { display: block; }
-.vf-nav { display: flex; justify-content: space-between; gap: .75rem; margin-top: 1.5rem; }
-@media (max-width: 540px) { .vf-grid { grid-template-columns: 1fr; } .vf-col-half { grid-column: 1 / -1; } }
-</style>
-
-<div class="vf-card" id="<?php echo $vfUid; ?>">
+<div class="vf-card" id="<?php echo $vfUid; ?>" data-form-uid="<?php echo $vfUid; ?>" data-recaptcha-key="<?php echo $vfRecaptchaKey; ?>">
   <h1><?php echo htmlspecialchars($form['name']); ?></h1>
   <?php if (!empty($form['description'])): ?>
   <p class="desc"><?php echo htmlspecialchars($form['description']); ?></p>
@@ -75,7 +29,7 @@ $vfUid = 'vf-' . htmlspecialchars($form['slug']);
         enctype="multipart/form-data" data-vf-form>
     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token ?? ''); ?>">
     <!-- Honeypot -->
-    <div style="position:absolute;left:-9999px;visibility:hidden;" aria-hidden="true">
+    <div class="vf-honeypot" aria-hidden="true">
       <input type="text" name="website" tabindex="-1" autocomplete="off">
     </div>
 
@@ -193,7 +147,7 @@ $vfUid = 'vf-' . htmlspecialchars($form['slug']);
         Spam check: what is <?php echo htmlspecialchars($mathQuestion); ?>? <span class="vf-required">*</span>
       </label>
       <input type="number" id="<?php echo $vfUid; ?>-math" name="math_answer" required
-             style="max-width:120px;" inputmode="numeric">
+             class="vf-math-input" inputmode="numeric">
     </div>
     <?php endif; ?>
 
@@ -209,129 +163,10 @@ $vfUid = 'vf-' . htmlspecialchars($form['slug']);
       <button type="submit" class="vf-submit" data-vf-submit style="display:none;">Submit</button>
     </div>
     <?php else: ?>
-    <div style="margin-top:1.5rem;">
+    <div class="vf-submit-wrap">
       <button type="submit" class="vf-submit">Submit</button>
     </div>
     <?php endif; ?>
   </form>
-
-  <script>
-  (function () {
-    'use strict';
-    var root = document.getElementById(<?php echo json_encode($vfUid); ?>);
-    if (!root) return;
-    var form = root.querySelector('[data-vf-form]');
-
-    /* ── Conditional logic ─────────────────────────────────────── */
-    function fieldValue(name) {
-      var els = form.querySelectorAll('[name="' + name + '"], [name="' + name + '[]"]');
-      var vals = [];
-      els.forEach(function (el) {
-        if (el.type === 'radio' || el.type === 'checkbox') {
-          if (el.checked) vals.push(el.value);
-        } else {
-          vals.push(el.value);
-        }
-      });
-      return vals.join(',');
-    }
-
-    function evalCondition(c) {
-      var v = (fieldValue(c.field) || '').toLowerCase();
-      var t = (c.value || '').toLowerCase();
-      switch (c.operator) {
-        case 'equals':     return v === t;
-        case 'not_equals': return v !== t;
-        case 'contains':   return v.indexOf(t) !== -1;
-        case 'empty':      return v === '';
-        case 'not_empty':  return v !== '';
-        default:           return false;
-      }
-    }
-
-    function applyConditions() {
-      root.querySelectorAll('[data-vf-conditions]').forEach(function (wrap) {
-        var rules;
-        try { rules = JSON.parse(wrap.dataset.vfConditions); } catch (e) { return; }
-        if (!rules || !rules.length) return;
-        var rule    = rules[0];
-        var matched = evalCondition(rule);
-        var visible = rule.action === 'hide' ? !matched : matched;
-        wrap.style.display = visible ? '' : 'none';
-        // Disabled inputs are skipped by HTML5 validation AND not submitted
-        wrap.querySelectorAll('input, select, textarea').forEach(function (el) {
-          el.disabled = !visible;
-        });
-      });
-    }
-
-    form.addEventListener('input', applyConditions);
-    form.addEventListener('change', applyConditions);
-    applyConditions();
-
-    /* ── Multi-step navigation ─────────────────────────────────── */
-    var steps = Array.prototype.slice.call(root.querySelectorAll('[data-vf-step]'));
-    if (steps.length > 1) {
-      var current  = 0;
-      var progress = root.querySelector('[data-vf-progress]');
-      var backBtn  = root.querySelector('[data-vf-back]');
-      var nextBtn  = root.querySelector('[data-vf-next]');
-      var subBtn   = root.querySelector('[data-vf-submit]');
-
-      function renderProgress() {
-        progress.innerHTML = '';
-        steps.forEach(function (s, i) {
-          var item = document.createElement('div');
-          item.className = 'vf-progress-item' + (i === current ? ' active' : (i < current ? ' done' : ''));
-          item.innerHTML = '<span class="num">' + (i + 1) + '</span><span>' + s.dataset.vfStepTitle + '</span>';
-          progress.appendChild(item);
-        });
-      }
-
-      function show(idx) {
-        current = idx;
-        steps.forEach(function (s, i) { s.classList.toggle('active', i === idx); });
-        backBtn.style.visibility = idx === 0 ? 'hidden' : 'visible';
-        nextBtn.style.display = idx === steps.length - 1 ? 'none' : '';
-        subBtn.style.display  = idx === steps.length - 1 ? '' : 'none';
-        renderProgress();
-      }
-
-      function validateStep(idx) {
-        var ok = true;
-        steps[idx].querySelectorAll('input, select, textarea').forEach(function (el) {
-          if (!el.disabled && !el.checkValidity()) {
-            if (ok) el.reportValidity();
-            ok = false;
-          }
-        });
-        return ok;
-      }
-
-      nextBtn.addEventListener('click', function () {
-        if (validateStep(current)) show(Math.min(current + 1, steps.length - 1));
-      });
-      backBtn.addEventListener('click', function () { show(Math.max(current - 1, 0)); });
-      show(0);
-    }
-
-    /* ── reCAPTCHA v3 token on submit ──────────────────────────── */
-    var recaptchaInput = form.querySelector('[data-vf-recaptcha]');
-    if (recaptchaInput) {
-      var siteKey = <?php echo json_encode($vfSettings['recaptcha_site_key'] ?? ''); ?>;
-      form.addEventListener('submit', function (e) {
-        if (recaptchaInput.value) return; // token already fetched
-        if (typeof grecaptcha === 'undefined') return; // fail open; server decides
-        e.preventDefault();
-        grecaptcha.ready(function () {
-          grecaptcha.execute(siteKey, { action: 'form_submit' }).then(function (token) {
-            recaptchaInput.value = token;
-            form.submit();
-          });
-        });
-      });
-    }
-  })();
-  </script>
   <?php endif; ?>
 </div>

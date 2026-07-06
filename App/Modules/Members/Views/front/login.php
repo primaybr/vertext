@@ -1,4 +1,3 @@
-<?php include __DIR__ . '/_styles.php'; ?>
 <div class="mb-auth-wrap">
   <div class="mb-card">
     <h1 class="mb-title">Sign In</h1>

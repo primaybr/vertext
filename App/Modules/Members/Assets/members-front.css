@@ -1,5 +1,4 @@
-<style>
-/* Members module - front-end account pages
+/* ── front/_styles.php: Members module front-end account pages design system ──
    Flat, simple, professional. Uses theme --clr-* variables; no gradients. */
 
 .mb-auth-wrap {
@@ -14,6 +13,8 @@
   border-radius: 8px;
   padding: 1.75rem;
 }
+
+.mb-honeypot { position: absolute; left: -9999px; }
 
 .mb-title {
   font-size: 1.5rem;
@@ -144,4 +145,3 @@
   margin: 0 0 .75rem;
   color: var(--clr-text, #111827);
 }
-</style>

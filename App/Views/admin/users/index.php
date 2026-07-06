@@ -70,7 +70,7 @@
               <img src="<?php echo htmlspecialchars($row['avatar_url']); ?>" alt=""
                    style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;">
               <?php else: ?>
-              <div style="width:32px;height:32px;border-radius:50%;background:var(--ps-primary);
+              <div style="width:32px;height:32px;border-radius:50%;background:var(--ps-primary-fill);
                           display:flex;align-items:center;justify-content:center;
                           font-size:.75rem;font-weight:700;color:#fff;flex-shrink:0;">
                 <?php echo strtoupper(substr($row['name'], 0, 1)); ?>

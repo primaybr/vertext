@@ -1,0 +1,23 @@
+/* ── front/preview-demo.php: live-preview demo hero/cards/buttons markup ── */
+.tc-demo-hero { padding: 3rem 0 2.5rem; }
+.tc-demo-hero h1 { font-size: 2.25rem; margin: 0 0 .75rem; }
+.tc-demo-hero p { font-size: 1.0625rem; color: var(--clr-muted); max-width: 46ch; margin: 0 0 1.5rem; }
+.tc-demo-actions { display: flex; gap: .75rem; flex-wrap: wrap; align-items: center; margin-bottom: 3rem; }
+.tc-demo-btn {
+  display: inline-flex; align-items: center; padding: .625rem 1.375rem; font-size: .9375rem;
+  font-weight: 600; border-radius: var(--radius-sm); text-decoration: none; cursor: default;
+  background: var(--clr-accent-fill); color: #fff; border: 1px solid var(--clr-accent-fill);
+}
+.tc-demo-btn.outline { background: transparent; color: var(--clr-accent); border-color: var(--clr-accent); }
+.tc-demo-link { font-size: .9375rem; color: var(--clr-accent); }
+.tc-demo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem; margin-bottom: 3rem; }
+.tc-demo-card {
+  border: 1px solid var(--clr-border); border-radius: var(--radius-md); padding: 1.5rem;
+  background: var(--clr-surface);
+}
+.tc-demo-card h3 { font-size: 1.0625rem; margin: 0 0 .5rem; }
+.tc-demo-card p { font-size: .875rem; color: var(--clr-muted); margin: 0; }
+.tc-demo-tag {
+  display: inline-block; font-size: .75rem; font-weight: 600; padding: .2em .7em;
+  border-radius: 999px; background: var(--clr-accent-fill); color: #fff; margin-bottom: 1rem;
+}

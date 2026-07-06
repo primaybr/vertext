@@ -491,7 +491,12 @@ class Phuse {
 
   // ── Dark Mode ─────────────────────────────────────────────────────────────
   // Reads localStorage, applies data-theme to <html>, injects toggle button.
+  // Admin pages own their own theme toggle (admin.js, #theme-toggle, 'vtx-theme'
+  // key) - skip entirely there so this doesn't fight it with a stale key and a
+  // second floating button.
   static darkMode() {
+    if (document.getElementById('theme-toggle')) return;
+
     const KEY = 'phuse-theme';
 
     const apply = (dark) => {

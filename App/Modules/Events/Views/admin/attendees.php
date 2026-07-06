@@ -23,7 +23,7 @@
   </div>
 </div>
 
-<div class="vtx-panel">
+<div class="vtx-panel" data-event-id="<?php echo htmlspecialchars((string) $event['id']); ?>" data-csrf="{{csrf_token}}">
   <?php if (empty($attendees)): ?>
   <div class="vtx-empty">
     <div class="vtx-empty-ico"><i class="pi pi-users"></i></div>
@@ -79,35 +79,3 @@
   </div>
   <?php endif; ?>
 </div>
-
-<script>
-(function () {
-  'use strict';
-  var EVENT_ID = <?php echo json_encode($event['id']); ?>;
-
-  document.querySelectorAll('[data-attendee-select]').forEach(function (sel) {
-    sel.addEventListener('change', function () {
-      var to = sel.value;
-      var id = sel.dataset.attendeeId;
-      var fd = new FormData();
-      fd.append('csrf_token', '{{csrf_token}}');
-      fd.append('status', to);
-
-      fetch(window.VTX_BASE_URL + '/admin/events/' + EVENT_ID + '/attendees/' + id + '/status', {
-        method: 'POST', body: fd, headers: { 'X-Requested-With': 'XMLHttpRequest' }
-      })
-      .then(function (r) { return r.json(); })
-      .then(function (res) {
-        Phuse.toast(res.message || (res.success ? 'Updated.' : 'Failed.'), res.success ? 'success' : 'error');
-        if (!res.success) { sel.value = sel.dataset.current; return; }
-        sel.dataset.current = to;
-        var cell = sel.closest('tr').querySelector('[data-attendee-status]');
-        var cls  = to === 'confirmed' ? 'success' : (to === 'waitlist' ? 'warning' : 'error');
-        cell.innerHTML = '<span class="vtx-tag ' + cls + '">' + to.charAt(0).toUpperCase() + to.slice(1) + '</span>';
-        // A promotion changes another row server-side; refresh counts lazily on next visit
-      })
-      .catch(function () { sel.value = sel.dataset.current; Phuse.toast('Network error.', 'error'); });
-    });
-  });
-})();
-</script>

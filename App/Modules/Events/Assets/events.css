@@ -2,7 +2,11 @@
 /* All colours use --clr-* CSS variables for light/dark mode compatibility */
 
 /* Public listing page */
-.ev-page { padding: 3rem 0; }
+.ev-page-header { margin-top: 2rem; margin-bottom: 2rem; }
+
+/* Past event styling (index.php) */
+.ev-card--past { opacity: .7; }
+.ev-date-badge--past { background: var(--clr-border); color: var(--clr-muted); }
 
 .ev-layout {
     display: grid;
@@ -23,7 +27,7 @@
     padding: .5rem 1rem;
     font-size: .9375rem;
     font-weight: 600;
-    color: var(--clr-text-muted, #6b7280);
+    color: var(--clr-muted);
     cursor: pointer;
     border-bottom: 2px solid transparent;
     margin-bottom: -2px;
@@ -48,7 +52,7 @@
 .ev-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,.08); }
 
 .ev-date-badge {
-    background: var(--clr-accent);
+    background: var(--clr-accent-fill);
     color: #fff;
     border-radius: 6px;
     padding: .4rem .7rem;
@@ -65,16 +69,17 @@
 
 .ev-meta {
     font-size: .8125rem;
-    color: var(--clr-text-muted, #6b7280);
+    color: var(--clr-muted);
     display: flex;
     flex-wrap: wrap;
     gap: .5rem 1rem;
     margin-top: .25rem;
 }
+.ev-meta .pi { margin-right: .3rem; }
 
 .ev-desc { font-size: .9rem; margin: .5rem 0 0; color: var(--clr-text, #374151); }
 
-.ev-empty { text-align: center; padding: 2rem; color: var(--clr-text-muted, #6b7280); }
+.ev-empty { text-align: center; padding: 2rem; color: var(--clr-muted); }
 
 /* Calendar sidebar */
 .ev-cal-panel {
@@ -109,6 +114,11 @@
 canvas#evCal { width: 100%; display: block; }
 
 /* Detail page */
+.ev-breadcrumb { font-size: .8125rem; margin-bottom: 1.5rem; color: var(--clr-muted); }
+.ev-breadcrumb a { color: var(--clr-muted); text-decoration: none; }
+.ev-breadcrumb a:hover { color: var(--clr-accent); }
+.ev-breadcrumb .sep { margin: 0 .4rem; }
+
 .ev-detail-layout {
     display: grid;
     grid-template-columns: 1fr 280px;
@@ -120,7 +130,7 @@ canvas#evCal { width: 100%; display: block; }
 .ev-hero-img img { width: 100%; max-height: 360px; object-fit: cover; display: block; }
 
 .ev-detail-title { font-size: 1.75rem; font-weight: 700; margin: 0 0 .75rem; }
-.ev-detail-desc { font-size: 1.0625rem; color: var(--clr-text-muted, #6b7280); margin: 0 0 1.5rem; line-height: 1.6; }
+.ev-detail-desc { font-size: 1.0625rem; color: var(--clr-muted); margin: 0 0 1.5rem; line-height: 1.6; }
 .ev-detail-body { font-size: .9375rem; line-height: 1.75; }
 
 .ev-info-card {
@@ -139,15 +149,18 @@ canvas#evCal { width: 100%; display: block; }
     gap: .6rem;
     align-items: start;
 }
+.ev-info-row .pi { color: var(--clr-accent); }
 
 .ev-info-label {
     font-size: .75rem;
     text-transform: uppercase;
     letter-spacing: .05em;
-    color: var(--clr-text-muted, #9ca3af);
+    color: var(--clr-muted);
     line-height: 1.2;
 }
 .ev-info-val { font-size: .9375rem; font-weight: 500; line-height: 1.4; }
+.ev-info-note { color: var(--clr-muted); font-weight: 400; }
+.ev-info-link { color: var(--clr-accent); text-decoration: none; font-size: .875rem; }
 
 .ev-rsvp-card {
     background: var(--clr-surface);
@@ -156,12 +169,34 @@ canvas#evCal { width: 100%; display: block; }
     padding: 1rem;
     margin-bottom: 1rem;
 }
+.ev-rsvp-done { color: var(--clr-muted); }
+.ev-rsvp-prompt { margin: 0 0 .75rem; font-size: .9375rem; font-weight: 600; }
+.ev-rsvp-note { font-size: .75rem; margin: .5rem 0 0; color: var(--clr-muted); }
+
+.ev-rsvp-field { margin-bottom: .875rem; }
+.ev-rsvp-input {
+    width: 100%;
+    padding: .5rem .75rem;
+    font-size: .9375rem;
+    font-family: inherit;
+    line-height: 1.5;
+    color: var(--clr-text);
+    background: var(--clr-bg);
+    border: 1px solid var(--clr-border);
+    border-radius: 6px;
+    appearance: none;
+}
+.ev-rsvp-input:focus {
+    outline: none;
+    border-color: var(--clr-accent);
+    box-shadow: 0 0 0 3px rgba(var(--clr-accent-rgb, 79, 70, 229), .15);
+}
 
 .btn-rsvp {
     display: block;
     width: 100%;
     padding: .625rem 1rem;
-    background: var(--clr-accent);
+    background: var(--clr-accent-fill);
     color: #fff;
     border: none;
     border-radius: 6px;
@@ -177,7 +212,7 @@ canvas#evCal { width: 100%; display: block; }
     display: inline-flex;
     align-items: center;
     font-size: .875rem;
-    color: var(--clr-text-muted, #6b7280);
+    color: var(--clr-muted);
     text-decoration: none;
 }
 .ev-back-link:hover { color: var(--clr-accent); }

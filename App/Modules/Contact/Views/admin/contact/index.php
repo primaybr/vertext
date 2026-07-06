@@ -61,7 +61,8 @@
                                 <td>
                                     <a href="<?= $baseUrl ?>/admin/contact/<?= $row['id'] ?>" class="btn btn-sm btn-outline-primary">View</a>
                                     <button type="button" class="btn btn-sm btn-outline-danger ms-1"
-                                            data-action="delete" data-id="<?= $row['id'] ?>">
+                                            data-action="delete" data-id="<?= $row['id'] ?>"
+                                            data-base-url="<?= $baseUrl ?>" data-csrf="<?= htmlspecialchars($csrfToken ?? '') ?>">
                                         <i class="pi pi-trash"></i>
                                     </button>
                                 </td>
@@ -88,20 +89,3 @@
         <?php endif; ?>
     </div>
 </div>
-
-<script>
-document.querySelectorAll('[data-action="delete"]').forEach(btn => {
-    btn.addEventListener('click', function () {
-        if (!confirm('Delete this submission?')) return;
-        const id = this.dataset.id;
-        fetch(`<?= $baseUrl ?>/admin/contact/${id}/delete`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: 'csrf_token=<?= htmlspecialchars($csrfToken ?? '') ?>'
-        })
-        .then(r => r.json())
-        .then(d => { if (d.success) this.closest('tr').remove(); else Phuse.toast(d.message, 'error'); })
-        .catch(() => Phuse.toast('Request failed.', 'error'));
-    });
-});
-</script>

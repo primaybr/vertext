@@ -1,0 +1,11 @@
+/* newsletter module admin styles */
+
+/* ── admin/campaign_form.php: tab buttons + back-link breadcrumb ── */
+.nl-tab-btn {
+  background: none; border: none; padding: .35rem .75rem; font-size: .8125rem;
+  color: var(--ps-text-muted); cursor: pointer; border-radius: 4px;
+  transition: background .1s, color .1s;
+}
+.nl-tab-btn.active { background: var(--ps-bg-alt); color: var(--ps-text); font-weight: 600; }
+.vtx-breadcrumb { font-size:.8125rem;color:var(--ps-text-muted);text-decoration:none; }
+.vtx-breadcrumb:hover { color:var(--ps-accent); }

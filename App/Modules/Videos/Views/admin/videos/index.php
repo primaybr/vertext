@@ -1,4 +1,4 @@
-<div class="vtx-page-head">
+<div class="vtx-page-head" id="vtx-videos-index">
   <div>
     <h1 class="vtx-page-title"><i class="pi pi-video me-2 text-primary"></i>Videos</h1>
     <p class="vtx-page-desc"><?= $total ?> video<?= $total !== 1 ? 's' : '' ?></p>
@@ -95,6 +95,3 @@
 <?php endif; ?>
 <?php endif; ?>
 
-<script>
-document.addEventListener('vtx:crud:success', function () { window.location.reload(); });
-</script>

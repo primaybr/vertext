@@ -78,21 +78,3 @@
     </button>
   </div>
 </form>
-<script>
-(function () {
-    Vtx.load(['slug', 'media-picker'], function () {
-        if (window.vtxSlug) window.vtxSlug.init();
-        var pickerBtn = document.querySelector('[data-vtx-media-picker]');
-        if (pickerBtn && window.VtxMediaPicker) new VtxMediaPicker({ btn: pickerBtn });
-    });
-    var removeBtn = document.getElementById('gallery-cover-remove');
-    if (removeBtn) {
-        removeBtn.addEventListener('click', function () {
-            document.getElementById('gallery-cover-id').value = '';
-            document.getElementById('gallery-cover-url-hidden').value = '';
-            var wrap = document.getElementById('gallery-cover-preview');
-            if (wrap) wrap.style.display = 'none';
-        });
-    }
-}());
-</script>

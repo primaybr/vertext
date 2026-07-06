@@ -36,7 +36,7 @@
 }
 
 .vtx-filter-tab.active {
-    background: rgba(37,99,235,.10);
+    background: rgba(var(--ps-primary-rgb, 30, 58, 95), .10);
     color: var(--ps-primary);
 }
 
@@ -66,7 +66,7 @@
 .vtx-tags-wrap:focus-within {
     border-color: var(--ps-primary);
     outline: none;
-    box-shadow: 0 0 0 3px rgba(var(--ps-primary-rgb, 79 70 229) / .15);
+    box-shadow: 0 0 0 3px rgba(var(--ps-primary-rgb, 30, 58, 95), .15);
 }
 
 .vtx-tag-chip {
@@ -74,7 +74,7 @@
     align-items: center;
     gap: .25rem;
     padding: .125rem .5rem;
-    background: rgba(37,99,235,.10);
+    background: rgba(var(--ps-primary-rgb, 30, 58, 95), .10);
     color: var(--ps-primary);
     border-radius: 20px;
     font-size: .75rem;
@@ -201,7 +201,7 @@
 .vtx-editor-wrap .ql-toolbar .ql-picker-label:hover,
 .vtx-editor-wrap .ql-toolbar button.ql-active,
 .vtx-editor-wrap .ql-toolbar .ql-picker-label.ql-active {
-    background: rgba(37,99,235,.10);
+    background: rgba(var(--ps-primary-rgb, 30, 58, 95), .10);
     color: var(--ps-primary) !important;
 }
 
@@ -250,14 +250,6 @@
 .vtx-char-count.warn   { color: var(--ps-warning, #D97706); }
 .vtx-char-count.danger { color: var(--ps-danger,  #DC2626); }
 
-/* ── Blog dashboard stat row ─────────────────────────────────── */
-.vtx-blog-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 1rem;
-    margin-bottom: 1.25rem;
-}
-
 /* ── Dark mode overrides ─────────────────────────────────────── */
 [data-theme=dark] .vtx-editor-wrap .ql-toolbar { background: var(--ps-bg-surface); border-bottom-color: var(--ps-border); }
 [data-theme=dark] .vtx-editor-wrap .ql-editor  { background: var(--ps-bg-base); color: var(--ps-text-primary); }
@@ -275,3 +267,19 @@
 [data-theme=dark] .vtx-tags-option:hover,
 [data-theme=dark] .vtx-tags-option.focused { background: rgba(255,255,255,.06); }
 [data-theme=dark] .vtx-filter-tab.active  { background: rgba(96,165,250,.15); color: #93C5FD; }
+
+/* ── admin/setup/index.php: step-badge circle ── */
+.vtx-step-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    background: var(--ps-primary-fill, #1E3A5F);
+    color: #fff;
+    font-size: .75rem;
+    font-weight: 700;
+    margin-right: .5rem;
+    flex-shrink: 0;
+}

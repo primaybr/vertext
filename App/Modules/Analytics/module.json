@@ -1,7 +1,7 @@
 {
     "name":        "Analytics",
     "slug":        "analytics",
-    "version":     "0.0.4",
+    "version":     "0.0.5",
     "description": "Privacy-friendly page view analytics for your front-end",
     "author":      "Vertext",
     "category":    "Analytics",
@@ -12,5 +12,10 @@
         "path":       "/admin/analytics",
         "active":     "analytics",
         "permission": "analytics.view"
+    },
+    "assets": {
+        "admin": {
+            "js": ["analytics-admin.js"]
+        }
     }
 }

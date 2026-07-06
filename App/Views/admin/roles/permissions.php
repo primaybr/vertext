@@ -80,7 +80,8 @@
             <button type="button"
                     class="btn btn-sm btn-outline-danger perm-delete-btn"
                     data-id="<?php echo htmlspecialchars($perm['id']); ?>"
-                    data-slug="<?php echo htmlspecialchars($perm['slug']); ?>">
+                    data-slug="<?php echo htmlspecialchars($perm['slug']); ?>"
+                    data-csrf="{{csrf_token}}">
               <i class="pi pi-trash"></i>
             </button>
             <?php endif; ?>
@@ -92,62 +93,3 @@
   </div>
 </div>
 <?php endforeach; ?>
-
-<script>
-(function() {
-  var createBtn  = document.getElementById('create-perm-btn');
-  var cancelBtn  = document.getElementById('cancel-perm-btn');
-  var formPanel  = document.getElementById('create-perm-form');
-  var form       = document.getElementById('perm-create-form');
-
-  createBtn.addEventListener('click', function() { formPanel.style.display = ''; createBtn.style.display = 'none'; });
-  cancelBtn.addEventListener('click', function() { formPanel.style.display = 'none'; createBtn.style.display = ''; });
-
-  // Auto-generate slug from name
-  form.querySelector('[name="name"]').addEventListener('input', function() {
-    var slug = this.value.toLowerCase().replace(/[^a-z0-9\.\-_]+/g, '.').replace(/\.+/g, '.').replace(/^\.|\.$/g, '');
-    form.querySelector('[name="slug"]').value = slug;
-  });
-
-  form.addEventListener('submit', function(e) {
-    e.preventDefault();
-    var btn = form.querySelector('[type="submit"]');
-    btn.disabled = true;
-    btn.textContent = 'Creating...';
-    window.VtxAjax.postForm('{{baseUrl}}/admin/roles/permissions/store', form, function(ok, res) {
-      btn.disabled = false;
-      btn.textContent = 'Create Permission';
-      var success = ok && res && res.success;
-      window.Phuse.toast((res && res.message) || (success ? 'Created.' : 'Failed.'), success ? 'success' : 'error');
-      if (success) { location.reload(); }
-    });
-  });
-
-  document.querySelectorAll('.perm-delete-btn').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      var id   = this.dataset.id;
-      var slug = this.dataset.slug;
-      window.vtxConfirmModal({
-        title: 'Delete Permission',
-        message: 'Delete "' + slug + '"? Any roles with this permission will lose it.',
-        confirmLabel: 'Delete',
-        confirmClass: 'btn-danger',
-        onConfirm: function() {
-          var fd = new FormData();
-          fd.append('csrf_token', '{{csrf_token}}');
-          var xhr = new XMLHttpRequest();
-          xhr.open('POST', window.VTX_BASE_URL + '/admin/roles/permissions/' + id + '/delete');
-          xhr.onload = function() {
-            var res = null;
-            try { res = JSON.parse(xhr.responseText); } catch(e) {}
-            var success = res && res.success;
-            window.Phuse.toast((res && res.message) || (success ? 'Deleted.' : 'Failed.'), success ? 'success' : 'error');
-            if (success) { location.reload(); }
-          };
-          xhr.send(fd);
-        }
-      });
-    });
-  });
-}());
-</script>

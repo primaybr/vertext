@@ -10,26 +10,22 @@
   <?php endif; ?>
 </div>
 
-<!-- Stat Cards -->
-<div class="vtx-blog-stats">
+<!-- Stat Ledger -->
+<div class="vtx-stats">
   <div class="vtx-stat">
-    <div class="vtx-stat-ico blue"><i class="pi pi-edit"></i></div>
     <div class="vtx-stat-val"><?php echo number_format($totalPosts); ?></div>
     <div class="vtx-stat-lbl">Total Posts</div>
   </div>
   <div class="vtx-stat">
-    <div class="vtx-stat-ico green"><i class="pi pi-check-circle"></i></div>
     <div class="vtx-stat-val"><?php echo number_format($published); ?></div>
     <div class="vtx-stat-lbl">Published</div>
   </div>
   <div class="vtx-stat">
-    <div class="vtx-stat-ico amber"><i class="pi pi-clock"></i></div>
     <div class="vtx-stat-val"><?php echo number_format($drafts); ?></div>
     <div class="vtx-stat-lbl">Drafts</div>
   </div>
   <?php if (\App\CMS\Auth::can('comments.view')): ?>
   <div class="vtx-stat">
-    <div class="vtx-stat-ico red"><i class="pi pi-message"></i></div>
     <div class="vtx-stat-val"><?php echo number_format($pendingComments); ?></div>
     <div class="vtx-stat-lbl">Pending Comments</div>
   </div>
@@ -47,7 +43,7 @@
             data-labels="<?php echo htmlspecialchars(json_encode($chartLabels)); ?>"
             data-values="<?php echo htmlspecialchars(json_encode($chartValues)); ?>"
             data-label="Posts Published"
-            data-color="#2563EB"
+            data-color="#1E3A5F"
             style="height:220px;width:100%;display:block;"></canvas>
   </div>
 </div>

@@ -178,12 +178,4 @@
     </form>
   </div>
 </div>
-<script>
-document.addEventListener('vtx:crud:success', function () {
-  var addModal    = document.getElementById('nl-add-modal');
-  var importModal = document.getElementById('nl-import-modal');
-  if (addModal)    { addModal.style.display = 'none'; addModal.querySelector('form').reset(); }
-  if (importModal) { importModal.style.display = 'none'; importModal.querySelector('form').reset(); }
-});
-</script>
 <?php endif; ?>

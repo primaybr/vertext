@@ -1,0 +1,11 @@
+{
+    "name":        "Field",
+    "slug":        "field",
+    "version":     "0.0.1",
+    "description": "Warm, tactile theme with stone-beige surfaces, forest-green accent, and a serif/sans pairing",
+    "author":      "Vertext",
+    "assets": {
+        "css": ["css/theme.css"],
+        "js":  ["js/theme.js"]
+    }
+}

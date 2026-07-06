@@ -1,11 +1,17 @@
 {
     "name":        "Webhooks",
     "slug":        "webhooks",
-    "version":     "0.0.1",
+    "version":     "0.0.2",
     "description": "Outgoing webhooks with HMAC-SHA256 signed payloads for CMS events.",
     "author":      "Vertext",
     "category":    "Integration",
     "requires":    { "vertext": ">=0.0.1" },
+    "assets": {
+        "admin": {
+            "css": ["webhooks-admin.css"],
+            "js": ["webhooks-admin.js"]
+        }
+    },
     "nav": {
         "label":      "Webhooks",
         "icon":       "pi-link",

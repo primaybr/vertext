@@ -154,16 +154,3 @@
     </button>
   </div>
 </form>
-<script>
-(function () {
-    Vtx.load(['slug', 'editor'], function () {
-        if (window.vtxSlug) window.vtxSlug.init();
-        var editorEl = document.getElementById('page-body-editor');
-        var hiddenEl = document.getElementById('page-body-hidden');
-        if (editorEl && hiddenEl && window.VtxEditor) {
-            var ed = new VtxEditor({ container: editorEl, textarea: hiddenEl });
-            if (hiddenEl.value) ed.setHTML(hiddenEl.value);
-        }
-    });
-}());
-</script>

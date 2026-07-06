@@ -82,7 +82,7 @@
 [data-vtx-upload]:hover,
 [data-vtx-upload].vtx-upload--over {
     border-color: var(--ps-primary) !important;
-    background: rgba(37,99,235,.04) !important;
+    background: rgba(var(--ps-primary-rgb, 30, 58, 95), .04) !important;
 }
 
 /* ── Media Picker (inside modal) ─────────────────────────────── */
@@ -151,7 +151,7 @@
     right: .25rem;
     width: 20px;
     height: 20px;
-    background: var(--ps-primary);
+    background: var(--ps-primary-fill);
     border-radius: 50%;
     display: flex;
     align-items: center;

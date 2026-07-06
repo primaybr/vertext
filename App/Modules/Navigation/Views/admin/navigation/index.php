@@ -102,34 +102,4 @@
   </div>
 </div>
 
-<script>
-var _newMenuModal = null;
-function getNewMenuModal() {
-  if (!_newMenuModal) _newMenuModal = Phuse.modal(document.getElementById('new-menu-modal'));
-  return _newMenuModal;
-}
-
-document.getElementById('new-menu-btn').addEventListener('click', function() {
-  getNewMenuModal().show();
-});
-
-document.getElementById('new-menu-form').addEventListener('submit', function(e) {
-  e.preventDefault();
-  var btn = document.getElementById('new-menu-submit');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Creating...';
-
-  window.VtxAjax.postForm(this.action, this, function(ok, res) {
-    if (ok && res && res.success) {
-      window.Phuse.toast(res.message || 'Menu created.', 'success');
-      getNewMenuModal().hide();
-      setTimeout(function() { location.reload(); }, 500);
-    } else {
-      btn.disabled = false;
-      btn.innerHTML = '<i class="pi pi-plus me-1"></i>Create Menu';
-      window.Phuse.toast((res && res.message) || 'Failed to create menu.', 'error');
-    }
-  });
-});
-</script>
 <?php endif; ?>

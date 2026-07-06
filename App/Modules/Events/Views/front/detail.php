@@ -1,9 +1,9 @@
-<div class="container" style="padding: 3rem 0;">
+<div class="container ev-detail-page">
 
   <!-- Breadcrumb -->
-  <nav style="font-size:.8125rem;margin-bottom:1.5rem;color:var(--clr-text-muted,#6b7280);">
-    <a href="<?php echo $baseUrl; ?>/events" style="color:var(--clr-text-muted);text-decoration:none;">Events</a>
-    <span style="margin:0 .4rem;">/</span>
+  <nav class="ev-breadcrumb">
+    <a href="<?php echo $baseUrl; ?>/events">Events</a>
+    <span class="sep">/</span>
     <span><?php echo htmlspecialchars($event['title']); ?></span>
   </nav>
 
@@ -42,7 +42,7 @@
       <!-- Date/Time card -->
       <div class="ev-info-card">
         <div class="ev-info-row">
-          <i class="pi pi-calendar" style="color:var(--clr-accent);"></i>
+          <i class="pi pi-calendar"></i>
           <div>
             <div class="ev-info-label">Date</div>
             <div class="ev-info-val">
@@ -54,13 +54,13 @@
           </div>
         </div>
         <div class="ev-info-row">
-          <i class="pi pi-clock" style="color:var(--clr-accent);"></i>
+          <i class="pi pi-clock"></i>
           <div>
             <div class="ev-info-label">Time</div>
             <div class="ev-info-val">
               <?php echo date('g:i A', $start); ?>
               <?php if ($event['end_at']): ?>
-              <span style="color:var(--clr-text-muted,#6b7280);">
+              <span class="ev-info-note">
                 &ndash; <?php echo date('g:i A', strtotime($event['end_at'])); ?>
               </span>
               <?php endif; ?>
@@ -69,7 +69,7 @@
         </div>
         <?php if ($event['location']): ?>
         <div class="ev-info-row">
-          <i class="pi pi-map-pin" style="color:var(--clr-accent);"></i>
+          <i class="pi pi-map-pin"></i>
           <div>
             <div class="ev-info-label">Location</div>
             <div class="ev-info-val"><?php echo htmlspecialchars($event['location']); ?></div>
@@ -78,25 +78,25 @@
         <?php endif; ?>
         <?php if ((int)$event['rsvp_count'] > 0): ?>
         <div class="ev-info-row">
-          <i class="pi pi-users" style="color:var(--clr-accent);"></i>
+          <i class="pi pi-users"></i>
           <div>
             <div class="ev-info-label">Attending</div>
             <div class="ev-info-val">
               <?php echo (int) $event['rsvp_count']; ?> registered
               <?php if (isset($spots_left) && $spots_left !== null): ?>
-              <span style="color:var(--clr-text-muted,#9ca3af);font-weight:400;">&middot; <?php echo (int) $spots_left; ?> spot(s) left</span>
+              <span class="ev-info-note">&middot; <?php echo (int) $spots_left; ?> spot(s) left</span>
               <?php endif; ?>
             </div>
           </div>
         </div>
         <?php endif; ?>
         <div class="ev-info-row">
-          <i class="pi pi-calendar" style="color:var(--clr-accent);"></i>
+          <i class="pi pi-calendar"></i>
           <div>
             <div class="ev-info-label">Calendar</div>
             <div class="ev-info-val">
               <a href="<?php echo $baseUrl; ?>/events/<?php echo htmlspecialchars($event['slug']); ?>/ical"
-                 style="color:var(--clr-accent);text-decoration:none;font-size:.875rem;">
+                 class="ev-info-link">
                 Add to calendar (.ics)
               </a>
             </div>
@@ -111,11 +111,11 @@
       ?>
       <div class="ev-rsvp-card">
         <?php if ($past): ?>
-        <p class="ev-rsvp-done" style="color:var(--clr-text-muted,#6b7280);">
+        <p class="ev-rsvp-done">
           <i class="pi pi-calendar me-1"></i> This event has passed.
         </p>
         <?php else: ?>
-        <p style="margin:0 0 .75rem;font-size:.9375rem;font-weight:600;">
+        <p class="ev-rsvp-prompt">
           <?php echo $isFull ? 'Event is full - join the waiting list' : 'Register for this event'; ?>
         </p>
         <form method="POST" action="<?php echo $baseUrl; ?>/events/<?php echo htmlspecialchars($event['slug']); ?>/rsvp">
@@ -150,7 +150,7 @@
             <i class="pi pi-check me-1"></i> <?php echo $isFull ? 'Join Waiting List' : 'Register'; ?>
           </button>
         </form>
-        <p style="font-size:.75rem;margin:.5rem 0 0;color:var(--clr-text-muted,#9ca3af);">
+        <p class="ev-rsvp-note">
           You will receive a confirmation email with a calendar invite and a cancellation link.
         </p>
         <?php endif; ?>
@@ -163,36 +163,3 @@
     </aside>
   </div>
 </div>
-
-<style>
-.ev-detail-layout { display:grid; grid-template-columns:1fr 280px; gap:2rem; align-items:start; }
-.ev-hero-img { margin-bottom:1.5rem; border-radius:8px; overflow:hidden; }
-.ev-hero-img img { width:100%; max-height:360px; object-fit:cover; display:block; }
-.ev-detail-title { font-size:1.75rem; font-weight:700; margin:0 0 .75rem; color:var(--clr-text); }
-.ev-detail-desc { font-size:1.0625rem; color:var(--clr-text-muted,#6b7280); margin:0 0 1.5rem; line-height:1.6; }
-.ev-detail-body { font-size:.9375rem; line-height:1.75; color:var(--clr-text); }
-.ev-info-card { background:var(--clr-surface); border:1px solid var(--clr-border); border-radius:8px; padding:1rem; margin-bottom:1rem; display:grid; gap:.85rem; }
-.ev-info-row { display:grid; grid-template-columns:20px 1fr; gap:.6rem; align-items:start; }
-.ev-info-label { font-size:.75rem; text-transform:uppercase; letter-spacing:.05em; color:var(--clr-text-muted,#9ca3af); line-height:1.2; }
-.ev-info-val { font-size:.9375rem; font-weight:500; line-height:1.4; }
-.ev-rsvp-card { background:var(--clr-surface); border:1px solid var(--clr-border); border-radius:8px; padding:1rem; margin-bottom:1rem; }
-.ev-rsvp-done { margin:0; font-size:.9375rem; }
-.ev-rsvp-field { margin-bottom:.6rem; }
-.ev-rsvp-input { width:100%; padding:.5rem .7rem; border:1px solid var(--clr-border); border-radius:6px;
-  font-size:.875rem; font-family:inherit; background:var(--clr-bg); color:var(--clr-text); box-sizing:border-box; }
-.ev-rsvp-input:focus { outline:none; border-color:var(--clr-accent); }
-.btn-rsvp { display:block; width:100%; padding:.625rem 1rem; background:var(--clr-accent); color:#fff; border:none; border-radius:6px; font-size:.9375rem; font-weight:600; cursor:pointer; text-align:center; }
-.btn-rsvp:hover { opacity:.9; }
-.ev-back-link { display:inline-flex; align-items:center; font-size:.875rem; color:var(--clr-text-muted,#6b7280); text-decoration:none; }
-.ev-back-link:hover { color:var(--clr-accent); }
-.ev-alert { padding:.75rem 1rem; border-radius:6px; font-size:.9rem; }
-.ev-alert-success { background:#dcfce7; color:#166534; border:1px solid #bbf7d0; }
-.ev-alert-error   { background:#fee2e2; color:#991b1b; border:1px solid #fecaca; }
-.ev-alert-info    { background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; }
-@media (prefers-color-scheme: dark) {
-  .ev-alert-success { background:#14532d; color:#bbf7d0; border-color:#166534; }
-  .ev-alert-error   { background:#7f1d1d; color:#fecaca; border-color:#991b1b; }
-  .ev-alert-info    { background:#1e3a5f; color:#bfdbfe; border-color:#1d4ed8; }
-}
-@media (max-width: 720px) { .ev-detail-layout { grid-template-columns:1fr; } }
-</style>

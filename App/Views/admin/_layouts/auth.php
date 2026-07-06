@@ -4,9 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{pageTitle}} - Vertext CMS</title>
+  <link rel="icon" type="image/svg+xml" href="{{assetsUrl}}images/logo/favicon.svg">
   <link rel="stylesheet" href="{{assetsUrl}}css/styles.css?v=<?php echo substr(hash('crc32b', \App\CMS\Version::APP), 0, 8); ?>">
   <link rel="stylesheet" href="{{assetsUrl}}css/admin.css?v=<?php echo substr(hash('crc32b', \App\CMS\Version::APP), 0, 8); ?>">
-  <script>(function(){try{var t=localStorage.getItem('phuse-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})()</script>
+  <?php include ROOT . 'App' . DS . 'Views' . DS . '_shared' . DS . 'theme-init.php'; ?>
 </head>
 <body>
 
