@@ -48,7 +48,7 @@ class VideosController extends BaseController
 
         foreach ($videos as &$v) {
             $v['thumbnail_url'] = $v['thumbnail_path']
-                ? $this->baseUrl . '/Public/' . ltrim(str_replace(ROOT, '', $v['thumbnail_path']), '/\\')
+                ? $this->baseUrl . '/' . ltrim(str_replace('\\', '/', str_replace(ROOT . 'Public', '', $v['thumbnail_path'])), '/')
                 : '';
         }
         unset($v);

@@ -69,7 +69,7 @@ class VideoController extends Controller
     private function thumbnailUrl(array $v): string
     {
         if ($v['thumbnail_path'] && is_file($v['thumbnail_path'])) {
-            $rel = str_replace(ROOT, '', $v['thumbnail_path']);
+            $rel = str_replace(ROOT . 'Public', '', $v['thumbnail_path']);
             return $this->baseUrl . '/' . ltrim(str_replace('\\', '/', $rel), '/');
         }
         // Fallback: YouTube thumbnail served directly (no local cache yet)
