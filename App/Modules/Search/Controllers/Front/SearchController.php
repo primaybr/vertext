@@ -16,6 +16,8 @@ class SearchController extends Controller
 {
     public function index(): void
     {
+        \App\CMS\PageCache::serve();
+
         $q       = trim($this->input->get('q') ?? '');
         $results = [];
         $total   = 0;
@@ -49,13 +51,16 @@ class SearchController extends Controller
             }
         }
 
-        ThemeEngine::render('modules/search/front/results', [
+        $vars = [
             'q'          => $q,
             'results'    => $results,
             'total'      => $total,
             'baseUrl'    => $this->baseUrl,
             'page_title' => $q ? 'Search: ' . $q : 'Search',
-        ]);
+        ];
+        \App\CMS\PageCache::capture(static function () use ($vars) {
+            ThemeEngine::render('modules/search/front/results', $vars);
+        });
     }
 
     private function highlight(string $text, string $query, int $length): string

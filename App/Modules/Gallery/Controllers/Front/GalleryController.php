@@ -17,6 +17,8 @@ class GalleryController extends Controller
 {
     public function index(): void
     {
+        \App\CMS\PageCache::serve();
+
         $galleries = (new \Core\Model('galleries'))
             ->select('galleries.id, galleries.title, galleries.slug, galleries.description,
                       media_files.filename AS cover_filename, media_files.thumbnail_path AS cover_thumb')
@@ -34,15 +36,20 @@ class GalleryController extends Controller
         }
         unset($g);
 
-        ThemeEngine::render('modules/gallery/front/index', [
+        $vars = [
             'galleries'  => $galleries,
             'baseUrl'    => $baseUrl,
             'page_title' => 'Gallery',
-        ]);
+        ];
+        \App\CMS\PageCache::capture(static function () use ($vars) {
+            ThemeEngine::render('modules/gallery/front/index', $vars);
+        });
     }
 
     public function album(string $slug): void
     {
+        \App\CMS\PageCache::serve();
+
         $gallery = (new \Core\Model('galleries'))
             ->where('slug', $slug)
             ->where('status', 'published')
@@ -71,11 +78,14 @@ class GalleryController extends Controller
         }
         unset($item);
 
-        ThemeEngine::render('modules/gallery/front/album', [
+        $vars = [
             'gallery'    => $gallery,
             'items'      => $items,
             'baseUrl'    => $baseUrl,
             'page_title' => $gallery['title'],
-        ]);
+        ];
+        \App\CMS\PageCache::capture(static function () use ($vars) {
+            ThemeEngine::render('modules/gallery/front/album', $vars);
+        });
     }
 }

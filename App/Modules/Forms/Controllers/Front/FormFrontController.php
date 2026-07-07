@@ -22,9 +22,12 @@ class FormFrontController extends Controller
 
     public function show(string $slug): void
     {
+        \App\CMS\PageCache::serve();
+
         $form = $this->loadForm($slug);
 
-        $flash = $this->session->flash('form_flash_' . $slug) ?: [];
+        $rawFlash = $this->session->flash('form_flash_' . $slug);
+        $flash    = $rawFlash ?: [];
 
         // Pre-fill for logged-in site members
         $member = null;
@@ -42,7 +45,7 @@ class FormFrontController extends Controller
             $mathQuestion = "{$a} + {$b}";
         }
 
-        ThemeEngine::render('modules/forms/front/form', [
+        $vars = [
             'form'         => $form,
             'fields'       => json_decode($form['fields'] ?: '[]', true) ?: [],
             'flash'        => is_array($flash) ? $flash : [],
@@ -51,7 +54,19 @@ class FormFrontController extends Controller
             'page_title'   => $form['name'],
             'member'       => $member,
             'mathQuestion' => $mathQuestion,
-        ]);
+        ];
+
+        // A just-consumed success flash hides the form (and its CSRF token) in
+        // favor of a one-time "thank you" message - capture()'s CSRF-based guard
+        // can't see that, so skip caching this render outright.
+        if ($rawFlash) {
+            ThemeEngine::render('modules/forms/front/form', $vars);
+            return;
+        }
+
+        \App\CMS\PageCache::capture(static function () use ($vars) {
+            ThemeEngine::render('modules/forms/front/form', $vars);
+        });
     }
 
     public function submit(string $slug): void

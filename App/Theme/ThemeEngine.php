@@ -79,7 +79,8 @@ class ThemeEngine
             'site', 'data', 'feedUrl'
         ));
         include $layoutFile;
-        echo ob_get_clean();
+        $finalHtml = ob_get_clean();
+        echo (new \Core\Utilities\Text\HTML())->minify($finalHtml);
 
         // Track page view (silent - analytics must never break a page)
         if (\App\CMS\ModuleLoader::isEnabled('analytics')) {

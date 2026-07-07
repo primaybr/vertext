@@ -85,6 +85,7 @@ class VideosController extends BaseController
 
         $this->db('videos')->save($data);
         Auth::audit('videos.create', 'videos', $data['slug']);
+        \App\CMS\PageCache::flushPages();
         $this->json(['success' => true, 'message' => 'Video added.']);
     }
 
@@ -132,6 +133,7 @@ class VideosController extends BaseController
 
         $this->db('videos')->where('id', $id)->update($data);
         Auth::audit('videos.update', 'videos', $id);
+        \App\CMS\PageCache::flushPages();
         $this->json(['success' => true, 'message' => 'Video updated.']);
     }
 
@@ -145,6 +147,7 @@ class VideosController extends BaseController
             'deleted_by' => Auth::id(),
         ]);
         Auth::audit('videos.delete', 'videos', $id);
+        \App\CMS\PageCache::flushPages();
         $this->json(['success' => true, 'message' => 'Video deleted.']);
     }
 

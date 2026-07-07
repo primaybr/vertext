@@ -108,6 +108,7 @@ class GalleriesController extends BaseController
         ]);
 
         Auth::audit('gallery.create', 'galleries', $id, ['title' => $title]);
+        \App\CMS\PageCache::flushPages();
         $this->json(['success' => true, 'message' => "Album \"{$title}\" created.",
                      'redirect' => $this->baseUrl . "/admin/gallery/{$id}/items"]);
     }
@@ -177,6 +178,7 @@ class GalleriesController extends BaseController
         $this->db('galleries')->where('id', $id)->update($data);
 
         Auth::audit('gallery.update', 'galleries', $id, ['title' => $title]);
+        \App\CMS\PageCache::flushPages();
         $this->json(['success' => true, 'message' => 'Album updated.']);
     }
 
@@ -197,6 +199,7 @@ class GalleriesController extends BaseController
         ]);
 
         Auth::audit('gallery.delete', 'galleries', $id);
+        \App\CMS\PageCache::flushPages();
         $this->json(['success' => true, 'message' => 'Album deleted.']);
     }
 

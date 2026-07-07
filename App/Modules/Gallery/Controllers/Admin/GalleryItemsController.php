@@ -105,6 +105,7 @@ class GalleryItemsController extends BaseController
             ->get(1);
 
         Auth::audit('gallery.item.add', 'gallery_items', $mediaId, ['gallery_id' => $galleryId]);
+        \App\CMS\PageCache::flushPages();
 
         $this->json([
             'success'       => true,
@@ -141,6 +142,7 @@ class GalleryItemsController extends BaseController
                 ->update(['sort_order' => $sortOrder]);
         }
 
+        \App\CMS\PageCache::flushPages();
         $this->json(['success' => true]);
     }
 
@@ -156,6 +158,7 @@ class GalleryItemsController extends BaseController
             ->delete();
 
         Auth::audit('gallery.item.remove', 'gallery_items', $itemId);
+        \App\CMS\PageCache::flushPages();
         $this->json(['success' => true, 'message' => 'Image removed.']);
     }
 

@@ -32,14 +32,19 @@ class AccountController extends Controller
             $this->redirect($this->baseUrl . '/account');
         }
 
+        \App\CMS\PageCache::serve();
+
         $flash = $this->session->flash('member_flash') ?: [];
-        ThemeEngine::render('modules/members/front/register', [
+        $vars  = [
             'flash'      => is_array($flash) ? $flash : [],
             'old'        => $this->session->flash('member_old') ?: [],
             'baseUrl'    => $this->baseUrl,
             'csrf_token' => $this->csrf->getToken(),
             'page_title' => 'Create Account',
-        ]);
+        ];
+        \App\CMS\PageCache::capture(static function () use ($vars) {
+            ThemeEngine::render('modules/members/front/register', $vars);
+        });
     }
 
     /** POST /account/register */
@@ -158,13 +163,18 @@ class AccountController extends Controller
             $this->redirect($this->baseUrl . '/account');
         }
 
+        \App\CMS\PageCache::serve();
+
         $flash = $this->session->flash('member_flash') ?: [];
-        ThemeEngine::render('modules/members/front/login', [
+        $vars  = [
             'flash'      => is_array($flash) ? $flash : [],
             'baseUrl'    => $this->baseUrl,
             'csrf_token' => $this->csrf->getToken(),
             'page_title' => 'Sign In',
-        ]);
+        ];
+        \App\CMS\PageCache::capture(static function () use ($vars) {
+            ThemeEngine::render('modules/members/front/login', $vars);
+        });
     }
 
     /** POST /account/login */

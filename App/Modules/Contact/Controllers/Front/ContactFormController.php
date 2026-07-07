@@ -32,14 +32,29 @@ class ContactFormController extends Controller
 
     public function show(): void
     {
-        $flash = $this->session->flash('contact_flash') ?: [];
+        \App\CMS\PageCache::serve();
 
-        ThemeEngine::render('modules/contact/front/form', [
+        $rawFlash = $this->session->flash('contact_flash');
+        $flash    = $rawFlash ?: [];
+
+        $vars = [
             'flash'      => is_array($flash) ? $flash : [],
             'baseUrl'    => $this->baseUrl,
             'csrf_token' => $this->csrf->getToken(),
             'page_title' => 'Contact',
-        ]);
+        ];
+
+        // A just-consumed success flash hides the form (and its CSRF token) in
+        // favor of a one-time "thank you" message - capture()'s CSRF-based guard
+        // can't see that, so skip caching this render outright.
+        if ($rawFlash) {
+            ThemeEngine::render('modules/contact/front/form', $vars);
+            return;
+        }
+
+        \App\CMS\PageCache::capture(static function () use ($vars) {
+            ThemeEngine::render('modules/contact/front/form', $vars);
+        });
     }
 
     public function submit(): void

@@ -28,6 +28,8 @@ class EventsFrontController extends Controller
 
     public function index(): void
     {
+        \App\CMS\PageCache::serve();
+
         $now = date('Y-m-d H:i:s');
 
         // Upcoming = future one-off events PLUS recurring events expanded into
@@ -52,19 +54,25 @@ class EventsFrontController extends Controller
             ->limitOffset(20, 0)
             ->get() ?: [];
 
-        ThemeEngine::render('modules/events/front/index', [
+        $vars = [
             'upcoming'   => $upcoming,
             'past'       => $past,
             'baseUrl'    => $this->baseUrl,
             'page_title' => 'Events',
-        ]);
+        ];
+        \App\CMS\PageCache::capture(static function () use ($vars) {
+            ThemeEngine::render('modules/events/front/index', $vars);
+        });
     }
 
     public function detail(string $slug): void
     {
+        \App\CMS\PageCache::serve();
+
         $event = $this->loadEvent($slug);
 
-        $flash = $this->session->flash('event_rsvp_flash') ?: [];
+        $rawFlash = $this->session->flash('event_rsvp_flash');
+        $flash    = $rawFlash ?: [];
 
         // Pre-fill for logged-in members
         $member = null;
@@ -72,7 +80,7 @@ class EventsFrontController extends Controller
             $member = \App\CMS\SiteAuth::user();
         }
 
-        ThemeEngine::render('modules/events/front/detail', [
+        $vars = [
             'event'      => $event,
             'flash'      => is_array($flash) ? $flash : [],
             'baseUrl'    => $this->baseUrl,
@@ -81,7 +89,19 @@ class EventsFrontController extends Controller
             'member'     => $member,
             'spots_left' => EventHelper::spotsLeft($event),
             'tickets'    => EventHelper::tickets($event),
-        ]);
+        ];
+
+        // A just-consumed flash message is one-time, personalized output. The RSVP
+        // form (with its CSRF token) is hidden for past events, so capture()'s own
+        // CSRF-based guard can't be relied on here - skip caching this render outright.
+        if ($rawFlash) {
+            ThemeEngine::render('modules/events/front/detail', $vars);
+            return;
+        }
+
+        \App\CMS\PageCache::capture(static function () use ($vars) {
+            ThemeEngine::render('modules/events/front/detail', $vars);
+        });
     }
 
     /** POST /events/{slug}/rsvp - per-attendee registration with capacity */

@@ -17,6 +17,8 @@ class VideoController extends Controller
 {
     public function index(): void
     {
+        \App\CMS\PageCache::serve();
+
         $videos = (new \Core\Model('videos'))
             ->select('id, title, slug, provider, video_id, thumbnail_path, description')
             ->where('status', 'published')
@@ -29,16 +31,21 @@ class VideoController extends Controller
         }
         unset($v);
 
-        ThemeEngine::render('modules/videos/front/index', [
+        $vars = [
             'videos'           => $videos,
             'baseUrl'          => $this->baseUrl,
             'page_title'       => 'Videos',
             'page_description' => 'Watch our video collection.',
-        ]);
+        ];
+        \App\CMS\PageCache::capture(static function () use ($vars) {
+            ThemeEngine::render('modules/videos/front/index', $vars);
+        });
     }
 
     public function single(string $slug): void
     {
+        \App\CMS\PageCache::serve();
+
         $video = (new \Core\Model('videos'))
             ->where('slug', $slug)
             ->where('status', 'published')
@@ -46,24 +53,30 @@ class VideoController extends Controller
 
         if (!$video) {
             http_response_code(404);
-            ThemeEngine::render('modules/videos/front/index', [
+            $vars = [
                 'videos'     => [],
                 'baseUrl'    => $this->baseUrl,
                 'page_title' => 'Not Found',
-            ]);
+            ];
+            \App\CMS\PageCache::capture(static function () use ($vars) {
+                ThemeEngine::render('modules/videos/front/index', $vars);
+            });
             return;
         }
 
         $video['thumbnail_url'] = $this->thumbnailUrl($video);
         $video['embed_iframe']  = $this->buildEmbed($video);
 
-        ThemeEngine::render('modules/videos/front/single', [
+        $vars = [
             'video'            => $video,
             'baseUrl'          => $this->baseUrl,
             'page_title'       => $video['meta_title'] ?: $video['title'],
             'page_description' => $video['meta_description'] ?: mb_substr(strip_tags($video['description'] ?? ''), 0, 160),
             'page_image'       => $video['thumbnail_url'],
-        ]);
+        ];
+        \App\CMS\PageCache::capture(static function () use ($vars) {
+            ThemeEngine::render('modules/videos/front/single', $vars);
+        });
     }
 
     private function thumbnailUrl(array $v): string

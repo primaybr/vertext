@@ -171,6 +171,7 @@ class EventsController extends BaseController
         ], $this->readV2Fields()));
 
         Auth::audit('event.create', 'events', $id, ['title' => $title]);
+        \App\CMS\PageCache::flushPages();
 
         if ($this->input->isAjax()) {
             $this->json(['success' => true, 'message' => "Event \"{$title}\" created."]);
@@ -248,6 +249,7 @@ class EventsController extends BaseController
 
         $this->db('events')->where('id', $id)->update($data);
         Auth::audit('event.update', 'events', $id, ['title' => $title]);
+        \App\CMS\PageCache::flushPages();
         $this->json(['success' => true, 'message' => 'Event updated.']);
     }
 
@@ -267,6 +269,7 @@ class EventsController extends BaseController
         ]);
 
         Auth::audit('event.delete', 'events', $id, ['title' => $event['title']]);
+        \App\CMS\PageCache::flushPages();
         $this->json(['success' => true, 'message' => "Event \"{$event['title']}\" deleted."]);
     }
 
