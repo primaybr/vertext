@@ -22,6 +22,6 @@ Storage/installed.lock
 # Installed module views — deployed by the module installer, not source-controlled
 App/Views/modules/
 Public/assets/modules/
-Public/uploads/media/
+Public/uploads/
 Public/themes/
 

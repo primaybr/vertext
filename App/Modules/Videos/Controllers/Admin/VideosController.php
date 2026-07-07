@@ -6,7 +6,7 @@ namespace App\Modules\Videos\Controllers\Admin;
 
 use App\Controllers\Admin\BaseController;
 use App\CMS\Auth;
-use Core\Utilities\Str;
+use Core\Utilities\Text\Str;
 
 /**
  * Admin video management.
