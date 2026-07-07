@@ -13,11 +13,20 @@ use Core\Cache\Cache;
 class RouterTest extends TestCase
 {
     private Router $router;
+    private string $baseDir;
 
     protected function setUp(): void
     {
+        // preparePattern() branches on HTTP_HOST to decide domain vs subdirectory
+        // access; force the subdirectory branch (matches these tests' expectations)
+        // since CLI test runs have no real HTTP_HOST.
+        $_SERVER['HTTP_HOST'] = 'localhost';
+
         // Create a basic Router instance without complex mocking
         $this->router = new Router();
+        // Router::preparePattern() prefixes subdirectory-access patterns with
+        // basename(ROOT) - compute it rather than hardcoding a checkout name.
+        $this->baseDir = basename(strtolower(rtrim(ROOT, DS)));
     }
 
     public function testRouterInstantiation(): void
@@ -35,7 +44,7 @@ class RouterTest extends TestCase
         $routesProperty->setAccessible(true);
         $routes = $routesProperty->getValue($this->router);
 
-        $expectedKey = '~^\/phuse\/test$~@GET';
+        $expectedKey = '~^/' . $this->baseDir . '/test/?$~@GET';
         $this->assertArrayHasKey($expectedKey, $routes);
         $this->assertEquals('TestController', $routes[$expectedKey]);
     }
@@ -49,7 +58,7 @@ class RouterTest extends TestCase
         $routesProperty->setAccessible(true);
         $routes = $routesProperty->getValue($this->router);
 
-        $expectedKey = '~^\/phuse\/test$~@GET';
+        $expectedKey = '~^/' . $this->baseDir . '/test/?$~@GET';
         $this->assertArrayHasKey($expectedKey, $routes);
         $this->assertEquals('TestController', $routes[$expectedKey]);
     }
@@ -63,7 +72,7 @@ class RouterTest extends TestCase
         $routesProperty->setAccessible(true);
         $routes = $routesProperty->getValue($this->router);
 
-        $expectedKey = '~^\/phuse\/test$~@POST';
+        $expectedKey = '~^/' . $this->baseDir . '/test/?$~@POST';
         $this->assertArrayHasKey($expectedKey, $routes);
         $this->assertEquals('TestController', $routes[$expectedKey]);
     }
@@ -77,7 +86,7 @@ class RouterTest extends TestCase
         $routesProperty->setAccessible(true);
         $routes = $routesProperty->getValue($this->router);
 
-        $expectedKey = '~^\/phuse\/test$~@PUT';
+        $expectedKey = '~^/' . $this->baseDir . '/test/?$~@PUT';
         $this->assertArrayHasKey($expectedKey, $routes);
         $this->assertEquals('TestController', $routes[$expectedKey]);
     }
@@ -91,7 +100,7 @@ class RouterTest extends TestCase
         $routesProperty->setAccessible(true);
         $routes = $routesProperty->getValue($this->router);
 
-        $expectedKey = '~^\/phuse\/test$~@DELETE';
+        $expectedKey = '~^/' . $this->baseDir . '/test/?$~@DELETE';
         $this->assertArrayHasKey($expectedKey, $routes);
         $this->assertEquals('TestController', $routes[$expectedKey]);
     }
@@ -114,7 +123,7 @@ class RouterTest extends TestCase
         $preparePatternMethod->setAccessible(true);
 
         $pattern = $preparePatternMethod->invoke($this->router, '/test');
-        $this->assertStringContainsString('phuse', $pattern); // Should contain the root directory name
+        $this->assertStringContainsString($this->baseDir, $pattern); // Should contain the root directory name
         $this->assertStringContainsString('test', $pattern);
     }
 

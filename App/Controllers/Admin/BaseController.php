@@ -59,11 +59,13 @@ abstract class BaseController extends Controller
     /** Render admin page: pre-render content into base layout */
     protected function adminRender(string $view, array $data = [], string $pageTitle = '', string $activeMenu = ''): void
     {
+        // Core\Middleware\SecurityHeadersMiddleware already applied X-Frame-Options,
+        // X-Content-Type-Options, Referrer-Policy, and a strict CSP to every request.
+        // Admin views still rely on inline <script>/<style>, so only the CSP is
+        // re-emitted here with 'unsafe-inline' allowed - header() replaces the
+        // earlier same-named header, the other three stay as the middleware set them.
         if (!headers_sent()) {
             header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; frame-ancestors 'none'");
-            header('X-Frame-Options: DENY');
-            header('X-Content-Type-Options: nosniff');
-            header('Referrer-Policy: strict-origin-when-cross-origin');
         }
         $flash     = $this->session->flash('flash');
         $csrfToken = $this->csrf->getToken();

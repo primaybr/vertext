@@ -81,11 +81,17 @@ final class TotpHelper
     /**
      * Hash all backup codes for storage.
      * Returns an array of bcrypt hashes.
+     *
+     * Strips the same whitespace/dashes matchBackupCode() strips from user
+     * input before verifying - hashing the raw "XXXXX-XXXXX" display format
+     * here while matchBackupCode() normalizes its input would mean a code
+     * could never verify against its own hash, regardless of what the user
+     * types.
      */
     public static function hashBackupCodes(array $plain): array
     {
         return array_map(
-            static fn(string $c) => password_hash($c, PASSWORD_BCRYPT, ['cost' => 10]),
+            static fn(string $c) => password_hash(preg_replace('/[\s\-]/', '', $c), PASSWORD_BCRYPT, ['cost' => 10]),
             $plain
         );
     }

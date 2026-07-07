@@ -106,11 +106,14 @@ class WizardController extends Controller
 
     // -- Private step processors -------------------------------
 
+    /** Requirement keys that only produce a warning, never block install */
+    private const OPTIONAL_REQUIREMENTS = ['mbstring', 'intl', 'zip'];
+
     private function processStep1(): array
     {
         $reqs = Installer::checkRequirements();
         foreach ($reqs as $key => $req) {
-            if (!$req['pass'] && $key !== 'mbstring') { // mbstring is optional-ish
+            if (!$req['pass'] && !in_array($key, self::OPTIONAL_REQUIREMENTS, true)) {
                 return ['success' => false, 'message' => "Requirement failed: {$req['label']}"];
             }
         }
@@ -171,16 +174,18 @@ class WizardController extends Controller
 
     private function processStep3(): array
     {
-        $siteName = trim($this->input->post('site_name', false) ?? '');
-        $siteUrl  = trim($this->input->post('site_url', false) ?? '');
-        $timezone = $this->input->post('timezone') ?? 'UTC';
-        $lang     = $this->input->post('language') ?? 'en';
+        $siteName  = trim($this->input->post('site_name', false) ?? '');
+        $siteUrl   = trim($this->input->post('site_url', false) ?? '');
+        $timezone  = $this->input->post('timezone') ?? 'UTC';
+        $lang      = $this->input->post('language') ?? 'en';
+        $debugMode = (bool) $this->input->post('debug_mode');
 
         if (!$siteName || !$siteUrl) {
             return ['success' => false, 'message' => 'Site name and URL are required.'];
         }
 
         $appConfig = [
+            'env'  => $debugMode ? 'development' : 'production',
             'site' => [
                 'title'  => $siteName,
                 'baseUrl'=> rtrim($siteUrl, '/'),
@@ -200,7 +205,7 @@ class WizardController extends Controller
             ]);
         }
 
-        $this->session->set('setup_app', compact('siteName', 'siteUrl', 'timezone', 'lang'));
+        $this->session->set('setup_app', compact('siteName', 'siteUrl', 'timezone', 'lang', 'debugMode'));
         return ['success' => true];
     }
 
@@ -260,6 +265,7 @@ class WizardController extends Controller
             'totalSteps'=> self::TOTAL_STEPS,
             'error'     => $error,
             'reqs'      => $reqs,
+            'optionalReqs' => self::OPTIONAL_REQUIREMENTS,
             'allPass'   => $allPass,
             'setupDb'   => $setupDb,
             'setupApp'  => $setupApp,
@@ -278,8 +284,10 @@ class WizardController extends Controller
 
     private function allRequirementsMet(array $reqs): bool
     {
-        foreach ($reqs as $req) {
-            if (!$req['pass']) return false;
+        foreach ($reqs as $key => $req) {
+            if (!$req['pass'] && !in_array($key, self::OPTIONAL_REQUIREMENTS, true)) {
+                return false;
+            }
         }
         return true;
     }

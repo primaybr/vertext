@@ -922,6 +922,30 @@
     margin-top: 0.25rem;
 }
 
+.vtx-field-check {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+.vtx-field-check label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--ps-text-secondary, #475569);
+}
+
+.vtx-setup-advanced {
+    margin-top: 1rem;
+}
+
+.vtx-setup-advanced summary {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--ps-text-muted, #94A3B8);
+    cursor: pointer;
+}
+
 /* -- Flash Message --------------------------------------------- */
 .vtx-flash {
     display: flex;

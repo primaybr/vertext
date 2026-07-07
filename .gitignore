@@ -4,13 +4,11 @@ Config/Config.php
 Logs/
 !Core/Cache/
 vendor/
-composer.lock
-composer.json
 .phpunit.cache
+tests/coverage/
 .mcp.json
 .claude/
 .playwright-mcp/
-.github/
 .markdownlint.json
 .remember/
 
@@ -18,6 +16,7 @@ composer.json
 Storage/db.php
 Storage/app.php
 Storage/installed.lock
+Storage/backups/
 
 # Installed module views — deployed by the module installer, not source-controlled
 App/Views/modules/

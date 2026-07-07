@@ -128,6 +128,64 @@ Fill in the `modules` array. Each entry has:
 
 ---
 
+## migrate
+
+Run pending database migrations, or check which ones are applied.
+
+```
+php vertext migrate up
+php vertext migrate status
+```
+
+Requires a configured database (`Storage/db.php` - created by the setup wizard, or by hand for a
+CLI-only environment).
+
+**`migrate up`** discovers every file under `Migrations/` (sorted by their numeric filename
+prefix, e.g. `001_core_tables.php`, `002_uuid_migration.php`), skips any already recorded in the
+`schema_migrations` table, and runs the rest in order - each inside its own transaction, which
+rolls back and aborts the whole run if that migration throws. This is the same runner the setup
+wizard's install step uses, so a fresh install and `migrate up` on an existing site behave
+identically.
+
+**`migrate status`** lists every discovered migration file with `[applied]` or `[pending]`,
+without running anything.
+
+```
+$ php vertext migrate status
+  [applied] 001_core_tables.php
+  [applied] 002_uuid_migration.php
+  [pending] 003_add_widgets.php
+
+$ php vertext migrate up
+Migrations applied.
+```
+
+**Writing a new migration**: add a file to `Migrations/` named `{next_number}_{snake_case_name}.php`
+(e.g. `003_add_widgets.php`) defining a class `Migration_{number}_{PascalCaseName}` (e.g.
+`Migration_003_AddWidgets`) with an `up(): void` method that runs whatever DDL/DML it needs via the
+`\PDO` instance passed to its constructor - no transaction handling needed, the runner already
+opened one. There is no `down()`/rollback support in this release; restore from a backup
+(see [Backup & Restore](backup-restore.md)) if a migration needs to be undone.
+
+Note: `Migrations/` is reserved for **core** schema changes only. Module-level tables are still
+created via each module's own `Module::install()`, unrelated to this runner.
+
+---
+
+## backup / restore
+
+Create and restore a single-archive backup of your database data, uploads, and config.
+
+```
+php vertext backup [--include-secrets] [--output=path]
+php vertext restore <archive-path> [--force]
+```
+
+See [Backup & Restore](backup-restore.md) for the full archive format, secret redaction behavior,
+and restore semantics.
+
+---
+
 ## Bundle status logic
 
 The Module Manager derives each bundle's status from the installed state of its listed modules:

@@ -4,21 +4,34 @@
 declare(strict_types=1);
 
 define('BASE_PATH', __DIR__);
+define('DS', DIRECTORY_SEPARATOR);
+define('ROOT', BASE_PATH . DS);
 
+require __DIR__ . '/App/CMS/Version.php';
 require __DIR__ . '/App/CMS/Cli/MakeModule.php';
 require __DIR__ . '/App/CMS/Cli/MakeBundle.php';
+require __DIR__ . '/App/CMS/MigrationRunner.php';
+require __DIR__ . '/App/CMS/Cli/Migrate.php';
+require __DIR__ . '/App/CMS/BackupManager.php';
+require __DIR__ . '/App/CMS/Cli/Backup.php';
+require __DIR__ . '/App/CMS/Cli/Restore.php';
 
 $command = $argv[1] ?? null;
-$name    = $argv[2] ?? null;
+$args    = array_slice($argv, 2);
 
-if (!$command || !$name) {
+$commandsRequiringArg = ['make:module', 'make:bundle', 'migrate', 'restore'];
+
+if (!$command || (in_array($command, $commandsRequiringArg, true) && !isset($args[0]))) {
     usage();
     exit(1);
 }
 
 match ($command) {
-    'make:module' => App\CMS\Cli\MakeModule::run($name),
-    'make:bundle' => App\CMS\Cli\MakeBundle::run($name),
+    'make:module' => App\CMS\Cli\MakeModule::run($args[0]),
+    'make:bundle' => App\CMS\Cli\MakeBundle::run($args[0]),
+    'migrate'     => App\CMS\Cli\Migrate::run($args[0]),
+    'backup'      => App\CMS\Cli\Backup::run($args),
+    'restore'     => App\CMS\Cli\Restore::run($args),
     default       => (static function () use ($command): never {
         echo "\033[31mUnknown command:\033[0m {$command}\n\n";
         usage();
@@ -32,16 +45,24 @@ function usage(): void
 \033[1mVertext CLI\033[0m
 
 Usage:
-  php vertext <command> <name>
+  php vertext <command> [args]
 
 Commands:
-  \033[36mmake:module\033[0m \033[33m<ModuleName>\033[0m   Scaffold a new module (PascalCase name)
-  \033[36mmake:bundle\033[0m \033[33m<bundle-slug>\033[0m   Create a bundle.json skeleton (kebab-case slug)
+  \033[36mmake:module\033[0m \033[33m<ModuleName>\033[0m         Scaffold a new module (PascalCase name)
+  \033[36mmake:bundle\033[0m \033[33m<bundle-slug>\033[0m         Create a bundle.json skeleton (kebab-case slug)
+  \033[36mmigrate\033[0m \033[33m<up|status>\033[0m               Run pending database migrations, or show their status
+  \033[36mbackup\033[0m \033[33m[--include-secrets] [--output=path]\033[0m   Create a backup archive
+  \033[36mrestore\033[0m \033[33m<archive-path> [--force]\033[0m  Restore a backup archive
 
 Examples:
   php vertext make:module Blog
   php vertext make:module ThemeCustomizer
   php vertext make:bundle marketing-suite
+  php vertext migrate status
+  php vertext migrate up
+  php vertext backup
+  php vertext backup --include-secrets --output=/tmp/full-backup.zip
+  php vertext restore Storage/backups/vertext-backup-2026-07-07_120000.zip
 
 HELP;
 }

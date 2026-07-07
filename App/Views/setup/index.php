@@ -61,9 +61,11 @@
       </p>
 
       <div>
-        <?php foreach ($reqs as $key => $req): ?>
+        <?php foreach ($reqs as $key => $req):
+            $dot = $req['pass'] ? 'pass' : (in_array($key, $optionalReqs, true) ? 'warn' : 'fail');
+        ?>
         <div class="vtx-req">
-          <div class="vtx-req-dot <?php echo $req['pass'] ? 'pass' : 'fail'; ?>"></div>
+          <div class="vtx-req-dot <?php echo $dot; ?>"></div>
           <div class="vtx-req-label"><?php echo htmlspecialchars($req['label']); ?></div>
           <div class="vtx-req-value"><?php echo htmlspecialchars($req['value']); ?></div>
         </div>
@@ -200,6 +202,20 @@
           </div>
         </div>
       </div>
+
+      <details class="vtx-setup-advanced">
+        <summary>Advanced</summary>
+        <div class="vtx-field-check">
+          <input type="checkbox" id="debug_mode" name="debug_mode" value="1"
+                 <?php echo !empty($setupApp['debugMode']) ? 'checked' : ''; ?>>
+          <label for="debug_mode">Enable debug mode for this install</label>
+        </div>
+        <div class="vtx-help">
+          Leave this unchecked for a production/public site. When checked, error details and stack
+          traces are shown instead of a generic error page - use only on a private dev/staging
+          install. See the <a href="https://github.com/primaybr/vertext/blob/main/docs/going-to-production.md" target="_blank" rel="noopener">production checklist</a> for more.
+        </div>
+      </details>
     </div>
 
     <div class="vtx-setup-foot">
@@ -285,6 +301,12 @@
       <a href="{{baseUrl}}/admin/login" class="btn btn-primary btn-lg">
         <i class="pi pi-arrow-right me-1"></i> Go to Login
       </a>
+
+      <p style="font-size:.8125rem;color:var(--ps-text-muted);margin-top:1.5rem;">
+        Before inviting real users, read the
+        <a href="https://github.com/primaybr/vertext/blob/main/docs/going-to-production.md" target="_blank" rel="noopener">production checklist</a>
+        (permissions, HTTPS, backups, and known limitations).
+      </p>
     </div>
     <?php endif; ?>
 

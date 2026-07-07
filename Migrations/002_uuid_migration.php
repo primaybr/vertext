@@ -21,6 +21,9 @@ declare(strict_types=1);
  *
  * Safe to run on a DB already using UUIDs - Phase 1 returns empty list and
  * the migration exits as a no-op without touching anything.
+ *
+ * Runs inside a transaction opened by MigrationRunner - up() does not manage
+ * its own transaction boundary.
  */
 class Migration_002_UuidMigration
 {
@@ -33,94 +36,85 @@ class Migration_002_UuidMigration
 
     public function up(): void
     {
-        $this->pdo->beginTransaction();
-        try {
-            // -- Phase 1: Discover tables with INT id ---------------------------
-            $idTables = $this->tablesWithIntId();
+        // -- Phase 1: Discover tables with INT id ---------------------------
+        $idTables = $this->tablesWithIntId();
 
-            if (empty($idTables)) {
-                $this->pdo->commit();
-                return; // Already UUID - nothing to do
+        if (empty($idTables)) {
+            return; // Already UUID - nothing to do
+        }
+
+        // -- Phase 2: Add _uuid shadow to every parent table ----------------
+        // Populate NOW while old INT id still exists (needed for Phase 3 JOIN)
+        foreach ($idTables as $t) {
+            $this->pdo->exec("ALTER TABLE \"{$t}\" ADD COLUMN IF NOT EXISTS _uuid UUID DEFAULT gen_random_uuid()");
+            $this->pdo->exec("UPDATE \"{$t}\" SET _uuid = gen_random_uuid() WHERE _uuid IS NULL");
+        }
+
+        // -- Phase 3: Map FK columns in child tables via old INT id ---------
+        // CRITICAL: child.fk_col = parent.id (INT) - parent.id still exists here.
+        // For NULL FK values (nullable FKs) the JOIN produces no match and the
+        // shadow column stays NULL, which is the correct outcome.
+        $fks = $this->intFkColumns($idTables);
+        foreach ($fks as ['table' => $t, 'col' => $c, 'ref' => $r]) {
+            $tmp = "_uuid_{$c}";
+            $this->pdo->exec("ALTER TABLE \"{$t}\" ADD COLUMN IF NOT EXISTS \"{$tmp}\" UUID");
+            $this->pdo->exec(
+                "UPDATE \"{$t}\" x
+                 SET    \"{$tmp}\" = p._uuid
+                 FROM   \"{$r}\" p
+                 WHERE  x.\"{$c}\" = p.id"
+            );
+        }
+
+        // -- Phase 4: Drop ALL FK constraints ------------------------------
+        // Must happen before we drop/rename columns that FK constraints reference.
+        foreach ($this->allFkConstraints() as ['table' => $t, 'name' => $n]) {
+            $this->pdo->exec("ALTER TABLE \"{$t}\" DROP CONSTRAINT IF EXISTS \"{$n}\"");
+        }
+
+        // -- Phase 5: Swap id columns on parent tables ---------------------
+        foreach ($idTables as $t) {
+            $pk = $this->pkConstraintName($t);
+            if ($pk) {
+                $this->pdo->exec("ALTER TABLE \"{$t}\" DROP CONSTRAINT \"{$pk}\"");
             }
+            $this->pdo->exec("ALTER TABLE \"{$t}\" DROP COLUMN id");
+            $this->pdo->exec("ALTER TABLE \"{$t}\" RENAME COLUMN _uuid TO id");
+            $this->pdo->exec("ALTER TABLE \"{$t}\" ADD PRIMARY KEY (id)");
+            $this->pdo->exec("ALTER TABLE \"{$t}\" ALTER COLUMN id SET DEFAULT gen_random_uuid()");
+        }
 
-            // -- Phase 2: Add _uuid shadow to every parent table ----------------
-            // Populate NOW while old INT id still exists (needed for Phase 3 JOIN)
-            foreach ($idTables as $t) {
-                $this->pdo->exec("ALTER TABLE \"{$t}\" ADD COLUMN IF NOT EXISTS _uuid UUID DEFAULT gen_random_uuid()");
-                $this->pdo->exec("UPDATE \"{$t}\" SET _uuid = gen_random_uuid() WHERE _uuid IS NULL");
+        // -- Phase 6: Swap FK columns in child tables -----------------------
+        foreach ($fks as ['table' => $t, 'col' => $c]) {
+            $tmp = "_uuid_{$c}";
+            $this->pdo->exec("ALTER TABLE \"{$t}\" DROP COLUMN \"{$c}\"");
+            $this->pdo->exec("ALTER TABLE \"{$t}\" RENAME COLUMN \"{$tmp}\" TO \"{$c}\"");
+        }
+
+        // -- Phase 7: Re-add composite PKs for known pivot tables ----------
+        foreach ($this->compositePivots() as $tbl => $cols) {
+            if (!$this->tableExists($tbl)) {
+                continue;
             }
-
-            // -- Phase 3: Map FK columns in child tables via old INT id ---------
-            // CRITICAL: child.fk_col = parent.id (INT) - parent.id still exists here.
-            // For NULL FK values (nullable FKs) the JOIN produces no match and the
-            // shadow column stays NULL, which is the correct outcome.
-            $fks = $this->intFkColumns($idTables);
-            foreach ($fks as ['table' => $t, 'col' => $c, 'ref' => $r]) {
-                $tmp = "_uuid_{$c}";
-                $this->pdo->exec("ALTER TABLE \"{$t}\" ADD COLUMN IF NOT EXISTS \"{$tmp}\" UUID");
-                $this->pdo->exec(
-                    "UPDATE \"{$t}\" x
-                     SET    \"{$tmp}\" = p._uuid
-                     FROM   \"{$r}\" p
-                     WHERE  x.\"{$c}\" = p.id"
-                );
+            if ($this->pkConstraintName($tbl)) {
+                continue; // Already has PK
             }
+            $this->pdo->exec("ALTER TABLE \"{$tbl}\" ADD PRIMARY KEY (" . implode(', ', $cols) . ")");
+        }
 
-            // -- Phase 4: Drop ALL FK constraints ------------------------------
-            // Must happen before we drop/rename columns that FK constraints reference.
-            foreach ($this->allFkConstraints() as ['table' => $t, 'name' => $n]) {
-                $this->pdo->exec("ALTER TABLE \"{$t}\" DROP CONSTRAINT IF EXISTS \"{$n}\"");
+        // -- Phase 8: Fix audit_logs.resource_id INT -> TEXT ----------------
+        if ($this->tableExists('audit_logs')) {
+            $rt = $this->colType('audit_logs', 'resource_id');
+            if ($rt !== null && in_array($rt, ['integer', 'bigint', 'smallint'], true)) {
+                $this->pdo->exec("ALTER TABLE audit_logs ALTER COLUMN resource_id TYPE TEXT USING resource_id::TEXT");
             }
+        }
 
-            // -- Phase 5: Swap id columns on parent tables ---------------------
-            foreach ($idTables as $t) {
-                $pk = $this->pkConstraintName($t);
-                if ($pk) {
-                    $this->pdo->exec("ALTER TABLE \"{$t}\" DROP CONSTRAINT \"{$pk}\"");
-                }
-                $this->pdo->exec("ALTER TABLE \"{$t}\" DROP COLUMN id");
-                $this->pdo->exec("ALTER TABLE \"{$t}\" RENAME COLUMN _uuid TO id");
-                $this->pdo->exec("ALTER TABLE \"{$t}\" ADD PRIMARY KEY (id)");
-                $this->pdo->exec("ALTER TABLE \"{$t}\" ALTER COLUMN id SET DEFAULT gen_random_uuid()");
+        // -- Phase 9: Ensure updated_at on all converted tables -------------
+        foreach ($idTables as $t) {
+            if ($this->colType($t, 'updated_at') === null) {
+                $this->pdo->exec("ALTER TABLE \"{$t}\" ADD COLUMN updated_at TIMESTAMP DEFAULT NOW()");
             }
-
-            // -- Phase 6: Swap FK columns in child tables -----------------------
-            foreach ($fks as ['table' => $t, 'col' => $c]) {
-                $tmp = "_uuid_{$c}";
-                $this->pdo->exec("ALTER TABLE \"{$t}\" DROP COLUMN \"{$c}\"");
-                $this->pdo->exec("ALTER TABLE \"{$t}\" RENAME COLUMN \"{$tmp}\" TO \"{$c}\"");
-            }
-
-            // -- Phase 7: Re-add composite PKs for known pivot tables ----------
-            foreach ($this->compositePivots() as $tbl => $cols) {
-                if (!$this->tableExists($tbl)) {
-                    continue;
-                }
-                if ($this->pkConstraintName($tbl)) {
-                    continue; // Already has PK
-                }
-                $this->pdo->exec("ALTER TABLE \"{$tbl}\" ADD PRIMARY KEY (" . implode(', ', $cols) . ")");
-            }
-
-            // -- Phase 8: Fix audit_logs.resource_id INT -> TEXT ----------------
-            if ($this->tableExists('audit_logs')) {
-                $rt = $this->colType('audit_logs', 'resource_id');
-                if ($rt !== null && in_array($rt, ['integer', 'bigint', 'smallint'], true)) {
-                    $this->pdo->exec("ALTER TABLE audit_logs ALTER COLUMN resource_id TYPE TEXT USING resource_id::TEXT");
-                }
-            }
-
-            // -- Phase 9: Ensure updated_at on all converted tables -------------
-            foreach ($idTables as $t) {
-                if ($this->colType($t, 'updated_at') === null) {
-                    $this->pdo->exec("ALTER TABLE \"{$t}\" ADD COLUMN updated_at TIMESTAMP DEFAULT NOW()");
-                }
-            }
-
-            $this->pdo->commit();
-        } catch (\Throwable $e) {
-            $this->pdo->rollBack();
-            throw $e;
         }
     }
 

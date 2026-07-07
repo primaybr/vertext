@@ -151,15 +151,24 @@ Audit logs are stored in the `audit_logs` table and visible in the Dashboard.
 
 ## Security Headers
 
-All admin responses are sent with:
+`Core\Middleware\SecurityHeadersMiddleware` applies a baseline to every response - admin, public
+front-end, and the REST API alike:
 
 ```
-Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'
+Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self' data:; frame-ancestors 'none'
 X-Frame-Options: DENY
 X-Content-Type-Options: nosniff
+Referrer-Policy: strict-origin-when-cross-origin
 ```
 
-These are set in `BaseController::adminRender()`. Add them to public controller responses if needed.
+`Strict-Transport-Security: max-age=31536000; includeSubDomains` is added on top of this when
+`'https' => true` in config - the same flag that activates the `Secure` session cookie above.
+
+Admin views still rely on inline `<script>`/`<style>` blocks, so `BaseController::adminRender()`
+re-emits `Content-Security-Policy` with `'unsafe-inline'` allowed on `script-src`/`style-src`
+immediately before rendering - a later `header()` call for the same header name replaces the
+earlier one, so this override applies to admin responses only. The public front-end and API keep
+the stricter, no-`unsafe-inline'` policy.
 
 ## IP Address Detection
 

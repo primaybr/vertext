@@ -39,7 +39,7 @@
       $tcLogo = class_exists('App\Modules\ThemeCustomizer\ThemeCustomizerHelper')
           ? \App\Modules\ThemeCustomizer\ThemeCustomizerHelper::getLogoUrl() : '';
       if ($tcLogo): ?>
-      <img src="<?php echo htmlspecialchars($tcLogo); ?>" alt="<?php echo htmlspecialchars($siteName); ?>" loading="lazy" style="max-height:48px;width:auto;vertical-align:middle;">
+      <img src="<?php echo htmlspecialchars($tcLogo); ?>" alt="<?php echo htmlspecialchars($siteName); ?>" loading="lazy" class="site-logo-img">
       <?php else: echo htmlspecialchars($siteName); endif; ?>
     </a>
     <nav class="site-nav">

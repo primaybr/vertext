@@ -131,6 +131,12 @@ Client::setTrustedProxies(['10.0.0.1', '192.168.1.100']);
 
 Without this, `REMOTE_ADDR` is always used (the secure default).
 
+Note this is separate from HTTPS detection: the `Secure` session cookie flag and the
+`Strict-Transport-Security` header both key off the `'https'` config flag directly (see
+[Going to Production](going-to-production.md)), not off proxy headers. If TLS is terminated by a
+proxy in front of this server, set `'https' => true` yourself - trusted-proxy config above only
+affects IP address logging/rate limiting, not the HTTPS signal.
+
 ## Cache
 
 The cache directory is `Cache/`. Clear it after any view, CSS, or JS change:

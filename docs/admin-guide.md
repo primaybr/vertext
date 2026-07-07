@@ -221,8 +221,12 @@ Logs are stored in the `audit_logs` table. The Dashboard shows the most recent e
 
 ## Security Headers
 
-All admin responses include the following HTTP headers:
+Every response - admin, public front-end, and the REST API - includes the following HTTP headers:
 
-- `Content-Security-Policy` - restricts asset sources
+- `Content-Security-Policy` - restricts asset sources (admin allows inline scripts/styles it relies
+  on; the public site and API use a stricter policy with no exceptions)
 - `X-Frame-Options: DENY` - prevents clickjacking
 - `X-Content-Type-Options: nosniff` - prevents MIME sniffing
+- `Referrer-Policy: strict-origin-when-cross-origin`
+- `Strict-Transport-Security` - added when `'https' => true` is set in config (see
+  [Going to Production](going-to-production.md))

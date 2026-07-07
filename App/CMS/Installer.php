@@ -65,6 +65,30 @@ class Installer
             'value'  => extension_loaded('mbstring') ? 'Available' : 'Missing',
         ];
 
+        $results['gd'] = [
+            'label'  => 'GD Extension (image resizing)',
+            'pass'   => extension_loaded('gd'),
+            'value'  => extension_loaded('gd') ? 'Available' : 'Missing',
+        ];
+
+        $results['fileinfo'] = [
+            'label'  => 'Fileinfo Extension (upload validation)',
+            'pass'   => extension_loaded('fileinfo'),
+            'value'  => extension_loaded('fileinfo') ? 'Available' : 'Missing',
+        ];
+
+        $results['intl'] = [
+            'label'  => 'Intl Extension (localized dates, optional)',
+            'pass'   => extension_loaded('intl'),
+            'value'  => extension_loaded('intl') ? 'Available' : 'Missing',
+        ];
+
+        $results['zip'] = [
+            'label'  => 'Zip Extension (backup/restore CLI, optional)',
+            'pass'   => extension_loaded('zip'),
+            'value'  => extension_loaded('zip') ? 'Available' : 'Missing',
+        ];
+
         $results['storage_writable'] = [
             'label'  => 'Storage Directory Writable',
             'pass'   => self::ensureStorage(),
@@ -183,7 +207,7 @@ class Installer
         return (bool) file_put_contents(self::APP_FILE, $content);
     }
 
-    /** Run core migrations and seed data */
+    /** Run all pending migrations (core tables, UUID conversion, and any added since) */
     public static function runMigrations(array $dbConfig): array
     {
         try {
@@ -193,16 +217,7 @@ class Installer
                 \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
             ]);
 
-            require_once ROOT . 'Migrations' . DS . '001_core_tables.php';
-            $migration = new \Migration_001_CoreTables($pdo);
-            $migration->up();
-            $migration->seed();
-
-            // Convert any SERIAL/INTEGER PKs to UUID (no-op on fresh UUID installs)
-            require_once ROOT . 'Migrations' . DS . '002_uuid_migration.php';
-            (new \Migration_002_UuidMigration($pdo))->up();
-
-            return ['success' => true];
+            return (new MigrationRunner($pdo))->up();
         } catch (\Exception $e) {
             return ['success' => false, 'message' => $e->getMessage()];
         }

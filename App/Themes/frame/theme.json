@@ -1,7 +1,7 @@
 {
     "name":        "Frame",
     "slug":        "frame",
-    "version":     "0.0.1",
+    "version":     "0.0.2",
     "description": "Minimal, gallery-style dark theme with a geometric display face and a muted brass accent",
     "author":      "Vertext",
     "assets": {

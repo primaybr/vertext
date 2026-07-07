@@ -165,6 +165,12 @@ main {
   color: var(--clr-accent);
 }
 
+.site-logo-img {
+  max-height: 48px;
+  width: auto;
+  vertical-align: middle;
+}
+
 .site-nav {
   display: flex;
   align-items: center;

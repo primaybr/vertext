@@ -5,13 +5,66 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [Upcoming] - 0.1.0
+## [0.1.0-beta] - 2026-07-07
 
-Production-readiness beta: safe defaults on install (`env` flips to `production`), CI +
-runnable test suite, feature test coverage for CMS modules, a general migration system,
-backup/restore tooling, security headers on the public site and API (not just admin), and
-upgrade/troubleshooting docs. Scoped as a public self-host beta, not enterprise-hardened -
-see the eventual release notes for what's explicitly deferred.
+Vertext's first public self-host beta: safe production defaults, a general database migration
+system, backup/restore tooling, security headers extended to the public site and API, an
+automated test suite with CI, and new guidance docs for self-hosters. Scoped for people
+comfortable running their own PHP/PostgreSQL server, not enterprise environments - see
+[Known Limitations](docs/known-limitations.md) for what this release does not cover.
+
+### Safe defaults on install
+
+- The setup wizard now sets `env => production` by default when installation completes, instead of
+  silently leaving new installs in `development` mode (which shows detailed error output, including
+  file paths, to any visitor who triggers an error). An "Enable debug mode for this install"
+  checkbox is available for those who genuinely want a dev/staging install.
+- The requirements check now also verifies the `gd`, `fileinfo`, `intl`, and `zip` extensions -
+  `gd`/`fileinfo` block installation if missing (Media uploads and image resizing depend on them),
+  `intl`/`zip` warn without blocking (both degrade gracefully).
+- New [Going to Production](docs/going-to-production.md) checklist, linked from the wizard's final
+  step - environment, file permissions, HTTPS, backups, and known limitations in one place.
+
+### Migrations, backups, and upgrading
+
+- General-purpose database migrations: `php vertext migrate up` and `php vertext migrate status`
+  discover and run any file under `Migrations/`, tracked in a new `schema_migrations` table - no
+  more hardcoded, two-file install step. Existing installs and fresh ones now go through the exact
+  same runner.
+- `php vertext backup` and `php vertext restore` - a single archive of your database data,
+  `Public/uploads/`, and config, with credentials redacted by default (`--include-secrets` to
+  include them). No `pg_dump`/shell dependency - pure PHP, works anywhere PHP can reach your
+  database. See [Backup & Restore](docs/backup-restore.md).
+- New [Upgrading](docs/upgrading.md) doc covering the git-pull + `migrate up` upgrade path.
+
+### Security
+
+- CSP, X-Frame-Options, X-Content-Type-Options, and Referrer-Policy headers - previously admin-only
+  - now apply to the public front-end and the REST API too, via a new shared
+  `Core\Middleware\SecurityHeadersMiddleware` (Phuse v1.2.8d). The front-end and API get a stricter
+  policy than admin (no `unsafe-inline`); the bundled themes' one remaining inline style attribute
+  was moved to a CSS class to comply with it.
+- `Strict-Transport-Security` (HSTS) is now sent automatically whenever `'https' => true` is set in
+  config.
+- Fixed a real bug in two-factor authentication: backup codes could never actually be redeemed,
+  regardless of what was typed, because the code was hashed with its display-format dash still
+  attached while verification stripped it before comparing. Anyone who lost their authenticator app
+  and needed a backup code to get back in would have been locked out.
+
+### Testing & CI
+
+- Vertext now has an automated test suite covering both the underlying framework and representative
+  CMS flows - setup install, admin login/2FA, Blog CRUD and public routing, Forms submission, and
+  the REST API's rate limiting - run automatically on every push via GitHub Actions (PHP 8.2 and
+  8.3, against a real PostgreSQL service). `composer install && vendor/bin/phpunit` now works
+  locally too, which it never could before (no `composer.json` existed).
+
+### Documentation
+
+- New: [Going to Production](docs/going-to-production.md), [Upgrading](docs/upgrading.md),
+  [Backup & Restore](docs/backup-restore.md), [Troubleshooting](docs/troubleshooting.md), and
+  [Known Limitations](docs/known-limitations.md) - clearer guidance for self-hosters running into
+  install or runtime issues, and an honest list of what this beta doesn't cover yet.
 
 ## [0.0.9d-alpha] - 2026-07-07
 
