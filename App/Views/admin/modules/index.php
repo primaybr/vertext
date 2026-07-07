@@ -12,6 +12,21 @@
 </div>
 <?php endif; ?>
 
+<?php if (!empty($slugCollisions)): ?>
+<div class="vtx-alert vtx-alert-error mb-3">
+  <strong>Module slug conflict<?php echo count($slugCollisions) > 1 ? 's' : ''; ?> detected</strong>
+  <ul style="margin:.5rem 0 0 1.25rem;">
+    <?php foreach ($slugCollisions as $collision): ?>
+    <li>
+      Slug <code><?php echo htmlspecialchars($collision['slug']); ?></code> is declared by multiple directories
+      (<?php echo htmlspecialchars(implode(', ', $collision['directories'])); ?>)<?php if ($collision['installed_directory']): ?> - currently installed from <code><?php echo htmlspecialchars($collision['installed_directory']); ?></code><?php endif; ?>.
+      Rename the slug in one module's <code>module.json</code> before installing.
+    </li>
+    <?php endforeach; ?>
+  </ul>
+</div>
+<?php endif; ?>
+
 <!-- -- Tab Navigation ------------------------------------------------------ -->
 <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem;">
   <div class="vtx-mod-tabs">

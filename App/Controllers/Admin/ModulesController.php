@@ -32,6 +32,7 @@ class ModulesController extends BaseController
 
         $modules   = $this->db('modules')->orderBy('is_core DESC, name', 'ASC')->get() ?: [];
         $available = ModuleManager::discover();
+        $slugCollisions = ModuleManager::findSlugCollisions();
 
         // Annotate each available module with dependency status for the UI
         foreach ($available as &$avail) {
@@ -105,11 +106,12 @@ class ModulesController extends BaseController
         unset($avail);
 
         $this->adminRender('admin/modules/index', [
-            'modules'     => $modules,
-            'available'   => $available,
-            'coreModules' => $coreModules,
-            'categories'  => $categories,
-            'bundles'     => $bundles,
+            'modules'         => $modules,
+            'available'       => $available,
+            'coreModules'     => $coreModules,
+            'categories'      => $categories,
+            'bundles'         => $bundles,
+            'slugCollisions'  => $slugCollisions,
         ], 'Module Manager', 'modules');
     }
 

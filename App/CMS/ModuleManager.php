@@ -45,30 +45,111 @@ class ModuleManager
         $rows      = (new \Core\Model('modules'))->get() ?: [];
         $installed = array_column($rows, 'slug');
 
+        $bySlug = self::scanManifestsBySlug();
+
         $available = [];
+        foreach ($bySlug as $slug => $entries) {
+            // Ambiguous on disk (two+ directories claim the same slug) - can't safely
+            // offer this for install until the collision is resolved. See
+            // findSlugCollisions() for the full report surfaced to the admin UI.
+            if (count($entries) > 1) {
+                continue;
+            }
+
+            if (in_array($slug, $installed, true)) {
+                continue;
+            }
+
+            $manifest = $entries[0]['manifest'];
+            $manifest['directory'] = $entries[0]['directory'];
+            $available[] = $manifest;
+        }
+
+        return $available;
+    }
+
+    /**
+     * Detect slug collisions: either two+ App/Modules/ directories declaring the
+     * same slug, or an on-disk manifest whose slug is already installed under a
+     * *different* directory. Without this, discover() simply drops the colliding
+     * manifest with no explanation, and install()/loadRoutes() would otherwise
+     * resolve the ambiguity silently by filesystem enumeration order - i.e. the
+     * "wrong" Module.php could run with no indication why.
+     *
+     * @return array<int, array{slug: string, directories: array<int, string>, installed_directory: ?string}>
+     */
+    public static function findSlugCollisions(): array
+    {
+        $bySlug = self::scanManifestsBySlug();
+        if (empty($bySlug)) {
+            return [];
+        }
+
+        $installedRows = (new \Core\Model('modules'))->select('slug, directory')->get() ?: [];
+        $installedDirBySlug = [];
+        foreach ($installedRows as $row) {
+            $installedDirBySlug[$row['slug']] = $row['directory'] ?? null;
+        }
+
+        $collisions = [];
+        foreach ($bySlug as $slug => $entries) {
+            $dirs = array_column($entries, 'directory');
+            $installedDir = $installedDirBySlug[$slug] ?? null;
+
+            $isCollision = count($dirs) > 1
+                || ($installedDir !== null && !in_array($installedDir, $dirs, true));
+
+            if (!$isCollision) {
+                continue;
+            }
+
+            $allDirs = $dirs;
+            if ($installedDir !== null && !in_array($installedDir, $allDirs, true)) {
+                $allDirs[] = $installedDir;
+            }
+
+            $collisions[] = [
+                'slug'                => $slug,
+                'directories'         => array_values(array_unique($allDirs)),
+                'installed_directory' => $installedDir,
+            ];
+        }
+
+        return $collisions;
+    }
+
+    /**
+     * Scan every App/Modules/*\/module.json and group by declared slug.
+     * Shared by discover(), findSlugCollisions(), and install()'s ambiguity guard
+     * so there is exactly one place that walks the filesystem for this.
+     *
+     * @return array<string, array<int, array{directory: string, manifest: array}>>
+     */
+    private static function scanManifestsBySlug(): array
+    {
+        if (!is_dir(self::MODULES_DIR)) {
+            return [];
+        }
+
+        $bySlug = [];
         foreach (glob(self::MODULES_DIR . '*', GLOB_ONLYDIR) as $modDir) {
             $manifestFile = $modDir . DS . 'module.json';
             if (!file_exists($manifestFile)) {
                 continue;
             }
 
-            $raw = file_get_contents($manifestFile);
-            $manifest = json_decode($raw, true);
-            if (!is_array($manifest) || empty($manifest['slug'])) {
+            $manifest = json_decode((string) file_get_contents($manifestFile), true);
+            if (!is_array($manifest) || empty($manifest['slug']) || !self::validSlug($manifest['slug'])) {
                 continue;
             }
 
-            if (!self::validSlug($manifest['slug'])) {
-                continue;
-            }
-
-            if (!in_array($manifest['slug'], $installed, true)) {
-                $manifest['directory'] = basename($modDir);
-                $available[] = $manifest;
-            }
+            $bySlug[$manifest['slug']][] = [
+                'directory' => basename($modDir),
+                'manifest'  => $manifest,
+            ];
         }
 
-        return $available;
+        return $bySlug;
     }
 
     // -- Bundles ----------------------------------------------------------------
@@ -245,6 +326,16 @@ class ModuleManager
         $info = self::findBySlug($slug);
         if (!$info) {
             return ['success' => false, 'message' => "No module with slug \"{$slug}\" found in App/Modules/."];
+        }
+
+        // Refuse if this slug is ambiguous - two+ directories in App/Modules/ declare
+        // it. Without this guard, findBySlug() above silently picked whichever
+        // directory glob() happened to enumerate first, meaning the wrong Module.php
+        // could run with no indication why. Rename one module's slug to resolve.
+        $claimants = self::scanManifestsBySlug()[$slug] ?? [];
+        if (count($claimants) > 1) {
+            $dirs = implode('", "', array_column($claimants, 'directory'));
+            return ['success' => false, 'message' => "Ambiguous module slug \"{$slug}\": declared by multiple directories (\"{$dirs}\"). Rename the slug in one module's module.json before installing either."];
         }
 
         [$manifest, $modDir, $dirName] = $info;
