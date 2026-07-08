@@ -18,6 +18,16 @@ class WizardController extends Controller
     public function __construct()
     {
         parent::__construct();
+
+        // Same fix as App\Controllers\Admin\AuthController - the setup wizard
+        // is necessarily pre-authentication, doesn't extend BaseController, and
+        // never got the CSP override BaseController::adminRender() applies for
+        // authenticated admin pages. Without it, the shared theme-init.php
+        // inline script (included by setup/layout.php) is silently blocked by
+        // SecurityHeadersMiddleware's strict default CSP.
+        if (!headers_sent()) {
+            header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; frame-ancestors 'none'");
+        }
     }
 
     /** GET /setup  - show current wizard step */

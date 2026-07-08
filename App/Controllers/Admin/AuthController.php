@@ -23,6 +23,19 @@ class AuthController extends Controller
     public function __construct()
     {
         parent::__construct();
+
+        // Core\Middleware\SecurityHeadersMiddleware applies a strict CSP (no
+        // 'unsafe-inline') to every request by default; App\Controllers\Admin\
+        // BaseController::adminRender() re-emits a looser one for authenticated
+        // admin pages, but login/forgot-password/reset-password/2FA are
+        // necessarily pre-authentication and don't extend BaseController, so
+        // they never got that override - the shared theme-init.php inline
+        // script (included by admin/_layouts/auth.php) was silently blocked.
+        // Same override BaseController::adminRender() uses, applied once here
+        // so every action in this controller inherits it.
+        if (!headers_sent()) {
+            header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; frame-ancestors 'none'");
+        }
     }
 
     /** GET /admin/login */

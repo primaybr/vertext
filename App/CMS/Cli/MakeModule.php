@@ -102,7 +102,10 @@ final class MakeModule
                 'permission' => "{$slug}.view",
             ],
             'assets'      => [
-                'css' => ["Assets/{$slug}.css"],
+                // Relative to the DEPLOYED module asset dir (Public/assets/modules/{slug}/),
+                // not the source Assets/ folder - deployAssets() copies Assets/'s contents
+                // into that directory directly, it doesn't nest an "Assets" subfolder there.
+                'css' => ["{$slug}.css"],
             ],
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
     }
