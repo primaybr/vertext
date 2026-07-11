@@ -1,0 +1,35 @@
+[
+    {
+        "type": "hero",
+        "headline": "Everything you need, all in one marketplace",
+        "subheadline": "Discover thousands of listings from trusted sellers, all in one place.",
+        "cta_text": "Browse Listings",
+        "cta_link": "/pages",
+        "image": ""
+    },
+    {
+        "type": "feature-grid",
+        "headline": "Why shop with us",
+        "columns": 3,
+        "items": [
+            { "icon": "pi-tag",     "title": "Great Prices",    "text": "Competitive pricing across every category, every day." },
+            { "icon": "pi-package", "title": "Fast Shipping",   "text": "Reliable delivery from sellers near you." },
+            { "icon": "pi-star",    "title": "Verified Sellers","text": "Every seller is reviewed and rated by real customers." }
+        ]
+    },
+    {
+        "type": "testimonials",
+        "headline": "What buyers are saying",
+        "items": [
+            { "quote": "Found exactly what I needed at a great price.", "author": "Jordan M.", "role": "Verified Buyer", "avatar": "" },
+            { "quote": "Shipping was faster than expected and the seller was great to work with.", "author": "Priya S.", "role": "Verified Buyer", "avatar": "" }
+        ]
+    },
+    {
+        "type": "cta-banner",
+        "headline": "Start browsing today",
+        "text": "New listings added every day across every category.",
+        "button_text": "Explore Now",
+        "button_link": "/pages"
+    }
+]

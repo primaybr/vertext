@@ -9,6 +9,17 @@ namespace App\CMS;
  *
  * The CMS only calls these three methods - everything else is
  * the module developer's responsibility.
+ *
+ * Modules MAY additionally implement an optional, duck-typed upgrade hook:
+ *
+ *     public function upgrade(\Core\Database\Connection $db, string $fromVersion): void
+ *
+ * ModuleManager::upgrade() calls it (via method_exists(), not an instanceof check)
+ * whenever an admin applies a version bump detected between the installed DB
+ * version and the on-disk module.json version. It is not part of this interface
+ * so existing modules require no changes; only modules that need to run a real
+ * migration when their version bumps need to add it. Like install()/uninstall(),
+ * it must be idempotent - safe to re-run if a previous attempt failed partway.
  */
 interface ModuleInterface
 {

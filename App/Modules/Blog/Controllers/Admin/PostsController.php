@@ -573,20 +573,14 @@ class PostsController extends BaseController
         }
     }
 
+    /** DOM-based allowlist sanitizer - see App\CMS\HtmlSanitizer. Previously a
+     *  regex-based strip_tags()+preg_replace() approach here had two confirmed
+     *  bypasses (unquoted attribute values, single-quoted javascript: hrefs) since
+     *  strip_tags() never touches attributes and the regexes only matched one
+     *  specific quote style. */
     private function sanitizeHtml(string $html): string
     {
-        // Allow only the safe subset Quill produces; strip everything else
-        $allowed = '<p><br><strong><em><u><s><h1><h2><h3><h4><ul><ol><li>'
-                 . '<blockquote><pre><code><a><img><span>';
-
-        $clean = strip_tags($html, $allowed);
-
-        // Strip event handlers and javascript: protocols from remaining tags
-        $clean = preg_replace('/\s*on\w+\s*=\s*"[^"]*"/i', '', $clean);
-        $clean = preg_replace('/\s*on\w+\s*=\s*\'[^\']*\'/i', '', $clean);
-        $clean = preg_replace('/href\s*=\s*"javascript:[^"]*"/i', 'href="#"', $clean);
-
-        return $clean;
+        return \App\CMS\HtmlSanitizer::clean($html);
     }
 
     private function validateCsrf(): void

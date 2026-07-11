@@ -7,6 +7,7 @@ namespace App\Controllers\Admin;
 use App\CMS\Auth;
 use App\CMS\ModuleLoader;
 use App\CMS\ModuleManager;
+use App\CMS\Version;
 
 /**
  * Admin Module Manager Controller
@@ -46,6 +47,9 @@ class ModulesController extends BaseController
         $modulesDir = defined('ROOT') ? ROOT . 'App' . DS . 'Modules' . DS : '';
         foreach ($modules as &$mod) {
             if (!empty($mod['is_core'])) {
+                // Core modules ship as part of the CMS itself - their version IS the
+                // CMS version, always live, never a frozen install-day DB snapshot.
+                $mod['version'] = Version::APP;
                 continue;
             }
             $dir = $mod['directory'] ?? '';
@@ -55,6 +59,16 @@ class ModulesController extends BaseController
             }
             $mod['category'] = $manifest['category'] ?? 'Other';
             $mod['nav_icon'] = $manifest['nav']['icon'] ?? 'pi-layers';
+
+            // Detect an available update against the raw installed DB version,
+            // before the display override below replaces it with the on-disk one.
+            $update = ModuleManager::checkForUpdate($manifest, $mod['version'] ?? '0.0.0');
+            if ($update) {
+                $mod['update_available'] = true;
+                $mod['update_from']      = $update['from'];
+                $mod['update_to']        = $update['to'];
+            }
+
             // Override version with the one from module.json if present
             if (!empty($manifest['version'])) {
                 $mod['version'] = $manifest['version'];
@@ -222,6 +236,44 @@ class ModulesController extends BaseController
                 $this->json(['success' => false, 'message' => $result['message'] ?? 'Uninstall failed.']);
             }
             $this->flash('error', $result['message'] ?? 'Uninstall failed.');
+        }
+
+        $this->redirect($this->baseUrl . '/admin/modules');
+    }
+
+    // -- Update -----------------------------------------------------------------
+
+    /** POST /admin/modules/([a-z0-9\-\_]+)/update */
+    public function update(string $slug): void
+    {
+        $this->requirePermission('modules.install');
+        $this->validateCsrf();
+
+        $mod = $this->db('modules')->where('slug', $slug)->get(1);
+
+        if ($mod && (bool) $mod['is_core']) {
+            if ($this->isAjax()) {
+                $this->json(['success' => false, 'message' => 'Core modules update automatically with the CMS version.'], 403);
+            }
+            $this->flash('error', 'Core modules update automatically with the CMS version.');
+            $this->redirect($this->baseUrl . '/admin/modules');
+        }
+
+        $result = ModuleManager::upgrade($slug);
+
+        if ($result['success']) {
+            $name = $result['name'] ?? $slug;
+            Auth::audit('module.upgrade', 'modules', '', ['slug' => $slug, 'from' => $result['from'], 'to' => $result['to']]);
+            $message = "Module \"{$name}\" updated to v{$result['to']}.";
+            if ($this->isAjax()) {
+                $this->json(['success' => true, 'message' => $message, 'version' => $result['to']]);
+            }
+            $this->flash('success', $message);
+        } else {
+            if ($this->isAjax()) {
+                $this->json(['success' => false, 'message' => $result['message'] ?? 'Update failed.']);
+            }
+            $this->flash('error', $result['message'] ?? 'Update failed.');
         }
 
         $this->redirect($this->baseUrl . '/admin/modules');

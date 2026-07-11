@@ -1,9 +1,16 @@
 {
     "name":        "Sitemap",
     "slug":        "sitemap",
-    "version":     "0.0.1",
-    "description": "Automatic XML sitemap from published pages and blog posts.",
+    "version":     "0.0.2",
+    "description": "Automatic XML sitemap, robots.txt, from published Pages, Blog, Events, Gallery and Videos.",
     "author":      "Vertext",
     "category":    "SEO",
-    "requires":    { "vertext": ">=0.0.1" }
+    "requires":    { "vertext": ">=0.0.1" },
+    "nav": {
+        "label":      "Sitemap",
+        "icon":       "pi-map",
+        "path":       "/admin/sitemap/settings",
+        "active":     "sitemap",
+        "permission": "sitemap.settings"
+    }
 }

@@ -1,0 +1,36 @@
+[
+    {
+        "type": "hero",
+        "headline": "Freshly brewed, locally sourced",
+        "subheadline": "Handcrafted coffee and a warm seat, every morning of the week.",
+        "cta_text": "See Our Menu",
+        "cta_link": "/pages",
+        "image": ""
+    },
+    {
+        "type": "feature-grid",
+        "headline": "Why our regulars keep coming back",
+        "columns": 3,
+        "items": [
+            { "icon": "pi-heart",   "title": "Locally Roasted",  "text": "Beans sourced from small farms and roasted in-house every week." },
+            { "icon": "pi-clock",   "title": "Open Early",       "text": "Doors open at 6am, every day, for the early risers." },
+            { "icon": "pi-users",   "title": "A Place to Gather","text": "Cozy seating, free wifi, and a space that feels like home." }
+        ]
+    },
+    {
+        "type": "gallery",
+        "headline": "A look inside",
+        "items": [
+            { "image": "", "alt": "Coffee shop interior" },
+            { "image": "", "alt": "Latte art" },
+            { "image": "", "alt": "Fresh pastries" }
+        ]
+    },
+    {
+        "type": "cta-banner",
+        "headline": "Stop by today",
+        "text": "We're open every day - come say hello.",
+        "button_text": "Find Us",
+        "button_link": "/contact"
+    }
+]

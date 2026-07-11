@@ -33,6 +33,21 @@ class Welcome extends Controller
             // DB unavailable - fall through to defaults
         }
 
+        $landingBlocksEnabled = ($settings['landing_blocks_enabled'] ?? '0') === '1';
+
+        if ($landingBlocksEnabled && class_exists(\App\Modules\ThemeCustomizer\LandingBlocksHelper::class)) {
+            $theme  = \App\Theme\ThemeEngine::activeTheme();
+            $blocks = \App\Modules\ThemeCustomizer\LandingBlocksHelper::getBlocks($theme);
+
+            \App\Theme\ThemeEngine::render('modules/theme-customizer/front/landing/index', [
+                'blocks'           => $blocks,
+                'baseUrl'          => $this->baseUrl,
+                'assetsUrl'        => $this->assetsUrl,
+                'page_description' => $settings['site_description'] ?? '',
+            ]);
+            return;
+        }
+
         $this->render('default/landing', [
             'siteName'        => $settings['site_name']        ?? 'My Site',
             'siteDescription' => $settings['site_description'] ?? '',

@@ -3,17 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><?php echo htmlspecialchars(($pageTitle ?: $siteName) . ($pageTitle ? ' - ' . $siteName : '')); ?></title>
-  <?php if ($pageDesc): ?>
-  <meta name="description" content="<?php echo htmlspecialchars($pageDesc); ?>">
-  <?php endif; ?>
-  <?php if ($pageImage): ?>
-  <meta property="og:image" content="<?php echo htmlspecialchars($pageImage); ?>">
-  <?php endif; ?>
-  <meta property="og:title" content="<?php echo htmlspecialchars($pageTitle ?: $siteName); ?>">
-  <?php if ($pageDesc): ?>
-  <meta property="og:description" content="<?php echo htmlspecialchars($pageDesc); ?>">
-  <?php endif; ?>
+  <?php include ROOT . 'App' . DS . 'Views' . DS . '_shared' . DS . 'seo-meta.php'; ?>
   <?php include ROOT . 'App' . DS . 'Views' . DS . '_shared' . DS . 'theme-init.php'; ?>
   <link rel="icon" type="image/svg+xml" href="<?php echo htmlspecialchars($baseUrl . '/assets/images/logo/favicon.svg'); ?>">
   <?php if (!empty($feedUrl)): ?>
@@ -28,7 +18,11 @@
   <?php foreach (\App\CMS\I18n::getSupportedLocales() as $__hl): ?>
   <link rel="alternate" hreflang="<?php echo htmlspecialchars($__hl); ?>" href="<?php echo htmlspecialchars($baseUrl . '/' . $__hl . ($_SERVER['REQUEST_URI'] ?? '/')); ?>">
   <?php endforeach; ?>
-  <?php if (class_exists('App\Modules\ThemeCustomizer\ThemeCustomizerHelper')) echo \App\Modules\ThemeCustomizer\ThemeCustomizerHelper::getCss(); ?>
+  <?php if (class_exists('App\Modules\ThemeCustomizer\ThemeCustomizerHelper')):
+      $__tcCssUrl = \App\Modules\ThemeCustomizer\ThemeCustomizerHelper::cssUrl($baseUrl);
+      if ($__tcCssUrl !== ''): ?>
+  <link rel="stylesheet" href="<?php echo htmlspecialchars($__tcCssUrl); ?>">
+  <?php endif; endif; ?>
 </head>
 <body>
 
@@ -101,5 +95,8 @@
 <?php foreach (\App\CMS\ModuleLoader::frontAssets()['js'] as $__mAsset): ?>
 <script src="<?php echo htmlspecialchars($baseUrl . '/assets/' . $__mAsset); ?>"></script>
 <?php endforeach; ?>
+<?php if (!empty($data['preview'])): ?>
+<script>document.addEventListener('click',function(e){var a=e.target.closest('a');if(a)e.preventDefault();},true);</script>
+<?php endif; ?>
 </body>
 </html>

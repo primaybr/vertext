@@ -6,8 +6,9 @@ $cornerStyle  = $s['corner_style'] ?? 'subtle';
 if (!in_array($cornerStyle, ['sharp', 'subtle', 'rounded'], true)) {
     $cornerStyle = 'subtle';
 }
-$logoUrl      = htmlspecialchars($s['logo_url']      ?? '');
-$customCss    = htmlspecialchars($s['custom_css']    ?? '');
+$logoUrl              = htmlspecialchars($s['logo_url']      ?? '');
+$customCss            = htmlspecialchars($s['custom_css']    ?? '');
+$landingBlocksEnabled = ($s['landing_blocks_enabled'] ?? '0') === '1';
 
 $fonts = [
     'system'  => 'System Default',
@@ -28,11 +29,22 @@ $previewSrc = htmlspecialchars(
     . '&font_family=' . urlencode($fontFamily === 'system' ? '' : ($s['font_family'] ?? ''))
     . '&corner_style=' . urlencode($cornerStyle)
 );
+
+$archetypes = ['default' => 'Business Suite', 'clean' => 'Marketplace', 'field' => 'Coffee Shop', 'frame' => 'Product Showcase'];
+$activeThemeSlug  = $activeTheme ?? 'default';
+$activeThemeName  = $activeThemeSlug;
+foreach (($themes ?? []) as $t) {
+    if (($t['slug'] ?? '') === $activeThemeSlug) {
+        $activeThemeName = $t['name'] ?? $activeThemeSlug;
+        break;
+    }
+}
+$archetypeLabel = $archetypes[$activeThemeSlug] ?? '';
 ?>
 <div class="vtx-page-head">
   <div>
     <h1 class="vtx-page-title"><i class="pi pi-palette me-2 text-primary"></i>Theme Customizer</h1>
-    <p class="vtx-page-desc">Adjust the public site appearance - the preview updates as you type, nothing changes on the live site until you save.</p>
+    <p class="vtx-page-desc">Adjust the public site appearance and homepage content.</p>
   </div>
 </div>
 
@@ -43,6 +55,16 @@ $previewSrc = htmlspecialchars(
 <div class="vtx-alert vtx-alert-danger mb-3"><?php echo htmlspecialchars($flash_error); ?></div>
 <?php endif; ?>
 
+<div class="vtx-tc-tabs mb-3">
+  <button type="button" class="vtx-tc-tab active" data-tab="appearance">
+    <i class="pi pi-palette me-1"></i>Appearance
+  </button>
+  <button type="button" class="vtx-tc-tab" data-tab="landing-blocks">
+    <i class="pi pi-layers me-1"></i>Landing Blocks
+  </button>
+</div>
+
+<div id="tab-appearance">
 <form method="POST" action="<?php echo $baseUrl; ?>/admin/theme-customizer/save">
   <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token ?? ''); ?>">
 
@@ -122,6 +144,18 @@ $previewSrc = htmlspecialchars(
       </div>
 
       <div class="vtx-panel mb-4">
+        <div class="vtx-panel-head"><h6 class="vtx-panel-title">Homepage</h6></div>
+        <div class="vtx-panel-body" style="padding:1.25rem;">
+          <div class="vtx-field" style="display:flex;align-items:center;gap:.75rem;">
+            <input class="form-check-input" type="checkbox" id="landing_blocks_enabled" name="landing_blocks_enabled"
+                   value="1" <?php echo $landingBlocksEnabled ? 'checked' : ''; ?>>
+            <label class="vtx-label" for="landing_blocks_enabled" style="margin:0;">Use this theme's block-based landing page</label>
+          </div>
+          <div class="form-text">When off, the homepage shows the default "you have a CMS" page. When on, it shows the active theme's Landing Blocks content (edit in the tab above).</div>
+        </div>
+      </div>
+
+      <div class="vtx-panel mb-4">
         <div class="vtx-panel-head"><h6 class="vtx-panel-title">Custom CSS</h6></div>
         <div class="vtx-panel-body" style="padding:1.25rem;">
           <textarea id="custom_css" name="custom_css" class="form-control"
@@ -156,3 +190,8 @@ $previewSrc = htmlspecialchars(
     </a>
   </div>
 </form>
+</div>
+
+<div id="tab-landing-blocks" style="display:none;">
+  <?php include __DIR__ . '/_landing-blocks-tab.php'; ?>
+</div>

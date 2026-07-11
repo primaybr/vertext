@@ -1,0 +1,35 @@
+[
+    {
+        "type": "hero",
+        "headline": "Designed with precision. Built to last.",
+        "subheadline": "A product engineered for the details you notice and the ones you don't.",
+        "cta_text": "Shop Now",
+        "cta_link": "/pages",
+        "image": ""
+    },
+    {
+        "type": "feature-grid",
+        "headline": "What sets it apart",
+        "columns": 3,
+        "items": [
+            { "icon": "pi-package", "title": "Premium Materials", "text": "Every component chosen for durability and feel." },
+            { "icon": "pi-cog",     "title": "Thoughtful Design", "text": "Refined down to the smallest detail." },
+            { "icon": "pi-check",   "title": "Backed by Warranty","text": "Confidence built into every purchase." }
+        ]
+    },
+    {
+        "type": "stats",
+        "items": [
+            { "number": "5yr",  "label": "Warranty" },
+            { "number": "50k+", "label": "Customers" },
+            { "number": "4.9",  "label": "Average Rating" }
+        ]
+    },
+    {
+        "type": "cta-banner",
+        "headline": "See it for yourself",
+        "text": "Free shipping on every order, no minimum.",
+        "button_text": "Shop the Collection",
+        "button_link": "/pages"
+    }
+]

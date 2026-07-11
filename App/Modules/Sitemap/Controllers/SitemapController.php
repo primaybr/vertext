@@ -9,6 +9,15 @@ use App\CMS\ModuleLoader;
 
 class SitemapController extends \Core\Controller
 {
+    /** slug => [providerClass, settingKey] - only instantiated when both the
+     *  module is enabled and its sitemap toggle is on, so Sitemap works fine
+     *  whether or not any of these modules are installed. */
+    private const PROVIDERS = [
+        'events'  => [\App\Modules\Events\SitemapProvider::class,  'sitemap_include_events'],
+        'gallery' => [\App\Modules\Gallery\SitemapProvider::class, 'sitemap_include_gallery'],
+        'videos'  => [\App\Modules\Videos\SitemapProvider::class,  'sitemap_include_videos'],
+    ];
+
     public function index(): void
     {
         // Resolve absolute site URL
@@ -94,6 +103,19 @@ class SitemapController extends \Core\Controller
             } catch (\Throwable) {}
         }
 
+        // Events / Gallery / Videos - contributed via SitemapProvider so one broken
+        // module/table never breaks the rest of the sitemap.
+        foreach (self::PROVIDERS as $moduleSlug => [$providerClass, $settingKey]) {
+            $included = ($cfg[$settingKey] ?? '1') !== '0';
+            if (!$included || !ModuleLoader::isEnabled($moduleSlug)) {
+                continue;
+            }
+            try {
+                $provider = new $providerClass();
+                $urls = array_merge($urls, $provider->getSitemapUrls($siteUrl));
+            } catch (\Throwable) {}
+        }
+
         header('Content-Type: application/xml; charset=utf-8');
         header('Cache-Control: public, max-age=3600');
 
@@ -116,6 +138,34 @@ class SitemapController extends \Core\Controller
         }
 
         echo '</urlset>';
+        exit;
+    }
+
+    public function robots(): void
+    {
+        header('Content-Type: text/plain; charset=utf-8');
+
+        $siteUrl = $this->resolveSiteUrl();
+        $extra   = [];
+
+        try {
+            $row   = (new Model('settings'))->select('value')->where('key', 'robots_extra_disallow')->where('grp', 'sitemap')->get(1);
+            $lines = explode("\n", $row['value'] ?? '');
+            foreach ($lines as $line) {
+                $line = trim($line);
+                if ($line !== '') {
+                    $extra[] = $line;
+                }
+            }
+        } catch (\Throwable) {}
+
+        echo "User-agent: *\n";
+        echo "Disallow: /admin/\n";
+        foreach ($extra as $path) {
+            echo 'Disallow: ' . $path . "\n";
+        }
+        echo "\n";
+        echo 'Sitemap: ' . rtrim($siteUrl, '/') . "/sitemap.xml\n";
         exit;
     }
 

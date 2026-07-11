@@ -1508,3 +1508,45 @@
 }
 
 [data-theme=dark] .vtx-upload-overlay { background: rgba(15,23,42,.88); }
+
+/* -- Tooltip (vtx-tooltip.js) ------------------------------------ */
+/* Fixed dark bubble regardless of light/dark admin theme - consistent contrast
+   against any surface it's shown over, same convention most tooltip patterns use. */
+.vtx-tooltip {
+    position: fixed;
+    z-index: 1200;
+    max-width: 240px;
+    padding: .375rem .625rem;
+    font-size: .75rem;
+    line-height: 1.3;
+    color: #fff;
+    background: #1f2937;
+    border-radius: var(--ps-radius-sm);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity .12s ease;
+    word-wrap: break-word;
+}
+
+.vtx-tooltip.is-visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.vtx-tooltip::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 100%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: #1f2937;
+}
+
+.vtx-tooltip.is-below::after {
+    top: auto;
+    bottom: 100%;
+    border-top-color: transparent;
+    border-bottom-color: #1f2937;
+}

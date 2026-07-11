@@ -1,16 +1,16 @@
 {
     "name":        "Theme Customizer",
     "slug":        "theme-customizer",
-    "version":     "0.0.3",
-    "description": "Customize the public site appearance: accent color, font family, logo, and custom CSS.",
+    "version":     "0.0.4",
+    "description": "Customize the public site appearance: accent color, font family, logo, custom CSS, and per-theme landing page blocks.",
     "author":      "Vertext",
     "category":    "Design",
     "requires":    { "vertext": ">=0.0.5" },
     "assets": {
         "css": ["tc-front.css"],
         "admin": {
-            "css": ["tc-admin.css"],
-            "js":  ["tc-admin.js"]
+            "css": ["tc-admin.css", "tc-landing-blocks-admin.css"],
+            "js":  ["tc-admin.js", "tc-landing-blocks-admin.js"]
         }
     },
     "nav": {

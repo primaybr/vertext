@@ -15,6 +15,10 @@ namespace App\Theme;
  *   page_description - meta description
  *   page_image       - og:image URL
  *
+ * Canonical URL and twitter:card tags are computed automatically for every
+ * render() call (see App/Views/_shared/seo-meta.php) - no per-controller
+ * opt-in needed beyond the page_title/page_description/page_image keys above.
+ *
  * Theme assets live in App/Themes/{name}/ (source, git-tracked).
  * On first request they are deployed to Public/themes/{name}/ automatically.
  */
@@ -49,6 +53,15 @@ class ThemeEngine
         $siteName = $site['site_name']        ?? 'Vertext';
         $siteDesc = $site['site_description'] ?? '';
 
+        // Canonical URL: prefer the admin-configured site_url (agrees with the
+        // sitemap's own <loc> host resolution) over the detected request host,
+        // and always strip the query string - canonical should point at the
+        // clean content URL, not a paginated/tracked variant.
+        $uri           = new \Core\Http\URI();
+        $requestPath   = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+        $canonicalHost = !empty($site['site_url']) ? rtrim($site['site_url'], '/') : rtrim($uri->getProtocol() . $uri->getHost(), '/');
+        $canonicalUrl  = $canonicalHost . $requestPath;
+
         // Inject RSS feed autodiscovery link when Blog module is active
         $feedUrl = '';
         if (\App\CMS\ModuleLoader::isEnabled('blog')) {
@@ -74,7 +87,7 @@ class ThemeEngine
         // Make everything available to the layout template
         ob_start();
         extract(compact(
-            'content', 'pageTitle', 'pageDesc', 'pageImage',
+            'content', 'pageTitle', 'pageDesc', 'pageImage', 'canonicalUrl',
             'baseUrl', 'themeUrl', 'siteName', 'siteDesc',
             'site', 'data', 'feedUrl'
         ));

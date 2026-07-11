@@ -7,6 +7,10 @@
  * provider in your Module::registerRoutes() or a service boot hook.
  *
  * Requires: Sitemap module installed and enabled.
+ *
+ * Events, Gallery, and Videos now ship real implementations of this pattern -
+ * see App/Modules/{Events,Gallery,Videos}/SitemapProvider.php for working
+ * reference code wired into SitemapController's provider map.
  */
 
 use App\Modules\Sitemap\SitemapProvider;

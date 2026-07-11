@@ -126,7 +126,7 @@
     /* -- Vtx Component Loader ---------------------------------- */
     window.Vtx = (function () {
         var BASE     = (window.VTX_ASSETS_URL || '') + 'js/components/';
-        var VERSIONS = { search: 1, datatable: 2, select: 1, editor: 2, tags: 3, chart: 1, upload: 1, 'media-picker': 2, slug: 1 };
+        var VERSIONS = { search: 1, datatable: 2, select: 1, editor: 2, tags: 3, chart: 1, upload: 1, 'media-picker': 2, slug: 1, tooltip: 1 };
         var _loaded    = {};
         var _instances = {};
 
@@ -163,6 +163,7 @@
                 if (document.querySelector('canvas[data-vtx-chart]'))   needed.push('chart');
                 if (document.querySelector('[data-vtx-upload]'))        needed.push('upload');
                 if (document.querySelector('[data-vtx-media-picker]'))  needed.push('media-picker');
+                if (document.querySelector('[data-vtx-tooltip]'))       needed.push('tooltip');
                 if (needed.length) this.load(needed);
             },
 
@@ -402,6 +403,13 @@
                             if (!el._vtxSelect) new Vtx.Select({ el: el });
                         });
                     });
+                }
+                // Tooltip listeners are delegated on document (see vtx-tooltip.js), so
+                // [data-vtx-tooltip] elements work as soon as the component script has
+                // loaded once - just make sure it's loaded if this modal introduced the
+                // first ones on a page that didn't have any at initial load.
+                if (body.querySelector('[data-vtx-tooltip]')) {
+                    Vtx.load(['tooltip']);
                 }
             });
         });

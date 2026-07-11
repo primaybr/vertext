@@ -47,14 +47,16 @@ class ThemeCustomizerHelper
         'rounded' => ['sm' => '0.625rem', 'md' => '0.875rem'],
     ];
 
+    /** Directory (relative to Public/) where generated CSS files are written. */
+    private const GENERATED_REL = 'assets/generated/';
+
     /**
-     * @param array $overrides Optional setting overrides (same keys as the saved
-     *     settings: primary_color, font_family, corner_style) used by the live
-     *     preview to render pending, unsaved changes without touching the DB.
+     * Builds the raw CSS text (no wrapping tags) for the current settings, merged
+     * with any active preview overrides.
      */
-    public static function getCss(array $overrides = []): string
+    private static function buildCss(): string
     {
-        $s = array_merge(self::load(), self::$previewOverrides, $overrides);
+        $s = array_merge(self::load(), self::$previewOverrides);
 
         $primary     = self::sanitizeColor($s['primary_color'] ?? '') ?: '#1E3A5F';
         $fontSans    = self::sanitizeFont($s['font_family'] ?? '');
@@ -93,14 +95,64 @@ class ThemeCustomizerHelper
             $vars .= "--radius-sm:{$radiusScale['sm']};--radius-md:{$radiusScale['md']};";
         }
 
-        $out = '';
-        if ($vars !== '' || $body !== '') {
-            $out .= "<style>" . ($vars !== '' ? ":root{{$vars}}" : '') . $body . "</style>\n";
-        }
+        $out = ($vars !== '' ? ":root{{$vars}}" : '') . $body;
         if (trim($customCss) !== '') {
-            $out .= '<style>' . $customCss . '</style>' . "\n";
+            $out .= $customCss;
         }
         return $out;
+    }
+
+    /**
+     * Returns the <link>-able URL for the current theme CSS.
+     *
+     * Writes to a real file rather than echoing an inline <style> block, because
+     * the site's CSP sends `style-src 'self'` with no `unsafe-inline` - an inline
+     * <style> tag is silently ignored by the browser under that policy (this was a
+     * real bug: color/font/corner-style/custom-CSS settings looked like they saved
+     * but never visibly applied, on both the live site and the customizer preview).
+     * A same-origin external stylesheet is allowed under `style-src 'self'` with no
+     * CSP changes needed.
+     *
+     * While a live-preview override is active (setPreviewOverrides() was called
+     * earlier in this request), writes to a separate, always-fresh preview file
+     * instead of the live one, so editing the customizer never touches what real
+     * visitors see.
+     */
+    public static function cssUrl(string $baseUrl): string
+    {
+        $dir = ROOT . 'Public' . DS . 'assets' . DS . 'generated' . DS;
+        if (!is_dir($dir) && !@mkdir($dir, 0755, true)) {
+            return ''; // Can't write - layout simply omits the <link>; base theme.css still applies.
+        }
+
+        if (self::$previewOverrides !== []) {
+            $file = $dir . 'theme-preview.css';
+            if (@file_put_contents($file, self::buildCss(), LOCK_EX) === false) {
+                return '';
+            }
+            // Cache-bust on every call - the filename never changes but the content
+            // does on every debounced edit, and browsers cache <link> hrefs by URL.
+            return rtrim($baseUrl, '/') . '/' . self::GENERATED_REL . 'theme-preview.css?t=' . time();
+        }
+
+        $file = $dir . 'theme-custom.css';
+        if (!is_file($file)) {
+            self::regenerateCustomCssFile();
+        }
+        if (!is_file($file)) {
+            return '';
+        }
+        return rtrim($baseUrl, '/') . '/' . self::GENERATED_REL . 'theme-custom.css?v=' . filemtime($file);
+    }
+
+    /** Regenerates the live (saved-settings) CSS file. Call after Save. */
+    public static function regenerateCustomCssFile(): void
+    {
+        $dir = ROOT . 'Public' . DS . 'assets' . DS . 'generated' . DS;
+        if (!is_dir($dir) && !@mkdir($dir, 0755, true)) {
+            return;
+        }
+        @file_put_contents($dir . 'theme-custom.css', self::buildCss(), LOCK_EX);
     }
 
     private static function sanitizeColor(string $val): string

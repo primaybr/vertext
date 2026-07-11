@@ -1,7 +1,7 @@
 {
     "name":        "Gallery",
     "slug":        "gallery",
-    "version":     "0.0.2",
+    "version":     "0.0.3",
     "description": "Public-facing photo albums using the Media library as the image source",
     "author":      "Vertext",
     "category":    "Media",

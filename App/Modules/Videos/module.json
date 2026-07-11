@@ -1,7 +1,7 @@
 {
     "name":        "Videos",
     "slug":        "videos",
-    "version":     "0.0.3",
+    "version":     "0.0.4",
     "description": "YouTube and Vimeo embed management with public video grid",
     "author":      "Vertext",
     "category":    "Media",

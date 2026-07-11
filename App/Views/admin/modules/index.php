@@ -213,10 +213,15 @@
               <?php echo $enabled ? 'Enabled' : 'Disabled'; ?>
             </span>
           </div>
-          <span class="vtx-tag" style="font-size:.6875rem;align-self:flex-start;">v<?php echo htmlspecialchars($mod['version'] ?? '1.0.0'); ?></span>
+          <span class="vtx-tag" style="font-size:.6875rem;align-self:flex-start;" id="version-<?php echo $slug; ?>">v<?php echo htmlspecialchars($mod['version'] ?? '1.0.0'); ?></span>
         </div>
         <?php if (!empty($mod['description'])): ?>
         <div class="vtx-module-desc"><?php echo htmlspecialchars($mod['description']); ?></div>
+        <?php endif; ?>
+        <?php if (!empty($mod['update_available'])): ?>
+        <span class="vtx-tag warning module-update-badge" id="update-badge-<?php echo $slug; ?>" style="font-size:.6875rem;" title="Update available">
+          <i class="pi pi-arrow-up me-1"></i>v<?php echo htmlspecialchars($mod['update_from']); ?> &rarr; v<?php echo htmlspecialchars($mod['update_to']); ?>
+        </span>
         <?php endif; ?>
         <div class="vtx-module-actions">
           <form id="sync-<?php echo $slug; ?>" method="POST"
@@ -227,24 +232,40 @@
                 action="{{baseUrl}}/admin/modules/<?php echo $slug; ?>/uninstall" style="display:none;">
             <input type="hidden" name="csrf_token" value="{{csrf_token}}">
           </form>
+          <form id="update-<?php echo $slug; ?>" method="POST"
+                action="{{baseUrl}}/admin/modules/<?php echo $slug; ?>/update" style="display:none;">
+            <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+          </form>
           <button type="button"
                   class="btn btn-sm module-toggle-btn <?php echo $enabled ? 'btn-outline-warning' : 'btn-outline-success'; ?>"
                   data-slug="<?php echo $slug; ?>"
                   data-url="{{baseUrl}}/admin/modules/<?php echo $slug; ?>/toggle"
-                  data-csrf="{{csrf_token}}">
-            <?php echo $enabled ? 'Disable' : 'Enable'; ?>
+                  data-csrf="{{csrf_token}}"
+                  data-vtx-tooltip="<?php echo $enabled ? 'Disable' : 'Enable'; ?>">
+            <i class="pi <?php echo $enabled ? 'pi-x-circle' : 'pi-check-circle'; ?>"></i>
           </button>
+          <?php if (!empty($mod['update_available'])): ?>
+          <button type="button" class="btn btn-sm btn-warning module-update-btn"
+                  data-slug="<?php echo $slug; ?>"
+                  data-form="update-<?php echo $slug; ?>"
+                  data-name="<?php echo $name; ?>"
+                  data-from="<?php echo htmlspecialchars($mod['update_from']); ?>"
+                  data-to="<?php echo htmlspecialchars($mod['update_to']); ?>">
+            <i class="pi pi-arrow-up me-1"></i>Update
+          </button>
+          <?php endif; ?>
           <button type="button" class="btn btn-sm btn-outline-secondary module-sync-btn"
                   data-slug="<?php echo $slug; ?>"
                   data-form="sync-<?php echo $slug; ?>"
-                  title="Sync Views">
+                  data-vtx-tooltip="Sync Views">
             <i class="pi pi-refresh"></i>
           </button>
           <button type="button" class="btn btn-sm btn-outline-danger module-uninstall-btn"
                   data-slug="<?php echo $slug; ?>"
                   data-form="uninstall-<?php echo $slug; ?>"
-                  data-name="<?php echo $name; ?>">
-            Uninstall
+                  data-name="<?php echo $name; ?>"
+                  data-vtx-tooltip="Uninstall">
+            <i class="pi pi-trash"></i>
           </button>
         </div>
       </div>
@@ -292,14 +313,15 @@
                   data-slug="<?php echo $slug; ?>"
                   data-form="install-<?php echo $slug; ?>"
                   data-name="<?php echo $name; ?>"
-                  data-settings='<?php echo htmlspecialchars(json_encode($avail['install_settings'] ?? []), ENT_QUOTES); ?>'>
-            <i class="pi pi-download me-1"></i>Install
+                  data-settings='<?php echo htmlspecialchars(json_encode($avail['install_settings'] ?? []), ENT_QUOTES); ?>'
+                  data-vtx-tooltip="Install">
+            <i class="pi pi-download"></i>
           </button>
           <?php else: ?>
           <?php $missingDeps = implode(', ', array_column(array_filter($avail['deps'], fn($d) => !$d['installed']), 'slug')); ?>
           <button type="button" class="btn btn-sm btn-outline-secondary" disabled
-                  title="Install required module(s) first: <?php echo htmlspecialchars($missingDeps); ?>">
-            <i class="pi pi-lock me-1"></i>Install
+                  data-vtx-tooltip="Install required module(s) first: <?php echo htmlspecialchars($missingDeps); ?>">
+            <i class="pi pi-lock"></i>
           </button>
           <?php endif; ?>
         </div>

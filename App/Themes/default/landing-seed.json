@@ -1,0 +1,35 @@
+[
+    {
+        "type": "hero",
+        "headline": "Run your business on one platform",
+        "subheadline": "Vertext brings your content, team, and operations together in a single, dependable workspace.",
+        "cta_text": "Get Started",
+        "cta_link": "/contact",
+        "image": ""
+    },
+    {
+        "type": "feature-grid",
+        "headline": "Everything your team needs",
+        "columns": 3,
+        "items": [
+            { "icon": "pi-briefcase", "title": "Unified Workspace", "text": "Manage content, users, and permissions from a single admin console." },
+            { "icon": "pi-shield",    "title": "Enterprise Security", "text": "Role-based access control and audit logging built in from day one." },
+            { "icon": "pi-chart-bar","title": "Actionable Insights", "text": "Understand what matters with clear, built-in reporting." }
+        ]
+    },
+    {
+        "type": "stats",
+        "items": [
+            { "number": "99.9%", "label": "Uptime" },
+            { "number": "24/7",  "label": "Support" },
+            { "number": "10min", "label": "Setup Time" }
+        ]
+    },
+    {
+        "type": "cta-banner",
+        "headline": "Ready to get started?",
+        "text": "Set up your workspace in minutes, no credit card required.",
+        "button_text": "Contact Sales",
+        "button_link": "/contact"
+    }
+]

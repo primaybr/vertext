@@ -1,0 +1,35 @@
+/* -- admin/theme-customizer/index.php: Landing Blocks drag-drop canvas -- */
+.vtx-lb-card {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  padding: 1rem;
+  margin-bottom: .75rem;
+  background: var(--ps-bg-alt);
+  border: 1px solid var(--ps-border);
+  border-radius: 8px;
+}
+.vtx-lb-card.dragging { opacity: .45; border-style: dashed; }
+.vtx-lb-card-head { display: flex; align-items: center; gap: .625rem; }
+.vtx-lb-card-handle { color: var(--ps-text-muted); cursor: grab; user-select: none; }
+.vtx-lb-card-head .vtx-tag { flex: 1; }
+.vtx-lb-card-delete {
+  width: 28px; height: 28px; padding: 0; background: none; border: 1px solid transparent;
+  border-radius: 4px; color: var(--ps-text-muted); cursor: pointer; transition: color .12s, background .12s, border-color .12s;
+}
+.vtx-lb-card-delete:hover { color: #e53e3e; background: rgba(229,62,62,.08); border-color: rgba(229,62,62,.25); }
+.vtx-lb-card-body { padding-left: 1.75rem; }
+
+.vtx-lb-items { display: flex; flex-direction: column; gap: .5rem; margin-top: .5rem; }
+.vtx-lb-item-row {
+  display: flex; align-items: flex-start; gap: .5rem; padding: .625rem;
+  background: var(--ps-bg-base); border: 1px solid var(--ps-border); border-radius: 6px;
+}
+.vtx-lb-item-row.dragging { opacity: .45; border-style: dashed; }
+.vtx-lb-item-handle { flex-shrink: 0; padding-top: 4px; color: var(--ps-text-muted); cursor: grab; user-select: none; }
+.vtx-lb-item-body { flex: 1; min-width: 0; }
+.vtx-lb-item-delete {
+  flex-shrink: 0; width: 26px; height: 26px; padding: 0; background: none; border: 1px solid transparent;
+  border-radius: 4px; color: var(--ps-text-muted); cursor: pointer; transition: color .12s, background .12s, border-color .12s;
+}
+.vtx-lb-item-delete:hover { color: #e53e3e; background: rgba(229,62,62,.08); border-color: rgba(229,62,62,.25); }

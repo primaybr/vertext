@@ -453,3 +453,141 @@ pre code {
     top: 0;
   }
 }
+
+/* -- Landing Page Blocks (0.1.1) -------------------------------
+   Shared class vocabulary across all 4 themes - visual identity comes
+   entirely from this theme's own --clr-*/--radius-*/--shadow-sm tokens
+   above, not from bespoke per-theme selectors. */
+.vtx-lb-page { display: flex; flex-direction: column; }
+
+.vtx-lb-btn {
+  display: inline-block;
+  padding: .75rem 1.75rem;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: .9375rem;
+  text-decoration: none;
+  transition: opacity .15s, transform .15s;
+}
+.vtx-lb-btn:hover { opacity: .88; transform: translateY(-1px); }
+.vtx-lb-btn-primary { background: var(--clr-accent-fill); color: #fff; }
+
+.vtx-lb-section { padding: 3.5rem 0; }
+.vtx-lb-section-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  text-align: center;
+  margin: 0 0 2.25rem;
+  color: var(--clr-text);
+}
+
+/* -- Hero -- */
+.vtx-lb-hero {
+  padding: 5rem 0;
+  text-align: center;
+  background: var(--clr-surface);
+}
+.vtx-lb-hero--has-image {
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  color: #fff;
+}
+.vtx-lb-hero--has-image::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,.45);
+}
+.vtx-lb-hero--has-image .container { position: relative; z-index: 1; }
+.vtx-lb-hero-headline {
+  font-size: clamp(1.875rem, 4vw, 3rem);
+  font-weight: 700;
+  margin: 0 0 1rem;
+  line-height: 1.15;
+}
+.vtx-lb-hero--has-image .vtx-lb-hero-headline,
+.vtx-lb-hero--has-image .vtx-lb-hero-subheadline { color: #fff; }
+.vtx-lb-hero-subheadline {
+  font-size: 1.125rem;
+  color: var(--clr-muted);
+  max-width: 640px;
+  margin: 0 auto 2rem;
+}
+
+/* -- Feature Grid -- */
+.vtx-lb-feature-grid-items {
+  display: grid;
+  grid-template-columns: repeat(var(--vtx-lb-cols, 3), 1fr);
+  gap: 2rem;
+}
+.vtx-lb-feature-item { text-align: center; }
+.vtx-lb-feature-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px; height: 52px;
+  border-radius: var(--radius-md);
+  background: var(--clr-surface);
+  color: var(--clr-accent);
+  font-size: 1.375rem;
+  margin-bottom: 1rem;
+}
+.vtx-lb-feature-title { font-size: 1.0625rem; font-weight: 600; margin: 0 0 .5rem; color: var(--clr-text); }
+.vtx-lb-feature-text { font-size: .9375rem; color: var(--clr-muted); margin: 0; line-height: 1.6; }
+
+/* -- Testimonials -- */
+.vtx-lb-testimonials-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+.vtx-lb-testimonial-card {
+  padding: 1.75rem;
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-md);
+}
+.vtx-lb-testimonial-avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; margin-bottom: 1rem; }
+.vtx-lb-testimonial-quote { font-size: 1rem; color: var(--clr-text); line-height: 1.6; margin: 0 0 1rem; }
+.vtx-lb-testimonial-author { font-weight: 600; font-size: .9375rem; color: var(--clr-text); }
+.vtx-lb-testimonial-role { font-size: .8125rem; color: var(--clr-muted); }
+
+/* -- Gallery -- */
+.vtx-lb-gallery-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+.vtx-lb-gallery-item { margin: 0; border-radius: var(--radius-md); overflow: hidden; }
+.vtx-lb-gallery-item img { display: block; width: 100%; height: 220px; object-fit: cover; }
+
+/* -- CTA Banner -- */
+.vtx-lb-cta-banner {
+  text-align: center;
+  background: var(--clr-accent-fill);
+  color: #fff;
+  border-radius: var(--radius-md);
+  margin: 0 auto;
+}
+.vtx-lb-cta-banner .container { max-width: 720px; }
+.vtx-lb-cta-headline { font-size: 1.75rem; font-weight: 700; margin: 0 0 .75rem; color: #fff; }
+.vtx-lb-cta-text { font-size: 1rem; opacity: .9; margin: 0 0 1.5rem; }
+.vtx-lb-cta-banner .vtx-lb-btn-primary { background: #fff; color: var(--clr-accent-fill); }
+
+/* -- Rich Text -- */
+.vtx-lb-rich-text-content { max-width: 740px; margin: 0 auto; color: var(--clr-text); line-height: 1.7; }
+.vtx-lb-rich-text-content img { max-width: 100%; border-radius: var(--radius-sm); }
+
+/* -- Stats -- */
+.vtx-lb-stats-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1.5rem;
+  text-align: center;
+}
+.vtx-lb-stat-number { font-size: 2.25rem; font-weight: 700; color: var(--clr-accent); }
+.vtx-lb-stat-label { font-size: .875rem; color: var(--clr-muted); margin-top: .25rem; }
+
+@media (max-width: 720px) {
+  .vtx-lb-feature-grid-items { grid-template-columns: 1fr !important; }
+}

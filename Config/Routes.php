@@ -97,6 +97,7 @@ $router->post('/admin/modules/install-from-url',                           'Admi
 $router->post('/admin/modules/([a-z0-9\-\_]+)/toggle',                    'Admin\ModulesController', 'toggle');
 $router->post('/admin/modules/([a-z0-9\-\_]+)/install',                   'Admin\ModulesController', 'install');
 $router->post('/admin/modules/([a-z0-9\-\_]+)/uninstall',                 'Admin\ModulesController', 'uninstall');
+$router->post('/admin/modules/([a-z0-9\-\_]+)/update',                    'Admin\ModulesController', 'update');
 $router->post('/admin/modules/([a-z0-9\-\_]+)/sync-views',                'Admin\ModulesController', 'syncViews');
 
 // -- Themes --------------------------------------------------------------------

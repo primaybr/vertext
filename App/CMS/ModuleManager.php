@@ -408,6 +408,7 @@ class ModuleManager
 
         ModuleLoader::refresh();
         self::clearRouteCache();
+        self::syncCoreModuleVersions();
 
         $result = ['success' => true, 'name' => $manifest['name'] ?? $dirName];
         if (!empty($manifest['setup'])) {
@@ -497,8 +498,140 @@ class ModuleManager
 
         ModuleLoader::refresh();
         self::clearRouteCache();
+        self::syncCoreModuleVersions();
 
         return ['success' => true];
+    }
+
+    // -- Update -------------------------------------------------------------
+
+    /**
+     * Compare an on-disk manifest version against the installed DB version.
+     * Returns null when there is nothing newer to offer.
+     */
+    public static function checkForUpdate(array $manifest, string $installedVersion): ?array
+    {
+        $manifestVersion = $manifest['version'] ?? null;
+        if (!$manifestVersion || !version_compare($manifestVersion, $installedVersion, '>')) {
+            return null;
+        }
+        return ['from' => $installedVersion, 'to' => $manifestVersion];
+    }
+
+    /**
+     * Upgrade an installed module to the version declared in its module.json:
+     *  1. Guard: slug valid, module installed, not core, manifest found, version actually newer
+     *  2. Call Module::upgrade($db, $fromVersion) if the module defines it - this is a
+     *     duck-typed, optional convention (see ModuleInterface's class docblock), not
+     *     part of the interface itself, so existing modules need no changes to keep working
+     *  3. Update the modules.version DB column
+     *  4. Redeploy views/assets in case the new version ships updated ones
+     */
+    public static function upgrade(string $slug): array
+    {
+        if (!self::validSlug($slug)) {
+            return ['success' => false, 'message' => 'Invalid module slug.'];
+        }
+
+        $row = (new \Core\Model('modules'))
+            ->select('id, name, version, directory, is_core')
+            ->where('slug', $slug)
+            ->get(1);
+
+        if (!$row) {
+            return ['success' => false, 'message' => "Module \"{$slug}\" is not installed."];
+        }
+
+        if ((bool) $row['is_core']) {
+            return ['success' => false, 'message' => 'Core modules update automatically with the CMS version.'];
+        }
+
+        $info = self::findBySlug($slug);
+        if (!$info) {
+            return ['success' => false, 'message' => "No module.json found for \"{$slug}\" in App/Modules/."];
+        }
+        [$manifest, $modDir, $dirName] = $info;
+
+        $update = self::checkForUpdate($manifest, $row['version'] ?? '0.0.0');
+        if (!$update) {
+            return ['success' => false, 'message' => "\"{$slug}\" is already up to date."];
+        }
+
+        if (!self::validDirName($dirName)) {
+            return ['success' => false, 'message' => 'Module directory name contains invalid characters.'];
+        }
+
+        $moduleFile = $modDir . DS . 'Module.php';
+        if (!file_exists($moduleFile)) {
+            return ['success' => false, 'message' => "Module.php is missing in \"{$dirName}\"."];
+        }
+
+        // Same borrowed-connection transaction pattern as install() above.
+        $orm  = new \Core\Model('modules');
+        $conn = $orm->db;
+
+        $inTransaction = false;
+        try {
+            require_once $moduleFile;
+            $className = "App\\Modules\\{$dirName}\\Module";
+
+            if (!class_exists($className) || !is_a($className, ModuleInterface::class, true)) {
+                return ['success' => false, 'message' => "{$className} must implement App\\CMS\\ModuleInterface."];
+            }
+
+            $instance = new $className();
+
+            $conn->beginTransaction();
+            $inTransaction = true;
+
+            // Optional duck-typed hook - only runs if the module opts in; otherwise
+            // this is a pure version-column sync with nothing to migrate.
+            if (method_exists($instance, 'upgrade')) {
+                $instance->upgrade($conn, $update['from']);
+            }
+
+            \Core\Model::on($conn, 'modules')
+                ->where('slug', $slug)
+                ->update(['version' => $update['to']]);
+
+            $conn->endTransaction();
+            $inTransaction = false;
+
+        } catch (\Exception $e) {
+            if ($inTransaction) {
+                $conn->cancelTransaction();
+            }
+            return ['success' => false, 'message' => $e->getMessage()];
+        }
+
+        // Filesystem redeploy is not transactional, same as install().
+        self::deployViews($modDir, $slug);
+        self::deployAssets($modDir, $slug);
+
+        ModuleLoader::refresh();
+        self::clearRouteCache();
+        self::syncCoreModuleVersions();
+
+        return ['success' => true, 'name' => $manifest['name'] ?? $dirName, 'from' => $update['from'], 'to' => $update['to']];
+    }
+
+    /**
+     * Best-effort sync of core module rows to the live Version::APP constant.
+     * Core modules have no on-disk manifest to re-read live the way addon modules
+     * do (see ModulesController::index()'s display override), so this keeps the
+     * stored value from drifting too far behind reality. Not the source of truth -
+     * display always substitutes Version::APP regardless of what is stored here.
+     */
+    private static function syncCoreModuleVersions(): void
+    {
+        try {
+            (new \Core\Model('modules'))
+                ->whereQuery('is_core = TRUE')
+                ->where('version', Version::APP, '!=')
+                ->update(['version' => Version::APP]);
+        } catch (\Throwable) {
+            // Non-fatal - ModulesController::index() overrides the display value regardless.
+        }
     }
 
     // -- Route loading ----------------------------------------------------------

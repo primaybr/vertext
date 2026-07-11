@@ -1,3 +1,18 @@
+/* -- admin/theme-customizer/index.php: Appearance/Landing Blocks tab bar -- */
+.vtx-tc-tabs {
+  display: flex; gap: .25rem; border-bottom: 2px solid var(--ps-border); padding-bottom: 0;
+}
+.vtx-tc-tab {
+  background: none; border: none; padding: .5rem 1rem; font-size: .875rem; font-weight: 500;
+  color: var(--ps-text-secondary); cursor: pointer; border-bottom: 2px solid transparent;
+  margin-bottom: -2px; border-radius: 4px 4px 0 0; transition: color .15s, border-color .15s;
+}
+.vtx-tc-tab:hover { color: var(--ps-text); }
+.vtx-tc-tab.active {
+  color: var(--ps-primary); border-bottom-color: var(--ps-primary);
+  background: var(--ps-primary-light, rgba(79,70,229,.06));
+}
+
 /* -- admin/theme-customizer/index.php: corner-radius option cards + sticky live-preview panel -- */
 .tc-corner-group { display: flex; gap: .5rem; }
 .tc-corner-option { flex: 1; }

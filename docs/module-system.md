@@ -91,6 +91,21 @@ public function registerRoutes(Router $router): void
 }
 ```
 
+### upgrade(Connection $db, string $fromVersion) - optional (0.1.1)
+
+Not part of `ModuleInterface` - this is a duck-typed convention, checked with `method_exists()`, so existing modules need no changes. Add it only if a version bump needs to actually migrate something (new column, backfill, new table); if you don't define it, Module Manager still detects and offers the version bump, it just has nothing to run beyond updating the recorded version.
+
+Module Manager compares the installed DB version against `module.json`'s `version` on every **Admin → Modules** load. When the manifest is newer, an "Update available" badge and button appear next to that module; clicking it runs `upgrade()` (if present) inside a transaction, then updates the stored version - same idempotency contract as `uninstall()`: safe to re-run if a previous attempt failed partway.
+
+```php
+public function upgrade(Connection $db, string $fromVersion): void
+{
+    // Only need to handle what actually changed since $fromVersion - keep this
+    // idempotent (IF NOT EXISTS / ON CONFLICT) since retries call it again from scratch.
+    $db->statement("ALTER TABLE my_items ADD COLUMN IF NOT EXISTS archived BOOLEAN DEFAULT FALSE");
+}
+```
+
 ## module.json Manifest
 
 ```json

@@ -1,7 +1,7 @@
 {
     "name":        "Default",
     "slug":        "default",
-    "version":     "0.0.3",
+    "version":     "0.0.5",
     "description": "Clean, minimal, responsive theme for the public front-end",
     "author":      "Vertext",
     "assets": {

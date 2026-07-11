@@ -240,6 +240,49 @@ Vtx.load(['slug'], function () {
 
 ---
 
+## vtx-tooltip
+
+Small hover/focus tooltip for any element - primarily used to label icon-only
+buttons. Auto-loaded whenever `[data-vtx-tooltip]` is present on the page (see
+`Vtx.autoInit()`); also loaded on demand when AJAX modal content introduces the
+first one on a page that had none at initial load.
+
+```html
+<button type="button" class="btn btn-sm btn-outline-danger" data-vtx-tooltip="Uninstall">
+  <i class="pi pi-trash"></i>
+</button>
+```
+
+No JS call needed - just add the attribute. The tooltip text is the attribute's
+value.
+
+**Behaviour:**
+
+- Listeners are delegated on `document` (mouseover/mouseout, focusin/focusout),
+  not bound per-element - elements added to the DOM later (AJAX modal content)
+  work immediately, no re-init call required
+- Shows after a short delay (300 ms) on hover or keyboard focus, hides on
+  mouseleave/blur/`Escape`
+- Auto-flips below the trigger if there isn't enough room above
+- If the trigger has no other accessible name (no visible text, no existing
+  `aria-label`), sets `aria-label` from the same attribute value - icon-only
+  buttons get a real screen-reader label, not just a hover-only tooltip. If the
+  trigger already has visible text or its own `aria-label`, it's left alone.
+
+| Attribute | Element | Description |
+| --------- | ------- | ----------- |
+| `data-vtx-tooltip` | any | The tooltip text |
+
+**CSS classes** (in `admin.css`):
+
+| Class | Purpose |
+|-------|---------|
+| `.vtx-tooltip` | The tooltip bubble (single shared node, repositioned per trigger) |
+| `.vtx-tooltip.is-visible` | Applied while shown |
+| `.vtx-tooltip.is-below` | Applied when flipped to render below the trigger instead of above |
+
+---
+
 ## vtx-upload
 
 Drag-and-drop file uploader with progress bar.

@@ -5,6 +5,139 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Unreleased]
+
+## [0.1.1-beta] - 2026-07-11
+
+Real module and theme versioning, per-theme landing pages, and finished-out SEO essentials.
+
+### Module Versioning
+
+- Core/system modules (Authentication, Dashboard, Users, Roles, Module Manager, CMS Settings, Theme
+  Manager) no longer show a version frozen at whatever the CMS version was on the day the site was
+  first installed - they now always display the CMS's actual running version.
+- Installed modules whose on-disk `module.json` version is newer than what's actually installed now
+  show an "Update available" badge and button in **Admin -> Modules**. Clicking it runs the module's
+  own migration logic (if it defines one) and records the new version - no action needed for modules
+  that don't define one, the version is simply brought up to date.
+
+### Theme Landing Pages
+
+- Each of the 4 built-in themes can now show a real, content-rich homepage instead of the generic
+  "you have a CMS" placeholder - toggle it on under **Theme Customizer -> Homepage**. Default shows
+  a Business Suite layout, Clean a Marketplace layout, Field a Coffee Shop layout, and Frame a
+  Product Showcase layout, each shipped with its own starter copy.
+- New **Landing Blocks** tab in Theme Customizer: add, reorder, and edit Hero, Feature Grid,
+  Testimonials, Gallery, CTA Banner, Rich Text, and Stats blocks via drag-and-drop. Content is
+  independent per theme - switching themes switches which set of blocks is shown.
+- Added live preview to the Landing Blocks tab: it's now a two-column layout (builder left, preview
+  right) matching Appearance, updating ~350ms after you stop editing - text fields, item add/
+  reorder/delete, block add/reorder/delete, and Rich Text content all trigger it. Pending edits are
+  staged server-side (session, sanitized identically to Save) rather than round-tripped through the
+  preview URL directly - a blocks payload (rich text, multiple items, image URLs) is far too large
+  for a query string the way the Appearance tab's color/font/corner-style overrides work.
+- Fixed two bugs found while building the above, both of which meant Landing Blocks editing was
+  more broken than it looked:
+  - **Save Blocks never actually worked.** `$this->input->post('blocks')` sanitizes with
+    `htmlspecialchars()` by default, which mangles every double-quote in the JSON-encoded payload
+    into `&quot;` before `json_decode()` ever sees it - decoding then fails on any non-trivial
+    payload, so every real save attempt hit "Invalid blocks payload." Same root cause as the
+    Theme Customizer font-family bug above; same fix (read raw, validate after).
+  - **Rich Text block edits were never captured for saving.** The block editor (Quill, via
+    `VtxEditor`) syncs its content into a hidden textarea via plain JS property assignment
+    (`textarea.value = ...`), which does not fire a native `input` event - so the generic
+    field-change listener that populates the in-memory blocks array never ran for it. Whatever was
+    in a Rich Text block when its card was built is what got saved, not what was actually typed.
+    Now re-read directly from the textarea right before it matters (staging or saving).
+
+### SEO Essentials
+
+- `/sitemap.xml` now includes Events, Gallery, and Videos alongside Pages and Blog, each with its
+  own on/off toggle under the new **Admin -> Sitemap** settings screen.
+- New `/robots.txt`, always blocking `/admin/`, with an admin-configurable list of additional
+  disallowed paths.
+- Every page now includes a canonical URL and Twitter Card tags alongside the existing Open Graph
+  tags, via one shared `seo-meta.php` partial included by all 4 themes.
+
+### Security
+
+- Fixed a stored XSS bypass in rich-text sanitization, found by automated review of the new Landing
+  Blocks Rich Text block and traced back to an identical flaw in Blog's post body sanitizer
+  (`PostsController::sanitizeHtml()`, the code this session's `LandingBlocksHelper` copy was modeled
+  on). The `strip_tags()` + regex approach had two bypasses that let attacker-controlled markup
+  survive unescaped into a page rendered directly to visitors: an **unquoted attribute value**
+  (`<img onerror=alert(1)>` - no quotes at all, so neither regex matched) and a **single-quoted
+  `javascript:` href** (`<a href='javascript:alert(1)'>` - only the double-quoted form was
+  neutralized). Both call sites now delegate to a new shared `App\CMS\HtmlSanitizer`, which parses
+  into a real DOM tree and rebuilds every surviving tag's attributes from an explicit allowlist
+  instead of regex-stripping the raw string - closes the whole bypass class rather than one instance
+  of it. Also tightened URL validation everywhere it's used (this sanitizer, Landing Blocks'
+  link/image fields, and Theme Customizer's logo URL) to reject protocol-relative `//host` URLs,
+  previously treated as a safe relative path.
+- Fixed a worse, related gap found while auditing the above: Pages' `content` field (also a Quill
+  rich-text body) was saved with **no sanitization call at all** on both create and update, despite
+  a code comment on the front-end view claiming it was "sanitized on save." Now runs through the
+  same `App\CMS\HtmlSanitizer`.
+- Synced Phuse framework to v1.2.9, a security-focused core update:
+  - The template engine's `{% if %}`/`{% while %}` conditions no longer run through `eval()` -
+    replaced with a small expression parser that understands comparisons and boolean logic only,
+    closing off a structural code-execution risk in condition handling.
+  - `{{ variable }}` output is now HTML-escaped by default everywhere in the template engine.
+    Views that intentionally render pre-built HTML through a plain `{{ }}` (rather than the
+    existing `{!! !!}` raw-output syntax) will now see it escaped - none were found in Vertext's
+    own views, but this is worth a visual pass after upgrading a customized install.
+  - A new `CSRFMiddleware` now double-checks CSRF tokens on every non-GET request as a
+    framework-level backstop, on top of Vertext's existing per-action checks. Requests
+    authenticated via the REST API's Bearer key are exempted, since that flow was never
+    CSRF-exposed in the first place.
+  - The session cookie's `Secure` flag is now set based on the actual request scheme instead of
+    being hardcoded `true` - fixes session/login persistence on non-HTTPS installs (most local dev
+    setups).
+- Added `Core\Env` (`.env` file loading) and `Core\Template\SafeHtml` (marks a string as
+  pre-rendered, trusted HTML so the new output-escaping skips it) from the same sync - unused by
+  Vertext today, available for modules that need them.
+- Fixed Theme Customizer's live-preview iframe failing to render at all. Its preview action renders
+  straight through `ThemeEngine::render()` rather than `adminRender()`, so it never picked up
+  `BaseController`'s CSP override and was left with `SecurityHeadersMiddleware`'s global baseline -
+  `X-Frame-Options: DENY` and `frame-ancestors 'none'`, both of which block *any* framing, including
+  the same-origin `<iframe>` on the Theme Customizer page one route over that embeds this exact URL.
+  The preview action now re-emits its own header pair with framing relaxed to `SAMEORIGIN`/
+  `frame-ancestors 'self'` only - still blocks framing from any other origin, everything else in the
+  policy stays as strict as the front-end baseline.
+- Fixed Theme Customizer's accent color / font / corner style / custom CSS never actually applying
+  anywhere - not just in the preview above, but on the live public site too, likely since the
+  strict site-wide CSP went live (0.1.0-beta). `ThemeCustomizerHelper` injected its computed CSS as
+  an inline `<style>` block, but the CSP sends `style-src 'self'` with no `unsafe-inline` - browsers
+  silently refuse to apply an inline `<style>` tag CSP doesn't cover, so the override was always
+  present in the HTML and always ignored. Switched to writing a real file and linking it
+  (`<link rel="stylesheet">`, CSP-compliant with no policy changes needed): a regenerated-on-Save
+  `Public/assets/generated/theme-custom.css` for the live site, and an always-fresh
+  `theme-preview.css` for the customizer's live preview.
+- Fixed font-family choices being corrupted before they were ever validated. `$this->input->post()`/
+  `->get()` sanitize with `htmlspecialchars()` by default, which turns the `'` in e.g.
+  `"Georgia, 'Times New Roman', serif"` into `&apos;` - every built-in font option except "system"
+  has a quote in its CSS value, so 3 of 4 font choices silently broke. The same default sanitization
+  was also mangling any logo URL with a `&` in its query string, and quietly corrupting the custom
+  CSS textarea (which isn't HTML - running it through an HTML-escaper was never correct to begin
+  with). All four fields are now read raw and validated/allowlisted immediately after, same pattern
+  already used elsewhere in the codebase for Quill body content.
+- Fixed nav links inside the Theme Customizer's live-preview iframe going blank when clicked. A
+  clicked link navigates the iframe to a normal front-end page, which - unlike the one preview route
+  above - has no `frame-ancestors` override, so it hit the identical CSP block. Preview pages now
+  intercept and cancel all link clicks (matching how other CMS theme customizers with live preview
+  behave - the iframe is a snapshot of the current page's styling, not a browsable copy of the site).
+
+### Admin UI
+
+- New `vtx-tooltip` component (`data-vtx-tooltip="Label"` on any element) - the admin panel's first
+  real tooltip system, replacing ad-hoc native `title="..."` attributes. Delegated on `document` so
+  it works on AJAX-loaded content automatically, shows on hover and keyboard focus, and sets
+  `aria-label` on icon-only triggers that don't already have one.
+- **Module Manager -> Modules (a la carte)**: Enable/Disable, Sync Views, Uninstall, and Install are
+  now icon-only buttons with tooltips instead of mixed text/icon buttons - less visual clutter in a
+  dense card grid. Update is unchanged (icon + text), since it's the one action worth calling out
+  explicitly rather than leaving to icon recognition alone.
+
 ## [0.1.0-beta] - 2026-07-07
 
 Vertext's first public self-host beta: safe production defaults, a general database migration
@@ -127,207 +260,4 @@ engine (now v1.2.8b).
   front-end asset instead of an admin one, so it was never loaded on the admin page that uses it.
   Also added the project's missing `.form-select-sm` style (present for `.form-control` but never
   defined for `.form-select`).
-
-## [0.0.9b-alpha] - 2026-07-06
-
-Two bugs found through manual testing after the 0.0.9 styling/identity pass, both fixed.
-
-- **Blog's reading-list button stopped swapping to a checkmark icon after saving a post** -
-  a regression from replacing its old emoji-based icon with the shared icon set: the module's
-  asset version wasn't bumped, so browsers kept serving the previously-cached script against the
-  new markup. Bumped Blog to `0.0.8` to bust the cache.
-- **Every save on the Videos admin page failed with "Security token invalid"** - the create/edit
-  form's hidden CSRF field referenced a variable name no controller ever provides, so the token
-  was always submitted empty and validation always failed. The identical mismatch was also found
-  and fixed in three Contact module admin views (inbox delete, single-message actions, and the
-  settings form), which had the same bug. Bumped Videos to `0.0.3` and Contact to `0.0.3`.
-
-## [0.0.9-alpha] - 2026-07-04
-
-Styling and admin identity overhaul, plus one feature addition: a live-preview Theme Customizer.
-Also includes a follow-up codebase-wide audit (2026-07-04): zero inline `<style>`/`<script>` blocks
-remain in any view file (system, theme, or module), plus a new framework capability and several
-real bugs found along the way.
-
-### Inline CSS/JS Extraction
-
-- Audited every view file under `App/Views/`, `App/Modules/*/Views/`, and `App/Themes/*/layout.php`.
-  Extracted all inline CSS into per-page/per-module `.css` files and all inline JS into `.js` files -
-  15 modules (Blog, Contact, Events, Forms, Gallery, Members, Newsletter, Pages, Search,
-  ThemeCustomizer, Videos, Analytics, Media, Navigation, Webhooks) plus system admin views
-  (`api_keys`, `roles`, `settings`, `themes`, `translations`, `profile`, `modules`) and the
-  655-line Module Manager install wizard.
-- **New: `ModuleLoader::frontAssets()`** - modules can now declare front-end CSS/JS in `module.json`
-  (top-level `assets.css`/`assets.js`, sibling to the existing admin-only `assets.admin.*`), injected
-  into all four bundled theme layouts. This didn't exist before - front-end module views had no
-  choice but to inline their CSS, which is what most of them were doing.
-- **New: `vtx:modal:loaded` event** - `admin.js`'s CRUD modal loader now dispatches this on
-  `document` (with `event.detail.body`) after injecting AJAX-fetched form HTML, so externalized
-  scripts that need to re-initialize a component (a rich-text editor, a slug generator) on every
-  modal open can listen for it instead of relying on inline `<script>` re-execution.
-- **Deduplicated 10 copies of the theme-init FOUC-prevention script** into one shared partial,
-  `App/Views/_shared/theme-init.php`, `<?php include ?>`'d by every layout. Kept inline deliberately
-  (an external file would reintroduce the flash-of-wrong-theme it exists to prevent) - centralizing
-  the source fixed a real staleness bug where `default/landing.php` and `default/welcome.php` still
-  read the pre-0.0.9 `phuse-theme` key with no migration to `vtx-theme`.
-- Two narrow, deliberate exceptions remain, both documented in code: `App/Views/maintenance.php`'s
-  CSS (fires too early in the request lifecycle for a reliable base URL, and a 503 page needs zero
-  external dependencies) and `Media/Views/admin/media/picker.php`'s script (a self-contained AJAX
-  partial pattern - both its own reload and Gallery's picker overlay re-execute its embedded
-  `<script>` tag by design; externalizing it would require rewiring every caller).
-
-### Bugs Found and Fixed During Verification
-
-- **`admin-pages.js` crashed on every admin page except Module Manager** - three IIFEs extracted
-  from `admin/modules/index.php` (tab switching, the bundle-install wizard, the a-la-carte configure
-  modal) called `document.getElementById(...)` without checking the result, which is only ever
-  non-null on that one page. Since this script now loads globally, the first crash aborted all
-  later top-level statements in the same file for the rest of that pageload. No user-facing impact
-  in practice (none of that code is needed outside Module Manager), but it spammed the console
-  everywhere else - fixed with existence guards.
-- **`tc-admin.js` (Theme Customizer) crashed on every other admin page** - same root cause,
-  `frame.dataset.previewUrl` on a null element. Fixed with a guard.
-- **`videos-admin.js`'s `vtx:crud:success` listener fired globally** - previously scoped to the
-  Videos page by virtue of being inline only there; now that it's a global script, saving or
-  deleting a record in *any* module would trigger an unwanted full-page reload. Scoped the reload
-  to only fire when `#vtx-videos-index` is present.
-- **Gallery's `_form.php` used a dead custom hook** (`window.vtxInitGalleryForm`, never called by
-  anything) instead of hooking into the modal lifecycle - replaced with `vtx:modal:loaded`.
-- **Admin dark-mode toggle silently fought a second theme system** - `scripts.js` (loaded on admin
-  pages for its shared `Phuse.toast()`/`Phuse.modal()` utilities) unconditionally ran its own
-  front-end `Phuse.darkMode()` on every page, which read the pre-0.0.9 `phuse-theme` key (not the
-  unified `vtx-theme` key `admin.js` uses), reset `data-theme` to system/legacy preference right
-  after `admin.js` had already set it, and injected a second floating toggle button. Fixed by
-  skipping `Phuse.darkMode()` entirely whenever the admin's own `#theme-toggle` button is present.
-
-### Two New Front-End Themes - Field and Frame
-
-- **Field** - warm, tactile alternative: stone-beige surfaces (`#EFEBE3`), deep pine-green accent
-  (`#2F4538`), Lora serif headings over Karla sans body text, soft rounded corners, and a dashed
-  "stitched" rule motif on the header/footer/dropdown edges instead of a plain hairline.
-- **Frame** - minimal gallery/portfolio identity: warm ivory by day / charcoal by night
-  (`#F5F0E8` / `#16181C`), muted brass-and-bronze accent, bold geometric Space Grotesk headings
-  over IBM Plex Sans body, near-flat corners, and a small-caps monospace nav/caption treatment.
-- Both follow the same structure as `default`/`clean` (`theme.json`, `layout.php`, `css/theme.css`,
-  `js/theme.js`), the same 1240px/1440px/740px container widths introduced earlier in 0.0.9, and
-  the same `--clr-accent` (flips per color scheme) / `--clr-accent-fill` (stable) split so module
-  views that fill buttons with the accent color keep working with no theme-specific changes.
-  Self-hosted Lora, Karla, and Space Grotesk (SIL OFL 1.1) added to `Public/assets/fonts/` and
-  `@font-face`-declared in `styles.css` alongside the existing IBM Plex families.
-- Vertext now ships 4 selectable themes on **Admin -> Themes** instead of 2.
-
-### Front-End Identity + Consistency Pass
-
-- **The `default` front theme now shares the admin's "Precision Ledger" identity** - navy accent
-  (was indigo `#4f46e5`), self-hosted IBM Plex Sans (was system-ui). Previously 0.0.9 only touched
-  the admin panel, so a site's public face and its own admin looked like two unrelated products.
-  `clean` theme is intentionally left as its own distinct editorial alternative (serif body,
-  uppercase nav) - not everything needs to converge on one look. `default` theme bumped to
-  `v0.0.2` in `theme.json` to reflect the identity change (shown live on **Admin -> Themes**,
-  which reads the manifest directly - no separate version store to keep in sync).
-- Front themes gained the same `--clr-accent` (flips for dark-mode contrast) / `--clr-accent-fill`
-  (stable navy, for solid button/badge fills) split introduced for the admin panel, for the same
-  reason: a dozen-plus module views (Contact, Forms, Search, Blog pagination, Events RSVP/date
-  badges) fill buttons with `var(--clr-accent)`, which would otherwise wash out in dark mode once
-  the default stopped being a bright, uniformly-legible indigo.
-- `ThemeCustomizerHelper::getCss()` now also sets `--clr-accent-fill`/`--clr-accent-rgb` when an
-  admin picks a custom accent color, so the picker's choice is what actually renders on buttons in
-  both light and dark mode, not just the theme's own unconfigured default.
-- Fixed three more stale hardcoded `rgba(79,70,229,...)` focus-ring glows (leftover from the old
-  indigo default, dating to before this project's Vertext branding even existed) in Contact,
-  Search, and the embedded Forms widget - same class of bug as the `#2563EB` sweep earlier in
-  0.0.9, just missed because these were focus states, not visible without clicking into a field.
-- Theme Customizer's two-column live-preview layout didn't collapse on narrow viewports - below
-  900px it now stacks controls above a fixed-height preview instead of squeezing both columns
-  into unusable widths.
-- Analytics' dashboard stat numbers were colored with `--ps-primary` (glows bright blue in dark
-  mode); changed to the same neutral `--ps-text-primary` treatment as the Dashboard's stat ledger,
-  so the two "big number" patterns in the admin panel read as one system instead of two.
-
-### Theme Customizer - Live Preview Builder
-
-- **Live preview iframe** - the customizer now renders an actual preview page (representative
-  hero, buttons, cards) through the active theme, updating ~350ms after any change instead of the
-  old static color-swatch mockup; nothing is saved until "Save Changes"
-- **New: Corner Style** - Sharp / Subtle / Rounded, controlling `--radius-sm`/`--radius-md` across
-  buttons, cards, and menus; `default` theme gained these radius tokens to match `clean` (it
-  previously hardcoded its one `border-radius` value with no variable)
-- `ThemeCustomizerHelper::getCss()` now accepts an overrides array (and a `setPreviewOverrides()`
-  static setter the preview route uses) so the same code path renders both the saved site CSS and
-  the iframe's pending, unsaved state
-- **Fixed a real save bug** - `Model::save($data, $update)` defaults to an INSERT unless `$update`
-  is explicitly passed `true`; the customizer's update branch never passed it, so calling Save a
-  *second* time on any already-existing setting threw a 500 (`Invalid parameter number: :where_0`)
-  - the WHERE clause's bind survived into an INSERT query that never referenced it. First save
-    always looked fine (it takes the insert path), which is why this had gone unnoticed.
-
-### Real Logo
-
-- Vertext's first real logomark (a vertex/"V" mark) replaces the placeholder "V" letter used in
-  the sidebar brand, login/reset/forgot-password screens, and the setup wizard, and now backs the
-  browser favicon on both the admin panel and the public site (previously there was none)
-- Vectorized from the source artwork with a one-off GD-based tracer (binary mask -> Moore-neighbor
-  boundary trace -> Ramer-Douglas-Peucker simplification) rather than hand-redrawn, so the SVG
-  path is measured from the actual artwork; three transparent-background variants live under
-  `Public/assets/images/logo/`: `logo-light.svg` (navy, light backgrounds), `logo-dark.svg`
-  (white, dark backgrounds), `favicon.svg` (navy, square). Each is ~450-480 bytes versus the
-  746 KB source PNG
-
-### Admin Identity - "Precision Ledger"
-
-- **New accent color** - retired the stock Tailwind-blue-600 `--ps-primary` (`#2563EB`) for a
-  deeper enterprise navy (`#1E3A5F`); semantic colors (success/danger/warning/info) unchanged
-- **Self-hosted typography** - `--ps-font-sans`/`--ps-font-mono` now use IBM Plex Sans/Mono
-  (vendored under `Public/assets/fonts/`, SIL Open Font License - no Google Fonts CDN call)
-- **Vertex-tick motif** - a small filled square replaces the tinted-background active state on
-  top-level sidebar navigation; the same treatment replaces the setup wizard's colored step-dots
-- **Stat ledger strip** - dashboard and module stat tiles dropped the icon-chip + big-number card
-  pattern for a flat horizontal strip (mono uppercase label, large number, hairline dividers)
-- **Flat status badges** - `.vtx-tag` dropped the tinted pill shape for a flat label with a small
-  colored dot prefix
-- **Dark-mode contrast fix** - splitting `--ps-primary` (now brightens to `#60A5FA` in dark mode,
-  used for text/icon/border foregrounds) from the new `--ps-primary-fill` (stays navy in both
-  modes, used for solid fills like buttons/avatars/logo marks) after the navy swap made icons,
-  links, and tab indicators unreadable against dark surfaces across the whole framework
-
-### Width System
-
-- Front-end `.container` 760px -> 1240px, new `.container-prose` (~740px, used by blog posts and
-  the default page template) preserves reading measure, `.container-wide` -> 1440px; fluid gutters
-  via `clamp()` on both themes (`default` and `clean`)
-- Admin `.vtx-content` capped at 1584px centered on ultrawide displays; `.modal-lg`/`.modal-xl`
-  widened; new `.vtx-table--dense` modifier; spacing scale tokens `--sp-1` through `--sp-8`
-
-### Token Unification
-
-- Bridged `--ps-*`/`--clr-*` naming with alias custom properties in both front themes
-- Unified the two dark-mode localStorage keys (admin `phuse-theme`, front `vtx-theme`) into one
-  (`vtx-theme`), with a one-time migration read of the old admin key
-- `ThemeCustomizer`'s accent color and font settings now also drive `--clr-accent`/`--clr-link`
-  and `body{font-family}` on the front-end - previously they only set `--ps-*` variables that no
-  front-end theme ever reads, so the customizer's color picker silently did nothing on the public
-  site
-
-### Fixes
-
-- `.vtx-main` had no `min-width: 0`, so wide tables (e.g. Recent Activity) forced the whole admin
-  page to overflow horizontally on mobile instead of scrolling within their own panel
-- `App/Views/setup/layout.php` had hardcoded `?v=142`/`?v=4` cache-bust query strings (dating back
-  to 0.0.7b) instead of the version-hash pattern used everywhere else, so setup wizard CSS could
-  never cache-bust across releases
-- Several front-end module pages (Events, Videos, Contact, Forms) combined `.container` with their
-  own page-level class that set a `padding` shorthand (e.g. `padding: 3rem 0`), which zeroed out
-  the new fluid side padding due to equal CSS specificity - page titles on those pages sat flush
-  against the viewport edge instead of aligning with the header/footer; fixed by switching those
-  rules to `padding-top`/`padding-bottom` only
-- Contact, the embedded Forms page, and Search each wrapped their entire page (title included) in
-  an independently-centered narrower column, so their titles landed at a different horizontal
-  position than every other top-level page (Events, Gallery, Videos, Blog index); titles now stay
-  on the same full-width `.container` as the rest of the site, with only the actual form/input
-  width constrained below the title - `.container-prose` is reserved for genuine long-form reading
-  content (blog posts, the Pages default template), not utility pages
-- Page titles also disagreed on font size: Search rendered its `<h1>` at 1.75rem while everything
-  else used the shared `h1 { font-size: 2rem }` from `styles.css`, and Blog's index/category pages
-  and both Gallery pages each set their own smaller size (1.5rem-1.75rem) on top of it - all of
-  them now inherit the shared default instead of redeclaring their own
 

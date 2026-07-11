@@ -104,7 +104,7 @@ class PagesController extends BaseController
         $id = (string) $this->db('pages')->save([
             'title'            => $title,
             'slug'             => $slug,
-            'content'          => trim($this->input->post('content', false) ?? ''),
+            'content'          => \App\CMS\HtmlSanitizer::clean($this->input->post('content', false) ?? ''),
             'excerpt'          => trim($this->input->post('excerpt', false) ?? ''),
             'status'           => $status,
             'published_at'     => $publishedAt,
@@ -169,7 +169,7 @@ class PagesController extends BaseController
 
         $data = [
             'title'            => $title,
-            'content'          => trim($this->input->post('content', false) ?? ''),
+            'content'          => \App\CMS\HtmlSanitizer::clean($this->input->post('content', false) ?? ''),
             'excerpt'          => trim($this->input->post('excerpt', false) ?? ''),
             'status'           => $status,
             'expire_at'        => $expireAt ? date('Y-m-d H:i:s', strtotime($expireAt)) : null,

@@ -56,6 +56,18 @@ class Router
      */
     private array $cachedRoutes = [];
     /**
+     * @var bool $enableRouteCache Whether to persist/read the route table to a
+     * file. Default OFF: registering the routes from Config on each request is
+     * cheap (a few array builds + small regexes), and the file cache had no
+     * invalidation — a stale Cache/routes.cache would shadow newly added routes
+     * until it was deleted by hand on the server. Real PHP speedup comes from
+     * OPcache on the .php files, not from serializing this array.
+     *
+     * If ever re-enabled, loadRoutes() self-invalidates against the mtime of
+     * the route config files, so it can never go stale silently again.
+     */
+    private bool $enableRouteCache = false;
+    /**
      * @var bool $routesCacheDirty Whether routes changed since the cache file was last written.
      */
     private bool $routesCacheDirty = false;
@@ -91,18 +103,55 @@ class Router
      */
     private function loadRoutes(): void
     {
+        // Route caching is disabled by default — see $enableRouteCache.
+        if (!$this->enableRouteCache) {
+            return;
+        }
+
         // Load routes from cache file
         $cacheFile = Folder\Path::CACHE . 'routes.cache';
-        if (file_exists($cacheFile)) {
-            $cachedRoutes = file_get_contents($cacheFile);
-            if ($cachedRoutes) {
-                $this->cachedRoutes = unserialize($cachedRoutes);
-                $this->routes = $this->cachedRoutes['routes'];
-                $this->actions = $this->cachedRoutes['actions'];
-                $this->methods = $this->cachedRoutes['methods'];
-                $this->middlewares = $this->cachedRoutes['middlewares'];
+        if (!file_exists($cacheFile)) {
+            return;
+        }
+
+        // Self-invalidate: if any route config file is newer than the cache,
+        // ignore the cache so add() rebuilds and re-persists it. This removes
+        // the need to delete Cache/routes.cache by hand after editing routes.
+        if (filemtime($cacheFile) < $this->routeConfigMtime()) {
+            return;
+        }
+
+        $cachedRoutes = file_get_contents($cacheFile);
+        if ($cachedRoutes) {
+            $this->cachedRoutes = unserialize($cachedRoutes);
+            $this->routes = $this->cachedRoutes['routes'];
+            $this->actions = $this->cachedRoutes['actions'];
+            $this->methods = $this->cachedRoutes['methods'];
+            $this->middlewares = $this->cachedRoutes['middlewares'];
+        }
+    }
+
+    /**
+     * Returns the newest modification time among the route config files, used
+     * to detect a stale route cache.
+     *
+     * @return int Unix mtime, or PHP_INT_MAX if the config dir is unreadable
+     *             (forces the cache to be treated as stale).
+     */
+    private function routeConfigMtime(): int
+    {
+        $newest = 0;
+        $configDir = Folder\Path::CONFIG;
+        $files = array_merge(
+            [$configDir . 'Routes.php', $configDir . 'Config.php'],
+            glob($configDir . 'Routes' . DIRECTORY_SEPARATOR . '*.php') ?: []
+        );
+        foreach ($files as $file) {
+            if (is_file($file)) {
+                $newest = max($newest, (int) filemtime($file));
             }
         }
+        return $newest === 0 ? PHP_INT_MAX : $newest;
     }
 
     /**
@@ -227,6 +276,19 @@ class Router
      */
     private function cacheRoutes(): void
     {
+        // Route caching is disabled by default — see $enableRouteCache.
+        if (!$this->enableRouteCache) {
+            return;
+        }
+
+        // Cache the routes to file
+        $this->cachedRoutes = [
+            'routes' => $this->routes,
+            'actions' => $this->actions,
+            'methods' => $this->methods,
+            'middlewares' => $this->middlewares,
+        ];
+
         if(!is_dir(Folder\Path::CACHE)) {
             mkdir(Folder\Path::CACHE, 0777, true);
         }
@@ -366,7 +428,7 @@ class Router
         $this->log->write("No matching route found for URL: $requestUri");
         $endTime = microtime(true); // End profiling
         $this->log->write('No matching route took: ' . ($endTime - $startTime) . ' seconds');
-        
+
 
         // Handle the case where no route matches
         http_response_code(404);
@@ -440,11 +502,11 @@ class Router
     private function preparePattern(string $pattern): string
     {
         $baseName = basename(strtolower(ROOT));
-        
+
         // Check if we're accessing via domain (phuse.test) or subdirectory (localhost/phuse)
         $host = $_SERVER['HTTP_HOST'] ?? '';
         $isDomainAccess = !str_contains($host, 'localhost') && !str_contains($host, '127.0.0.1');
-        
+
         if ($isDomainAccess) {
             // Domain access: patterns don't include base name, trailing slash optional
             return match ($pattern) {
@@ -469,14 +531,14 @@ class Router
     {
         $url = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
         $url = ($url != '/' && $_SERVER['HTTP_HOST'] != 'localhost') ? rtrim($url, '/') : $url;
-        
+
         // Split the URL into segments by the slash character
         $segments = explode('/', $url);
         $baseName = basename(strtolower(ROOT));
 
         // Check if we're accessing via domain (phuse.test) or subdirectory (localhost/phuse)
         $isDomainAccess = !isset($segments[1]) || $segments[1] !== $baseName;
-        
+
         if ($isDomainAccess) {
             // Domain access: use URL as-is (no base name needed)
             $url = $url;

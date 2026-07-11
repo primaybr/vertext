@@ -32,13 +32,30 @@ class Module implements ModuleInterface
         );
         $db->execute();
 
-        // Seed default settings (idempotent)
+        $this->seedSettings($db);
+        LandingBlocksHelper::ensureSchema();
+    }
+
+    /**
+     * Duck-typed upgrade hook (see ModuleInterface docblock) - v0.0.4 added the
+     * landing_blocks_enabled toggle and the theme_landing_blocks table, neither
+     * of which existed when this module was first installed on existing sites.
+     */
+    public function upgrade(\Core\Database\Connection $db, string $fromVersion): void
+    {
+        $this->seedSettings($db);
+        LandingBlocksHelper::ensureSchema();
+    }
+
+    private function seedSettings(\Core\Database\Connection $db): void
+    {
         $defaults = [
-            ['primary_color', '#1E3A5F', 'text',     'Primary Accent Color'],
-            ['font_family',   'system',  'text',     'Font Family'],
-            ['corner_style',  'subtle',  'text',     'Corner Style'],
-            ['logo_url',      '',        'text',     'Logo URL'],
-            ['custom_css',    '',        'textarea', 'Custom CSS'],
+            ['primary_color',          '#1E3A5F', 'text',     'Primary Accent Color'],
+            ['font_family',            'system',  'text',     'Font Family'],
+            ['corner_style',           'subtle',  'text',     'Corner Style'],
+            ['logo_url',               '',        'text',     'Logo URL'],
+            ['custom_css',             '',        'textarea', 'Custom CSS'],
+            ['landing_blocks_enabled', '0',       'bool',     'Use theme block-based landing page'],
         ];
         foreach ($defaults as [$key, $val, $type, $label]) {
             $exists = \Core\Model::on($db, 'settings')
@@ -72,5 +89,7 @@ class Module implements ModuleInterface
         $router->get('/admin/theme-customizer',         $c, 'index');
         $router->post('/admin/theme-customizer/save',   $c, 'save');
         $router->get('/admin/theme-customizer/preview', $c, 'preview');
+        $router->post('/admin/theme-customizer/landing-blocks/([a-z0-9\-]+)/save', $c, 'saveLandingBlocks');
+        $router->post('/admin/theme-customizer/landing-blocks/([a-z0-9\-]+)/preview-stage', $c, 'previewStageLandingBlocks');
     }
 }

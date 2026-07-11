@@ -11,13 +11,14 @@ use Core\Config;
 use Core\Container;
 use Core\Middleware\MiddlewareStack;
 use Core\Middleware\SecurityHeadersMiddleware;
+use Core\Middleware\CSRFMiddleware;
 use Core\Http\Session;
 use Exception;
 
 /**
  * Class Base
  * Handles the core functionality of the application, including routing and environment configuration.
- * 
+ *
  * @author Prima Yoga
  */
 class Base
@@ -27,13 +28,13 @@ class Base
      * Excludes notices, strict standards, and user notices
      */
     private const ERROR_REPORTING_LEVEL_PRODUCTION = E_ALL & ~E_NOTICE & ~E_USER_NOTICE;
-    
+
     /**
      * Error reporting level for development environment
      * Reports all possible errors
      */
     private const ERROR_REPORTING_LEVEL_DEVELOPMENT = -1;
-    
+
     /**
      * Minimum PHP version required
      */
@@ -43,37 +44,37 @@ class Base
      * @var Log Logger instance
      */
     private Log $logger;
-    
+
     /**
      * @var Config Configuration instance
      */
     private Config $config;
-    
+
     /**
      * @var Handler Exception handler instance
      */
     private Handler $handler;
-    
+
     /**
      * @var Session Session management instance
      */
     private Session $session;
-    
+
     /**
      * @var Container Dependency injection container instance
      */
     private Container $container;
-    
+
     /**
      * Constructor initializes the application
-     * 
+     *
      * @throws SystemException If PHP version requirement is not met
      */
     public function __construct()
     {
         // Check for PHP version required to run the framework
         $this->checkPhpVersion();
-        
+
         $this->container = new Container();
         $this->config = $this->container->set('config', Config::class, true)->get('config');
         $this->logger = new Log();
@@ -81,11 +82,11 @@ class Base
         $this->session = new Session($this->logger);
         $this->init();
     }
-    
+
     /**
      * Runs the application by loading the appropriate routes based on the environment.
      * Throws an exception if the environment is not set correctly.
-     * 
+     *
      * @throws SystemException if the application environment is not set correctly.
      * @return void
      */
@@ -102,20 +103,21 @@ class Base
         try {
             $env = $this->config->getEnv();
             $validEnvironments = ['development', 'local', 'production', 'testing'];
-            
+
             if (!in_array($env, $validEnvironments)) {
                 throw new SystemException(
                     "Invalid environment: {$env}. Expected one of: " . implode(', ', $validEnvironments),
                     ['environment' => $env, 'valid_environments' => $validEnvironments]
                 );
             }
-            
+
             // Create middleware stack with routing as the final handler
             $middlewareStack = new MiddlewareStack(function() {
                 $routes = require_once Path::CONFIG . 'Routes.php';
                 return $routes->run();
             });
             $middlewareStack->add(new SecurityHeadersMiddleware());
+            $middlewareStack->add(new CSRFMiddleware());
 
             // Process through middleware stack
             $middlewareStack->process();
@@ -153,10 +155,10 @@ class Base
             exit(1);
         }
     }
-    
+
     /**
      * Initialize application settings, error handling, and session configuration
-     * 
+     *
      * @return void
      */
     private function init(): void
@@ -164,36 +166,36 @@ class Base
         $this->configureErrorHandling();
         // Session is now handled by the Session class in the constructor
     }
-    
+
     /**
      * Configure error handling based on environment
-     * 
+     *
      * @return void
      */
     private function configureErrorHandling(): void
     {
         $isProduction = $this->config->getEnv() === 'production';
-        
+
         // Configure error display and reporting based on environment
         ini_set('display_errors', $isProduction ? '0' : '1');
         error_reporting($isProduction ? self::ERROR_REPORTING_LEVEL_PRODUCTION : self::ERROR_REPORTING_LEVEL_DEVELOPMENT);
         // Set custom error handler
         set_error_handler([$this->handler, 'errorHandler']);
     }
-    
+
     /**
      * Get the Session instance
-     * 
+     *
      * @return Session The session management instance
      */
     public function getSession(): Session
     {
         return $this->session;
     }
-    
+
     /**
      * Check if the PHP version meets the minimum requirement
-     * 
+     *
      * @throws SystemException If PHP version is below minimum requirement
      * @return void
      */

@@ -44,6 +44,10 @@ spl_autoload_register(function ($namespace_class) {
     }
 });
 
+// Load .env into the process environment before anything (Config, helpers)
+// might read from it.
+Core\Env::load();
+
 // Global helper functions (e.g. the __() translation helper)
 $_vtxHelpers = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'App' . DIRECTORY_SEPARATOR . 'helpers.php';
 if (file_exists($_vtxHelpers)) {

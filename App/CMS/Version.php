@@ -7,8 +7,8 @@ namespace App\CMS;
 final class Version
 {
     /** Current CMS release. Bump when cutting a new version. */
-    public const APP = '0.1.0-beta';
+    public const APP = '0.1.1-beta';
 
     /** Phuse framework version this CMS was built on. */
-    public const PHUSE = '1.2.8d';
+    public const PHUSE = '1.2.9';
 }

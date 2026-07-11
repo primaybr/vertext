@@ -773,7 +773,7 @@ function attachInstallListeners() {
         confirmClass: 'btn-primary',
         onConfirm: function() {
           me.disabled  = true;
-          me.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span>Installing...';
+          me.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
 
           window.VtxAjax.postForm(form.action, form, function(ok, res) {
             var msg     = (res && res.message) ? res.message : (ok ? 'Module installed.' : 'Installation failed.');
@@ -789,7 +789,7 @@ function attachInstallListeners() {
                 refreshPanels();
               } else {
                 me.disabled  = false;
-                me.innerHTML = '<i class="pi pi-download me-1"></i>Install';
+                me.innerHTML = '<i class="pi pi-download"></i>';
               }
             }
           });
@@ -808,8 +808,8 @@ function attachToggleListeners() {
       var csrf = this.dataset.csrf;
       var me   = this;
 
-      me.disabled    = true;
-      me.textContent = '...';
+      me.disabled  = true;
+      me.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
 
       window.VtxAjax.post(url, {csrf_token: csrf}, function(ok, res) {
         me.disabled = false;
@@ -818,10 +818,11 @@ function attachToggleListeners() {
           var enabled = res.status === 'enabled';
           badge.textContent = enabled ? 'Enabled' : 'Disabled';
           badge.className   = 'vtx-tag ' + (enabled ? 'success' : 'error') + ' module-status-badge';
-          me.textContent    = enabled ? 'Disable' : 'Enable';
-          me.className      = 'btn btn-sm module-toggle-btn ' + (enabled ? 'btn-outline-warning' : 'btn-outline-success');
+          me.innerHTML         = '<i class="pi ' + (enabled ? 'pi-x-circle' : 'pi-check-circle') + '"></i>';
+          me.className         = 'btn btn-sm module-toggle-btn ' + (enabled ? 'btn-outline-warning' : 'btn-outline-success');
+          me.dataset.vtxTooltip = enabled ? 'Disable' : 'Enable';
         } else {
-          me.textContent = 'Error';
+          me.innerHTML = '<i class="pi pi-alert-triangle"></i>';
           setTimeout(function() { location.reload(); }, 1200);
         }
       });
@@ -844,7 +845,7 @@ function attachUninstallListeners() {
         confirmClass: 'btn-danger',
         onConfirm: function() {
           me.disabled  = true;
-          me.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span>Uninstalling...';
+          me.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
 
           window.VtxAjax.postForm(form.action, form, function(ok, res) {
             var msg = (res && res.message) ? res.message : (ok ? 'Module uninstalled.' : 'Uninstall failed.');
@@ -853,7 +854,49 @@ function attachUninstallListeners() {
               refreshPanels();
             } else {
               me.disabled  = false;
-              me.innerHTML = 'Uninstall';
+              me.innerHTML = '<i class="pi pi-trash"></i>';
+            }
+          });
+        }
+      });
+    });
+  });
+}
+
+function attachUpdateListeners() {
+  document.querySelectorAll('.module-update-btn:not([data-wired])').forEach(function(btn) {
+    btn.dataset.wired = '1';
+    btn.addEventListener('click', function() {
+      var slug = this.dataset.slug;
+      var name = this.dataset.name;
+      var from = this.dataset.from;
+      var to   = this.dataset.to;
+      var form = document.getElementById(this.dataset.form);
+      var me   = this;
+
+      window.vtxConfirmModal({
+        title:        'Update Module',
+        message:      'Update "' + name + '" from v' + from + ' to v' + to + '? This will run the module\'s upgrade routine.',
+        confirmLabel: 'Update',
+        confirmClass: 'btn-warning',
+        onConfirm: function() {
+          me.disabled  = true;
+          me.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span>Updating...';
+
+          window.VtxAjax.postForm(form.action, form, function(ok, res) {
+            var msg     = (res && res.message) ? res.message : (ok ? 'Module updated.' : 'Update failed.');
+            var success = ok && res && res.success;
+            window.Phuse.toast(msg, success ? 'success' : 'error');
+
+            if (success) {
+              var versionTag = document.getElementById('version-' + slug);
+              if (versionTag) { versionTag.textContent = 'v' + res.version; }
+              var badge = document.getElementById('update-badge-' + slug);
+              if (badge) { badge.remove(); }
+              me.remove();
+            } else {
+              me.disabled  = false;
+              me.innerHTML = '<i class="pi pi-arrow-up me-1"></i>Update';
             }
           });
         }
@@ -886,6 +929,7 @@ attachInstallListeners();
 attachUninstallListeners();
 attachToggleListeners();
 attachSyncListeners();
+attachUpdateListeners();
 
 // -- Bundle delete --------------------------------------------------------
 document.querySelectorAll('.bundle-delete-btn').forEach(function(btn) {
