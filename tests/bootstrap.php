@@ -42,11 +42,57 @@ $testDbConfig = [
 ];
 file_put_contents($dbConfigFile, "<?php\n// Written by tests/bootstrap.php for this test run\nreturn " . var_export($testDbConfig, true) . ";\n");
 
-register_shutdown_function(static function () use ($dbConfigFile, $dbConfigBackup): void {
+// Core\Config requires Config/Config.php to exist - it's gitignored (may contain
+// a developer's local baseUrl/site settings), so a fresh CI checkout has no copy
+// of it at all and every test touching Core\Config/Controller/Router/Template
+// fails with "Configuration file not found". Same backup/write/restore pattern
+// as Storage/db.php above: never disturbs a real local install, always present
+// for a clean checkout.
+$appConfigFile = ROOT . 'Config' . DS . 'Config.php';
+$appConfigBackup = null;
+
+if (file_exists($appConfigFile)) {
+    $appConfigBackup = file_get_contents($appConfigFile);
+} else {
+    $testAppConfig = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace Config;
+
+// Written by tests/bootstrap.php for this test run
+return [
+    'env'   => 'testing',
+    'https' => false,
+    'site'  => [
+        'baseUrl'         => '',
+        'adminUrl'        => 'admin',
+        'assetsUrl'       => 'assets',
+        'title'           => 'Vertext CMS',
+        'imgUrl'          => 'vertext/',
+        'metaTitle'       => 'Vertext CMS',
+        'metaDescription' => 'A modular, lightweight CMS built on Phuse Framework',
+        'metaKeywords'    => 'vertext,cms,content management',
+        'version'         => '0.0.2b-alpha',
+    ],
+];
+
+PHP;
+    file_put_contents($appConfigFile, $testAppConfig);
+}
+
+register_shutdown_function(static function () use ($dbConfigFile, $dbConfigBackup, $appConfigFile, $appConfigBackup): void {
     if ($dbConfigBackup !== null) {
         file_put_contents($dbConfigFile, $dbConfigBackup);
     } elseif (file_exists($dbConfigFile)) {
         unlink($dbConfigFile);
+    }
+
+    if ($appConfigBackup !== null) {
+        file_put_contents($appConfigFile, $appConfigBackup);
+    } elseif (file_exists($appConfigFile)) {
+        unlink($appConfigFile);
     }
 });
 

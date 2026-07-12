@@ -9,8 +9,20 @@
   <?php if (!empty($feedUrl)): ?>
   <link rel="alternate" type="application/rss+xml" title="<?php echo htmlspecialchars($siteName . ' RSS Feed'); ?>" href="<?php echo htmlspecialchars($feedUrl); ?>">
   <?php endif; ?>
-  <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl . '/assets/css/styles.css'); ?>?v=<?php echo substr(hash('crc32b', \App\CMS\Version::APP), 0, 8); ?>">
-  <link rel="stylesheet" href="<?php echo htmlspecialchars($themeUrl . '/css/theme.css'); ?>?v=<?php echo substr(hash('crc32b', \App\CMS\Version::APP), 0, 8); ?>">
+  <?php
+    // mtime-based cache-busting: Version::APP only changes on a release cut, so any
+    // CSS/JS edit made between releases (e.g. this session's Landing Blocks styling)
+    // never invalidated already-cached copies of these files - a tab left open, or
+    // reloaded without a hard-refresh, kept serving pre-edit CSS indefinitely, while
+    // the Theme Customizer's live-preview iframe (which force-reloads with its own
+    // timestamp on every edit) always showed the current file. Falls back to the old
+    // version-hash scheme only if the file is somehow unreadable.
+    $__stylesV = @filemtime(ROOT . 'Public' . DS . 'assets' . DS . 'css' . DS . 'styles.css') ?: substr(hash('crc32b', \App\CMS\Version::APP), 0, 8);
+    $__themeV  = @filemtime(ROOT . 'Public' . DS . 'themes' . DS . basename(__DIR__) . DS . 'css' . DS . 'theme.css') ?: substr(hash('crc32b', \App\CMS\Version::APP), 0, 8);
+    $__themeJsV = @filemtime(ROOT . 'Public' . DS . 'themes' . DS . basename(__DIR__) . DS . 'js' . DS . 'theme.js') ?: substr(hash('crc32b', \App\CMS\Version::APP), 0, 8);
+  ?>
+  <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl . '/assets/css/styles.css'); ?>?v=<?php echo $__stylesV; ?>">
+  <link rel="stylesheet" href="<?php echo htmlspecialchars($themeUrl . '/css/theme.css'); ?>?v=<?php echo $__themeV; ?>">
   <?php foreach (\App\CMS\ModuleLoader::frontAssets()['css'] as $__mAsset): ?>
   <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl . '/assets/' . $__mAsset); ?>">
   <?php endforeach; ?>
@@ -89,7 +101,7 @@
   </div>
 </footer>
 
-<script src="<?php echo htmlspecialchars($themeUrl . '/js/theme.js'); ?>?v=<?php echo substr(hash('crc32b', \App\CMS\Version::APP), 0, 8); ?>"></script>
+<script src="<?php echo htmlspecialchars($themeUrl . '/js/theme.js'); ?>?v=<?php echo $__themeJsV; ?>"></script>
 <?php foreach (\App\CMS\ModuleLoader::frontAssets()['js'] as $__mAsset): ?>
 <script src="<?php echo htmlspecialchars($baseUrl . '/assets/' . $__mAsset); ?>"></script>
 <?php endforeach; ?>

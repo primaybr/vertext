@@ -7,6 +7,32 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- The 404 page didn't adhere to the active theme and looked visibly broken - `App/Views/error/404.php`
+  hand-duplicated the site header/nav/footer instead of rendering through `ThemeEngine`, so it never
+  picked up theme/CSS changes, and its content used inline `style="..."` attributes and an
+  `onclick="history.back()"` handler, both silently blocked by the site's CSP (`style-src`/`script-src
+  'self'`, no `unsafe-inline`) - the page rendered unstyled and its "Go Back" button didn't work.
+  Rewritten to render through `ThemeEngine::render()` like every other front-end page (so it now gets
+  the real theme's header/nav/footer/accent color, automatically, forever) with real CSS classes and
+  an external script for the back-button, verified live via Playwright (console errors 8 -> 1, the
+  remaining one being the 404 response itself).
+- `styles.css`/`theme.css`/`theme.js` cache-busted on `?v=<hash of Version::APP>` - a value that only
+  changes on a release cut, so any edit made between releases (like this session's Landing Blocks
+  CSS) never invalidated already-cached copies. A tab left open, or reloaded without a hard-refresh,
+  kept serving pre-edit CSS indefinitely, while the Theme Customizer's live-preview iframe (which
+  force-reloads with its own timestamp on every edit) always showed the current file - the two could
+  drift apart and look different for no reason other than one tab being staler than the other. Now
+  cache-busts on the file's own mtime instead, so any edit is immediately visible on next load.
+- The GitHub Actions test run failed outright - `Config/Config.php` is gitignored (it can hold a
+  developer's local site settings) so a fresh CI checkout never has one, and every test touching
+  `Core\Config`/`Controller`/`Router`/`Template\Parser` failed with "Configuration file not found"
+  (25+ errors across `ConfigTest`, `ControllerTest`, `RouterTest`, `TemplateTest` and others).
+  `tests/bootstrap.php` now writes a throwaway test config on the fly when none exists (mirroring
+  the same backup/write/restore pattern already used for `Storage/db.php`), leaving a developer's
+  real local config untouched while giving CI exactly what it needs.
+
 ## [0.1.1-beta] - 2026-07-11
 
 Real module and theme versioning, per-theme landing pages, and finished-out SEO essentials.
