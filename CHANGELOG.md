@@ -5,7 +5,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [Unreleased]
+## [Upcoming]
+
+---
 
 ## [0.1.1b] - 2026-07-12
 
