@@ -51,4 +51,4 @@ jobs:
           TEST_DB_NAME: vertext_test
           TEST_DB_USER: postgres
           TEST_DB_PASS: postgres
-        run: vendor/bin/phpunit
+        run: vendor/bin/phpunit --no-coverage
