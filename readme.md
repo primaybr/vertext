@@ -1,6 +1,6 @@
 # Vertext CMS
 
-![Version](https://img.shields.io/badge/version-0.1.1--beta-blue)
+![Version](https://img.shields.io/badge/version-0.1.1b-blue)
 ![Status](https://img.shields.io/badge/status-public%20beta-orange)
 ![PHP](https://img.shields.io/badge/PHP-8.2%2B-777BB4)
 ![License](https://img.shields.io/badge/license-MIT-green)

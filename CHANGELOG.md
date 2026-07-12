@@ -7,6 +7,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.1.1b] - 2026-07-12
+
 ### Fixed
 
 - The 404 page didn't adhere to the active theme and looked visibly broken - `App/Views/error/404.php`
@@ -32,6 +34,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   `tests/bootstrap.php` now writes a throwaway test config on the fly when none exists (mirroring
   the same backup/write/restore pattern already used for `Storage/db.php`), leaving a developer's
   real local config untouched while giving CI exactly what it needs.
+- The test suite still exited non-zero on GitHub Actions even after the above fix, despite every
+  test passing - PHPUnit 10 defaults `failOnPhpunitWarning` to `true`, and a stale `phpunit.xml`
+  (`<coverage><include>`/`<exclude>`, moved to a top-level `<source>` block several PHPUnit versions
+  ago) was triggering an XML-schema-validation warning on every run, which counts as exactly that
+  kind of warning. Fixed the schema (added `<source>`, `<coverage>` now only holds `<report>`), added
+  `failOnPhpunitWarning="false"` next to the existing `failOnWarning`/`failOnDeprecation` flags, and
+  added `--no-coverage` to the CI run step since no coverage report is consumed by the pipeline.
+  Verified the causation directly: with the flag removed, the exact same all-green test output flips
+  from exit 0 to exit 1, and back again with it restored.
 
 ## [0.1.1-beta] - 2026-07-11
 
@@ -259,31 +270,4 @@ underlying Phuse engine (now v1.2.8c).
 - **No response compression anywhere.** Added transparent gzip compression for every response -
   admin, front-end, and the REST API - via a single `ob_gzhandler` output buffer, so clients that
   support it get a substantially smaller response with no per-route changes.
-
-## [0.0.9c-alpha] - 2026-07-06
-
-Five more bugs found through manual testing, plus a framework-level fix in the underlying Phuse
-engine (now v1.2.8b).
-
-- **Contact Settings crashed with a PHP parse error on every load** - a malformed method call
-  (`$this->flash('flash' => 'success', ...)`, not valid call syntax) in `ContactSettingsController`.
-- **Media Library's "move file to folder" and Blog's bulk comment moderation (approve/spam/delete)
-  always failed** - both built their `id IN (...)` SQL with mismatched positional/named parameter
-  styles, which PDO rejects. This is also why every folder's file counter always showed 0: no file
-  could ever actually be moved into one. Fixed, and found the identical root cause is itself
-  traceable to a bug in Phuse's query builder - `whereIn()` combined with `update()` or `delete()`
-  silently dropped part of the WHERE clause. Fixed at the framework level (Phuse v1.2.8b) and
-  verified against a live database.
-- **Media's bulk action toolbar was invisible to any role without delete rights** - the entire
-  bulk-select UI (including "Move to folder", which only needs edit rights) was gated behind the
-  delete permission. Each action now shows based on its own required permission.
-- **Members' Account page had a narrower layout than every other front-end page** - its title/header
-  row was never placed in the shared page container, so it sat at a different horizontal position
-  than Search, Videos, Gallery, etc. Also added a site-wide fix for a related but separate visual
-  glitch: short pages without a scrollbar rendered a few pixels wider than tall ones, making the
-  shared header look inconsistent between pages.
-- **Form Builder's field-type buttons rendered with no styling** - their CSS was declared as a
-  front-end asset instead of an admin one, so it was never loaded on the admin page that uses it.
-  Also added the project's missing `.form-select-sm` style (present for `.form-control` but never
-  defined for `.form-select`).
 
