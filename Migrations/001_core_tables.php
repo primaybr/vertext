@@ -143,11 +143,25 @@ class Migration_001_CoreTables
             "ALTER TABLE modules ADD CONSTRAINT modules_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL",
             "ALTER TABLE modules ADD CONSTRAINT modules_deleted_by_fkey FOREIGN KEY (deleted_by) REFERENCES users(id) ON DELETE SET NULL",
         ];
-        foreach ($auditFks as $sql) {
+        // SAVEPOINT-guarded, not a bare try/catch: this runs inside the outer
+        // transaction MigrationRunner::runOne() started. A plain PHP catch around
+        // a failed ALTER (e.g. "constraint already exists" on a re-run) does NOT
+        // undo Postgres's server-side "transaction aborted" state - every
+        // statement after the first failure (the rest of this loop, then seed())
+        // would keep throwing "current transaction is aborted" until a real
+        // ROLLBACK happens. Only a SAVEPOINT can be rolled back without dooming
+        // the whole migration - this is what made up() (and therefore
+        // Installer::runMigrations()) fail whenever re-run against an
+        // already-migrated database instead of being a safe no-op.
+        foreach ($auditFks as $i => $sql) {
+            $sp = "audit_fk_{$i}";
             try {
+                $this->pdo->exec("SAVEPOINT {$sp}");
                 $this->pdo->exec($sql);
+                $this->pdo->exec("RELEASE SAVEPOINT {$sp}");
             } catch (\PDOException $e) {
                 // Constraint already exists - safe to ignore on re-run
+                $this->pdo->exec("ROLLBACK TO SAVEPOINT {$sp}");
             }
         }
     }

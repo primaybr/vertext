@@ -429,9 +429,11 @@ main {
 /* -- Feature Grid -- */
 .vtx-lb-feature-grid-items {
   display: grid;
-  grid-template-columns: repeat(var(--vtx-lb-cols, 3), 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 2rem;
 }
+.vtx-lb-feature-grid-items.vtx-lb-cols-2 { grid-template-columns: repeat(2, 1fr); }
+.vtx-lb-feature-grid-items.vtx-lb-cols-4 { grid-template-columns: repeat(4, 1fr); }
 .vtx-lb-feature-item { text-align: center; }
 .vtx-lb-feature-icon {
   display: inline-flex;

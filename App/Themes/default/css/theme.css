@@ -406,9 +406,16 @@ main {
 /* -- Feature Grid -- */
 .vtx-lb-feature-grid-items {
   display: grid;
-  grid-template-columns: repeat(var(--vtx-lb-cols, 3), 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 2rem;
 }
+/* Column count as a class, not the previous CSS-custom-property + inline
+   style="--vtx-lb-cols:N" - a strict CSP (style-src 'self', no unsafe-inline)
+   silently blocks that inline style, which went unnoticed because 3 is both
+   the seed default and this rule's own fallback; only became visible once a
+   real site used a non-default column count. */
+.vtx-lb-feature-grid-items.vtx-lb-cols-2 { grid-template-columns: repeat(2, 1fr); }
+.vtx-lb-feature-grid-items.vtx-lb-cols-4 { grid-template-columns: repeat(4, 1fr); }
 .vtx-lb-feature-item { text-align: center; }
 .vtx-lb-feature-icon {
   display: inline-flex;
