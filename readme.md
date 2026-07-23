@@ -9,11 +9,11 @@
 
 Vertext is a lightweight, extensible content management system written in PHP 8.2+. It provides a professional admin panel, role-based access control, and a clean module system so you can ship exactly the features you need - nothing more.
 
-> Vertext 0.1.1 is a **public self-host beta** - good enough for real use, but not
+> Vertext 0.1.4b is a **public self-host beta** - good enough for real use, but not
 > enterprise-hardened. Read [Known Limitations](docs/known-limitations.md) before deploying, and
 > [Going to Production](docs/going-to-production.md) before inviting real users.
 
-> **Built on [Phuse 1.2.9](https://github.com/primaybr/phuse)** - Vertext is powered by the Phuse framework, which provides the ORM, router, session manager, input helpers, validator, and core utilities.
+> **Built on [Phuse 1.3.0](https://github.com/primaybr/phuse)** - Vertext is powered by the Phuse framework, which provides the ORM, router, session manager, input helpers, validator, and core utilities.
 
 ---
 
