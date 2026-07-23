@@ -7,6 +7,31 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Upcoming]
 
+## [0.1.4b] - 2026-07-23
+
+### Added
+
+- **`I18n::getDefaultLocale()`** - returns the site's configured default locale (`settings.default_locale`) independent of the current visitor's session override, for themes using a no-prefix-for-default URL scheme (bare path = default locale, `/xx/` = everything else). `resolveLocale()` now delegates to it instead of duplicating the same settings lookup inline.
+- **Pages can now have a translated version of the same slug.** `pages.slug` was globally unique, so the same slug (e.g. `about`) couldn't have both an `id` and `en` row side by side. Migrated to a composite `(slug, lang)` unique index, and the front-end `PageController` now serves the visitor's locale when a translated row exists for a slug, falling back to any language instead of a 404 when it doesn't - the same graceful-degradation shape `Blog\Controllers\Front\BlogController`'s listing page already used.
+- **`I18n::path($baseUrl, $path)` / the global `site_path()` helper** - the one place every internal same-site page link should now be built: bare path for the default locale, `/xx/` prefix for everything else, matching the current visitor's locale (session-sticky, via `I18n::getLocale()`). Themes/modules building internal links should always route through this instead of raw `$baseUrl . '/...'` concatenation - asset URLs (CSS/JS/images) must still bypass it and stay unprefixed.
+- **`PageCache::serve()` now takes an optional `$ttl` parameter** (defaults to the existing `DEFAULT_TTL`) - lets a page whose content ages faster than the 10-minute default (e.g. a trending/ranking page) use a shorter staleness window without a separate caching mechanism. Fully backward-compatible; every existing bare `PageCache::serve();` call is unaffected.
+
+### Fixed
+
+- **Blog posts never actually appeared in the sitemap** - `SitemapController` queried a table called `blog_posts`, which doesn't exist (the real table is `posts`); the query silently failed inside its own `catch` block, so `sitemap.xml` quietly omitted every post with no visible error.
+- **A translated page contributed the same sitemap URL twice** - with Pages now supporting one row per locale, `SitemapController` still emitted a bare `/{slug}` URL for every row regardless of language, so a page with an `id` and `en` version listed the identical URL twice instead of once each. Now builds the URL the same way `Config/Routes.php`'s own prefix-stripping does: bare path for the default locale, `/xx/` prefix for everything else.
+- **A site with locale-prefixed URLs (e.g. Carikno's `/en/`) could show the wrong-locale nav to a visitor sharing the cache window** - `NavHelper::getMenu()`'s 5-minute fragment cache was keyed only by menu slug, but its resolved item URLs are locale-dependent once a theme adopts `site_path()`; now keyed by locale too. `resolveUrl()`'s `page`/`module` branches and `buildFromModuleRoutes()`'s auto-generated items now route through `I18n::path()` instead of raw `$baseUrl` concatenation, so nav links carry the current visitor's locale prefix like every other internal link (`custom`-type links, which may be external, are left untouched).
+- **The shared 404 page's "Go to Homepage" link ignored the visitor's locale** - `App/Views/error/_404-content.php` built its link from a bare `$baseUrl`; now routes through `site_path()`.
+- **Blog's front-end links (post/category links, pagination, comment form actions, series navigation, related posts, the reading-list share URL, and the legacy-base-path 301 redirect) all ignored the visitor's locale** - every one of them concatenated `$baseUrl` directly; now route through `site_path()`.
+- **A write through `Core\Model` wiped the entire file-based query cache, not just the entries a write could actually affect** - `Core\Cache\QueryCache`'s cache filenames were keyed only by an MD5 of the SQL+params, with no table name embedded, so the already-existing `clearTableCache($table)` method was silently a no-op for any real table and `Model::clearQueryCache()` fell back to wiping everything on every `save()`/`update()`/`delete()`. Cache filenames now embed every table a query touches (`FROM`/`JOIN` identifiers, which `Core\Model`'s query builder never quotes, so they're safely extractable), and `clearQueryCache()` now calls `clearTableCache($this->table)` instead of a blanket `clear()`. New test coverage: `tests/Core/Cache/QueryCacheTest.php`. Synced to Phuse v1.3.0.
+- GD's WebP decoder can hit an unrecoverable, uncatchable "gd-webp cannot allocate temporary buffer"
+  fatal error on certain animated WebP images - crashed the whole PHP process even though
+  `getimagesizefromstring()` reported perfectly reasonable dimensions (found via a real crawled
+  Carikno marketplace image). GD only ever supports a WebP's first static frame anyway, so
+  `Core/Utilities/Image/ImageTrait.php` now detects the RIFF/WEBP container's `ANIM` chunk signature
+  and rejects gracefully before ever calling the crashing function, instead of relying on GD to fail
+  safely. Synced to Phuse v1.3.0.
+
 ---
 
 ## [0.1.1b] - 2026-07-12

@@ -46,16 +46,24 @@ class SitemapController extends \Core\Controller
             'priority'   => '1.0',
         ];
 
-        // Published pages
+        // Published pages - one URL per (slug, lang) row. A page's default-locale
+        // row gets the bare path; every other language gets a /xx/ prefix, same
+        // scheme Config/Routes.php's prefix-stripper and the theme's hreflang
+        // tags use, so a bilingual page (e.g. two "about" rows) contributes two
+        // distinct URLs instead of the same bare path emitted twice.
         if ($includePages) {
             try {
+                $defaultLocale = \App\CMS\I18n::getDefaultLocale();
                 $pages = (new Model('pages'))
-                    ->select('slug, updated_at')
+                    ->select('slug, lang, updated_at')
                     ->where('status', 'published')
                     ->get() ?: [];
                 foreach ($pages as $page) {
+                    $slug = ltrim($page['slug'], '/');
+                    $lang = $page['lang'] ?? $defaultLocale;
+                    $path = $lang === $defaultLocale ? "/{$slug}" : "/{$lang}/{$slug}";
                     $urls[] = [
-                        'loc'        => rtrim($siteUrl, '/') . '/' . ltrim($page['slug'], '/'),
+                        'loc'        => rtrim($siteUrl, '/') . $path,
                         'lastmod'    => substr($page['updated_at'] ?? '', 0, 10),
                         'changefreq' => 'monthly',
                         'priority'   => '0.8',
@@ -84,7 +92,7 @@ class SitemapController extends \Core\Controller
                     ];
                 }
 
-                $posts = (new Model('blog_posts'))
+                $posts = (new Model('posts'))
                     ->select('slug, updated_at, published_at')
                     ->where('status', 'published')
                     ->whereNull('deleted_at')

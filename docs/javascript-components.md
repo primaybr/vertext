@@ -1,16 +1,18 @@
 # JavaScript Components
 
-Vertext ships a `vtx-*` component library for the admin panel. Components are activated by the `data-component` attribute on any HTML element. The library is in `Public/assets/js/` and loaded by the admin layout.
+Vertext ships a `vtx-*` component library for the admin panel. The library is in `Public/assets/js/` and loaded by the admin layout.
 
 ## Activation Pattern
 
-All components use a consistent data-attribute API:
+Most components are activated by the `data-component` attribute on any HTML element:
 
 ```html
 <div data-component="vtx-component-name" data-option="value">
     <!-- component content -->
 </div>
 ```
+
+**Two components are the exception** and use their own dedicated boolean attribute instead of `data-component` - `vtx-select` (`data-vtx-select`) and `vtx-media-picker` (`data-vtx-media-picker`). See each component's own section below for its real attribute set; do not assume `data-component="vtx-select"` or `data-component="vtx-media-picker"` work - they do not activate anything.
 
 Components are auto-initialized when the DOM is ready, and also after AJAX modal injections.
 
@@ -92,24 +94,32 @@ The editor writes its HTML output to the hidden `<textarea>` specified by `data-
 
 ## vtx-media-picker
 
-Media library picker modal. See [Media Module docs](media-module.md) for full integration guide.
+Media library picker modal. Activated by `data-vtx-media-picker` (NOT `data-component`) on the trigger `<button>` itself - not a wrapping `<div>`. See [Media Module docs](media-module.md) for full integration guide.
 
 ```html
-<div
-    data-component="vtx-media-picker"
-    data-target="#image-id-input"
-    data-preview="#image-preview"
-    data-url="/admin/media/picker"
->
-    <button type="button" class="btn btn-secondary">Choose Image</button>
+<button type="button" class="btn btn-secondary"
+        data-vtx-media-picker
+        data-target-id-input="image-id-input"
+        data-target-url-input="image-url-input"
+        data-target-preview="image-preview"
+        data-target-preview-wrap="image-preview-wrap">
+    Choose Image
+</button>
+<input type="hidden" id="image-id-input" name="image_id">
+<input type="hidden" id="image-url-input" name="image_url">
+<div id="image-preview-wrap" hidden>
+    <img id="image-preview" src="" alt="">
 </div>
 ```
 
 | Attribute | Description |
 |-----------|-------------|
-| `data-target` | Hidden input to receive the selected media ID |
-| `data-preview` | Container to show the selected image preview |
-| `data-url` | URL of the media picker endpoint |
+| `data-target-id-input` | Element id of the hidden input to receive the selected media's id |
+| `data-target-url-input` | Element id of the hidden input to receive the selected media's url |
+| `data-target-preview` | Element id of an `<img>` to update with the selected image (optional) |
+| `data-target-preview-wrap` | Element id of a wrapper to un-hide once an image is selected (optional) |
+
+Also exposes a static, buttonless API for programmatic use (e.g. building a custom multi-image grid): `VtxMediaPicker.open(function (url, id) { ... })` opens the same picker and invokes the callback with the selected image's URL/id on selection.
 
 **CSS classes** (in `media.css`):
 
@@ -149,10 +159,10 @@ Live AJAX search input for filtering tables/lists.
 
 ## vtx-select
 
-Enhanced `<select>` with search and keyboard navigation.
+Enhanced `<select>` with search, keyboard navigation, and optional AJAX-loaded options. Activated by `data-vtx-select` (NOT `data-component`). The native `<select>` stays in the DOM (hidden) so normal form submission is unaffected; the dropdown itself renders as a body-level portal so it's never clipped by an ancestor `overflow:hidden` panel or modal.
 
 ```html
-<select data-component="vtx-select" name="category_id">
+<select data-vtx-select data-searchable data-placeholder="Select category..." name="category_id">
     <option value="">-- Select Category --</option>
     <?php foreach ($categories as $cat): ?>
         <option value="{{ $cat->id }}" <?= $post->category_id == $cat->id ? 'selected' : '' ?>>
@@ -162,7 +172,15 @@ Enhanced `<select>` with search and keyboard navigation.
 </select>
 ```
 
-No extra attributes required. The component enhances any `<select>` with `data-component="vtx-select"`.
+| Attribute | Description |
+|-----------|-------------|
+| `data-vtx-select` | Required - activates the component on this `<select>` |
+| `data-searchable` | Adds a search box inside the dropdown; add this once the option list can exceed a screenful (brand/category/user pickers) - omit for small fixed enums (status, language) |
+| `data-placeholder` | Placeholder text shown when nothing is selected (defaults to the first empty-value `<option>`'s text, or "Select…") |
+| `data-ajax-url` | Lazy-loads options from this URL on first open instead of reading static `<option>`s - expects a JSON array of `{value, label, disabled}` |
+| `multiple` (native) | Renders as a multi-select with removable tag chips |
+
+Imperative API (rarely needed - the declarative attributes above cover normal use): `new Vtx.Select({ el: selectEl, searchable: true, placeholder: 'Choose…', ajaxUrl: '/admin/...', onChange: fn })`, with instance methods `getValue()`, `setValue(val)`, `setOptions([{value,label,disabled}])`, `destroy()` (accessible on an enhanced element via `selectEl._vtxSelect`).
 
 ---
 

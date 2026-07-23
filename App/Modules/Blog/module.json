@@ -1,8 +1,8 @@
 {
     "name":        "Blog",
     "slug":        "blog",
-    "version":     "0.0.9",
-    "description": "Full-featured blog with posts, categories, tags, comments, analytics, and public frontend",
+    "version":     "0.1.0",
+    "description": "Full-featured blog with posts, categories, tags, comments, analytics, and public frontend. Every internal link (post/category links, pagination, comment form actions, the reading-list share URL, series navigation, related posts, and the legacy-base-path 301 redirect) now routes through `site_path()` so it keeps a visitor's chosen locale prefix (e.g. /en/) instead of silently dropping back to the default-locale bare URL.",
     "setup":       "/admin/blog/setup",
     "author":      "Vertext",
     "category":    "Content",

@@ -3,6 +3,7 @@ Session/
 Config/Config.php
 Logs/
 !Core/Cache/
+!tests/Core/Cache/
 vendor/
 .phpunit.cache
 tests/coverage/
@@ -11,6 +12,7 @@ tests/coverage/
 .playwright-mcp/
 .markdownlint.json
 .remember/
+.kilo/
 
 # Runtime-generated credential files — never commit these
 Storage/db.php

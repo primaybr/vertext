@@ -19,7 +19,7 @@ $blogBase    = $rawBlogBase === '' ? '' : '/' . $rawBlogBase;
     <?php foreach ($posts as $post): ?>
     <li class="post-item">
       <h2 class="post-title">
-        <a href="<?php echo $baseUrl . $blogBase; ?>/<?php echo htmlspecialchars($post['slug']); ?>">
+        <a href="<?php echo htmlspecialchars(site_path($baseUrl, $blogBase . '/' . $post['slug'])); ?>">
           <?php echo htmlspecialchars($post['title']); ?>
         </a>
       </h2>
@@ -40,12 +40,12 @@ $blogBase    = $rawBlogBase === '' ? '' : '/' . $rawBlogBase;
       <?php if (!empty($post['categories'])): ?>
       <div class="post-cats">
         <?php foreach ($post['categories'] as $cat): ?>
-        <a href="<?php echo $baseUrl . $blogBase; ?>/category/<?php echo htmlspecialchars($cat['slug']); ?>"
+        <a href="<?php echo htmlspecialchars(site_path($baseUrl, $blogBase . '/category/' . $cat['slug'])); ?>"
            class="post-cat"><?php echo htmlspecialchars($cat['name']); ?></a>
         <?php endforeach; ?>
       </div>
       <?php endif; ?>
-      <p><a href="<?php echo $baseUrl . $blogBase; ?>/<?php echo htmlspecialchars($post['slug']); ?>" class="read-more">Read more &rarr;</a></p>
+      <p><a href="<?php echo htmlspecialchars(site_path($baseUrl, $blogBase . '/' . $post['slug'])); ?>" class="read-more">Read more &rarr;</a></p>
     </li>
     <?php endforeach; ?>
   </ul>
@@ -56,7 +56,7 @@ $blogBase    = $rawBlogBase === '' ? '' : '/' . $rawBlogBase;
     <?php if ($i === ($page ?? 1)): ?>
     <span class="current"><?php echo $i; ?></span>
     <?php else: ?>
-    <a href="<?php echo $baseUrl . ($blogBase !== '' ? $blogBase : '/'); ?>?page=<?php echo $i; ?>"><?php echo $i; ?></a>
+    <a href="<?php echo htmlspecialchars(site_path($baseUrl, $blogBase !== '' ? $blogBase : '/')); ?>?page=<?php echo $i; ?>"><?php echo $i; ?></a>
     <?php endif; ?>
     <?php endfor; ?>
   </nav>

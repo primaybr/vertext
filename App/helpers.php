@@ -18,6 +18,23 @@ if (!function_exists('__')) {
     }
 }
 
+if (!function_exists('site_path')) {
+    /**
+     * Same-site page URL carrying the current visitor's locale prefix (bare
+     * path for the default locale, /xx/ for everything else). Use for every
+     * internal page link (nav, footer, product links, form actions, ...) -
+     * never for asset URLs (CSS/JS/images), which must stay unprefixed.
+     *
+     * @param string $baseUrl The site's base URL (Controller::$baseUrl, or an
+     *                         absolute domain e.g. from settings.site_url)
+     * @param string $path    e.g. "/product/some-slug" or "/search"
+     */
+    function site_path(string $baseUrl, string $path): string
+    {
+        return \App\CMS\I18n::path($baseUrl, $path);
+    }
+}
+
 if (!function_exists('asset_url')) {
     /**
      * Version-fingerprinted asset URL for HTTP cache busting.

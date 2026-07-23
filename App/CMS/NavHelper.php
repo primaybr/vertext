@@ -43,9 +43,12 @@ class NavHelper
         }
 
         // Fragment-cached for 5 minutes; invalidated by NavigationController
-        // on any menu save (PageCache::forgetFragment('nav_' . slug)).
+        // on any menu save (PageCache::forgetFragment('nav_' . slug)). Keyed
+        // by locale too - resolved URLs below carry a locale prefix, so the
+        // id and en versions of a menu are genuinely different payloads, not
+        // just different-language labels over the same URLs.
         return self::$cache[$slug] = PageCache::remember(
-            'nav_' . $slug,
+            'nav_' . $slug . '_' . I18n::getLocale(),
             static fn(): array => self::buildMenu($slug)
         );
     }
@@ -156,7 +159,7 @@ class NavHelper
                     $items[] = [
                         'id'          => 'auto_' . md5($path),
                         'label'       => $route['label'] ?? $mod['slug'],
-                        'url'         => $baseUrl . $path,
+                        'url'         => I18n::path($baseUrl, $path),
                         'open_in_new' => false,
                         'type'        => 'module',
                         'children'    => [],
@@ -172,11 +175,15 @@ class NavHelper
 
     private static function resolveUrl(array $item, string $baseUrl): string
     {
+        // "custom" links are admin-typed URLs (possibly external) - left
+        // exactly as entered, never locale-prefixed. "page"/"module" links
+        // are built from a known internal path, so they get the current
+        // visitor's locale prefix like every other internal link.
         if ($item['type'] === 'page' && !empty($item['page_slug'])) {
-            return $baseUrl . '/' . ltrim($item['page_slug'], '/');
+            return I18n::path($baseUrl, '/' . ltrim($item['page_slug'], '/'));
         }
         if ($item['type'] === 'module' && !empty($item['url'])) {
-            return rtrim($baseUrl, '/') . '/' . ltrim($item['url'], '/');
+            return I18n::path($baseUrl, '/' . ltrim($item['url'], '/'));
         }
         return $item['url'] ?? '#';
     }

@@ -37,10 +37,24 @@ class PageController extends Controller
 
         $this->ensurePagesSchema();
 
+        $visibleFilter = "(status = 'published' OR (status = 'scheduled' AND published_at <= NOW())) AND (expire_at IS NULL OR expire_at > NOW())";
+
+        // i18n: prefer the visitor's locale, but fall back to any language
+        // for this slug when a translation doesn't exist yet - same
+        // graceful-degradation shape as Blog\Controllers\Front\BlogController.
+        $locale = \App\CMS\I18n::getLocale();
         $page = (new \Core\Model('pages'))
             ->where('slug', $slug)
-            ->whereRaw("(status = 'published' OR (status = 'scheduled' AND published_at <= NOW())) AND (expire_at IS NULL OR expire_at > NOW())", [])
+            ->where('lang', $locale)
+            ->whereRaw($visibleFilter, [])
             ->get(1);
+
+        if (!$page) {
+            $page = (new \Core\Model('pages'))
+                ->where('slug', $slug)
+                ->whereRaw($visibleFilter, [])
+                ->get(1);
+        }
 
         if (!$page) {
             http_response_code(404);

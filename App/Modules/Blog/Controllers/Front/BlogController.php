@@ -268,19 +268,19 @@ class BlogController extends Controller
             ->get(1);
 
         if (!$post) {
-            $this->redirect($this->baseUrl . ($blogBase ?: '/'));
+            $this->redirect(site_path($this->baseUrl, $blogBase ?: '/'));
         }
 
         // CSRF
         $token = $this->input->post('csrf_token') ?? '';
         if (!$this->csrf->validateToken($token)) {
             $this->session->set('blog_comment_flash', ['type' => 'error', 'message' => 'Security token invalid. Please try again.']);
-            $this->redirect($this->baseUrl . $blogBase . '/' . $slug);
+            $this->redirect(site_path($this->baseUrl, $blogBase . '/' . $slug));
         }
 
         // Comments enabled?
         if (!$this->settingBool('comments_enabled', true)) {
-            $this->redirect($this->baseUrl . $blogBase . '/' . $slug);
+            $this->redirect(site_path($this->baseUrl, $blogBase . '/' . $slug));
         }
 
         $authorName  = substr(trim($this->input->post('author_name',  false) ?? ''), 0, 120);
@@ -290,7 +290,7 @@ class BlogController extends Controller
 
         if (!$authorName || !$body) {
             $this->session->set('blog_comment_flash', ['type' => 'error', 'message' => 'Name and comment are required.']);
-            $this->redirect($this->baseUrl . $blogBase . '/' . $slug);
+            $this->redirect(site_path($this->baseUrl, $blogBase . '/' . $slug));
         }
 
         // Validate parent comment belongs to same post and is approved
@@ -332,7 +332,7 @@ class BlogController extends Controller
             $this->sendNewCommentNotification($post, $authorName, $authorEmail, $body, $rawBase);
         }
 
-        $this->redirect($this->baseUrl . $blogBase . '/' . $slug);
+        $this->redirect(site_path($this->baseUrl, $blogBase . '/' . $slug));
     }
 
     public function feed(): void

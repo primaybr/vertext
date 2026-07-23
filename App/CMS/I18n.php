@@ -47,6 +47,48 @@ class I18n
         return self::$locale;
     }
 
+    /**
+     * The site's configured default locale (settings.default_locale),
+     * independent of the current visitor's session override. Themes using a
+     * no-prefix-for-default URL scheme (bare path = default locale, /xx/ =
+     * everything else) use this to know which locale gets the bare path.
+     */
+    public static function getDefaultLocale(): string
+    {
+        try {
+            $row = self::pdo()
+                ->query("SELECT value FROM settings WHERE key = 'default_locale' LIMIT 1")
+                ->fetchColumn();
+            if ($row && in_array($row, self::getSupportedLocales(), true)) {
+                return (string) $row;
+            }
+        } catch (\Throwable) {
+            // DB unavailable (e.g. setup wizard) - fall through to default
+        }
+        return self::FALLBACK;
+    }
+
+    /**
+     * Build a same-site URL that carries the CURRENT visitor's locale prefix
+     * (bare path for the default locale, /xx/ for everything else) - the one
+     * place every internal page link should route through, so a visitor who
+     * has switched locale stays in it as they navigate the site, instead of
+     * reverting to the default locale's bare URL on their very next click
+     * (session-sticky locale still applies content-wise, but the URL itself
+     * would silently stop matching what's actually being shown).
+     *
+     * Not for asset URLs (CSS/JS/images) - those must never carry a locale
+     * prefix, so callers building those keep using $baseUrl directly.
+     */
+    public static function path(string $baseUrl, string $path): string
+    {
+        $locale  = self::getLocale();
+        $default = self::getDefaultLocale();
+        $base    = rtrim($baseUrl, '/');
+        $path    = '/' . ltrim($path, '/');
+        return $locale === $default ? $base . $path : $base . '/' . $locale . $path;
+    }
+
     /** Returns all locale codes found in App/Lang/ directories. */
     public static function getSupportedLocales(): array
     {
@@ -224,18 +266,7 @@ class I18n
         }
 
         // 2. Site default from settings table
-        try {
-            $row = self::pdo()
-                ->query("SELECT value FROM settings WHERE key = 'default_locale' LIMIT 1")
-                ->fetchColumn();
-            if ($row && in_array($row, self::getSupportedLocales(), true)) {
-                return (string) $row;
-            }
-        } catch (\Throwable) {
-            // DB unavailable (e.g. setup wizard) - fall through to default
-        }
-
-        return self::FALLBACK;
+        return self::getDefaultLocale();
     }
 
     private static function pdo(): \PDO

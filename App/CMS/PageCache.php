@@ -76,14 +76,18 @@ class PageCache
 
     // -- Full-page cache -------------------------------------------------------
 
-    /** Serve the cached page and exit, when possible. Call at the top of a front action. */
-    public static function serve(): void
+    /**
+     * Serve the cached page and exit, when possible. Call at the top of a front action.
+     * $ttl lets a page whose content ages faster than the 10-minute default (e.g. a
+     * trending/ranking page) use a shorter staleness window without a separate mechanism.
+     */
+    public static function serve(int $ttl = self::DEFAULT_TTL): void
     {
         if (!self::enabled() || !self::cacheableRequest()) return;
 
         $file = self::pageFile(self::key());
         if (!is_file($file)) return;
-        if (time() - (int) filemtime($file) > self::DEFAULT_TTL) {
+        if (time() - (int) filemtime($file) > $ttl) {
             @unlink($file);
             return;
         }

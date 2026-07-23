@@ -1,8 +1,8 @@
 {
     "name":        "Pages",
     "slug":        "pages",
-    "version":     "0.0.4",
-    "description": "Static page management - create and publish standalone pages on your site",
+    "version":     "0.0.5",
+    "description": "Static page management - create and publish standalone pages on your site. Front-end rendering now respects a page's lang column: serves the visitor's locale when a translated row exists for that slug, otherwise falls back to any language instead of 404ing. Requires a composite (slug, lang) unique index instead of a slug-only unique constraint, so the same slug can have a row per locale.",
     "author":      "Vertext",
     "category":    "Content",
     "requires":    { "vertext": ">=0.0.2" },

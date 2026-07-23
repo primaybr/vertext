@@ -49,7 +49,7 @@ class BlogRedirectController extends Controller
         $rawBase = trim($row['value'] ?? 'blog', '/');
         $newBase = $rawBase === '' ? '' : '/' . $rawBase;
 
-        $to = $this->baseUrl . $newBase . ($tail !== '' ? '/' . $tail : '');
+        $to = site_path($this->baseUrl, $newBase . ($tail !== '' ? '/' . $tail : '') ?: '/');
 
         http_response_code(301);
         header('Location: ' . $to);

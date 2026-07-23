@@ -6,7 +6,7 @@ $blogBase    = $rawBlogBase === '' ? '' : '/' . $rawBlogBase;
 <div class="container-prose">
   <div class="post-breadcrumb">
     <nav class="crumbs">
-      <a href="<?php echo $baseUrl . ($blogBase !== '' ? $blogBase : '/'); ?>"><?php echo htmlspecialchars($settings['blog_title'] ?? 'Blog'); ?></a>
+      <a href="<?php echo htmlspecialchars(site_path($baseUrl, $blogBase !== '' ? $blogBase : '/')); ?>"><?php echo htmlspecialchars($settings['blog_title'] ?? 'Blog'); ?></a>
       <span class="sep">/</span>
       <span><?php echo htmlspecialchars($post['title']); ?></span>
     </nav>
@@ -14,7 +14,7 @@ $blogBase    = $rawBlogBase === '' ? '' : '/' . $rawBlogBase;
             data-post-id="<?php echo htmlspecialchars($post['id']); ?>"
             data-post-title="<?php echo htmlspecialchars($post['title']); ?>"
             data-post-slug="<?php echo htmlspecialchars($post['slug']); ?>"
-            data-post-url="<?php echo htmlspecialchars($baseUrl . $blogBase . '/' . $post['slug']); ?>">
+            data-post-url="<?php echo htmlspecialchars(site_path($baseUrl, $blogBase . '/' . $post['slug'])); ?>">
       <i id="rl-icon" class="pi pi-menu"></i>
       <span id="rl-label">Save to Reading List</span>
     </button>
@@ -56,7 +56,7 @@ $blogBase    = $rawBlogBase === '' ? '' : '/' . $rawBlogBase;
           <?php if ($isCurrent): ?>
           <?php echo htmlspecialchars($sp['title']); ?>
           <?php else: ?>
-          <a href="<?php echo htmlspecialchars($baseUrl . $blogBase . '/' . $sp['slug']); ?>">
+          <a href="<?php echo htmlspecialchars(site_path($baseUrl, $blogBase . '/' . $sp['slug'])); ?>">
             <?php echo htmlspecialchars($sp['title']); ?>
           </a>
           <?php endif; ?>
@@ -66,12 +66,12 @@ $blogBase    = $rawBlogBase === '' ? '' : '/' . $rawBlogBase;
       <?php if (!empty($series['prev']) || !empty($series['next'])): ?>
       <div class="series-nav">
         <?php if (!empty($series['prev'])): ?>
-        <a href="<?php echo htmlspecialchars($baseUrl . $blogBase . '/' . $series['prev']['slug']); ?>">
+        <a href="<?php echo htmlspecialchars(site_path($baseUrl, $blogBase . '/' . $series['prev']['slug'])); ?>">
           &larr; <?php echo htmlspecialchars($series['prev']['title']); ?>
         </a>
         <?php endif; ?>
         <?php if (!empty($series['next'])): ?>
-        <a href="<?php echo htmlspecialchars($baseUrl . $blogBase . '/' . $series['next']['slug']); ?>">
+        <a href="<?php echo htmlspecialchars(site_path($baseUrl, $blogBase . '/' . $series['next']['slug'])); ?>">
           <?php echo htmlspecialchars($series['next']['title']); ?> &rarr;
         </a>
         <?php endif; ?>
@@ -99,7 +99,7 @@ $blogBase    = $rawBlogBase === '' ? '' : '/' . $rawBlogBase;
     <h2>Related Posts</h2>
     <div class="related-grid">
       <?php foreach ($relatedPosts as $rp): ?>
-      <a href="<?php echo htmlspecialchars($baseUrl . $blogBase . '/' . $rp['slug']); ?>" class="related-card">
+      <a href="<?php echo htmlspecialchars(site_path($baseUrl, $blogBase . '/' . $rp['slug'])); ?>" class="related-card">
         <?php if (!empty($rp['featured_image_url'])): ?>
         <img src="<?php echo htmlspecialchars($rp['featured_image_url']); ?>"
              alt="<?php echo htmlspecialchars($rp['title']); ?>"
@@ -147,7 +147,7 @@ $blogBase    = $rawBlogBase === '' ? '' : '/' . $rawBlogBase;
       <?php if (empty($c['parent_comment_id'])): ?>
       <button type="button" class="comment-reply-btn" onclick="toggleReplyForm('reply-<?php echo $c['id']; ?>')">Reply</button>
       <div class="reply-form" id="reply-<?php echo $c['id']; ?>">
-        <form method="POST" action="<?php echo $baseUrl . $blogBase; ?>/<?php echo htmlspecialchars($postSlug); ?>/comment">
+        <form method="POST" action="<?php echo htmlspecialchars(site_path($baseUrl, $blogBase . '/' . $postSlug . '/comment')); ?>">
           <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
           <input type="hidden" name="parent_comment_id" value="<?php echo $c['id']; ?>">
           <div class="field">
@@ -184,7 +184,7 @@ $blogBase    = $rawBlogBase === '' ? '' : '/' . $rawBlogBase;
         <?php echo htmlspecialchars($commentFlash['message'] ?? ''); ?>
       </div>
       <?php endif; ?>
-      <form method="POST" action="<?php echo $baseUrl . $blogBase; ?>/<?php echo htmlspecialchars($post['slug']); ?>/comment">
+      <form method="POST" action="<?php echo htmlspecialchars(site_path($baseUrl, $blogBase . '/' . $post['slug'] . '/comment')); ?>">
         <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token ?? ''); ?>">
         <div class="field">
           <label for="c-name">Name *</label>

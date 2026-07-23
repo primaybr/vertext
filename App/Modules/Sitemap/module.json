@@ -1,8 +1,8 @@
 {
     "name":        "Sitemap",
     "slug":        "sitemap",
-    "version":     "0.0.2",
-    "description": "Automatic XML sitemap, robots.txt, from published Pages, Blog, Events, Gallery and Videos.",
+    "version":     "0.0.3",
+    "description": "Automatic XML sitemap, robots.txt, from published Pages, Blog, Events, Gallery and Videos. Fixed two real bugs: blog posts were queried from a nonexistent 'blog_posts' table (the real table is 'posts'), so they silently never appeared in the sitemap; and multi-language Pages contributed the same bare-path URL once per lang row instead of one distinct URL per locale (bare path for the default locale, /xx/ prefix for others, matching Config/Routes.php's own prefix-routing scheme).",
     "author":      "Vertext",
     "category":    "SEO",
     "requires":    { "vertext": ">=0.0.1" },
