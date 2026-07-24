@@ -236,6 +236,26 @@
       </div>
       <?php endif; ?>
 
+      <!-- Analytics -->
+      <?php if (!empty($grouped['analytics'])): ?>
+      <div class="vtx-panel mb-4">
+        <div class="vtx-panel-head">
+          <h2 class="vtx-panel-title"><i class="pi pi-chart-bar me-1 text-primary"></i> Analytics</h2>
+        </div>
+        <div class="vtx-panel-body">
+
+          <div class="vtx-field">
+            <label class="vtx-label" for="ga_measurement_id">Google Analytics Measurement ID</label>
+            <input class="form-control" type="text" id="ga_measurement_id" name="ga_measurement_id"
+                   value="<?php echo htmlspecialchars($settings['ga_measurement_id'] ?? ''); ?>"
+                   placeholder="G-XXXXXXXXXX">
+            <div class="vtx-help">Leave blank to disable Google Analytics tracking on the front-end.</div>
+          </div>
+
+        </div>
+      </div>
+      <?php endif; ?>
+
     </div><!-- /col-lg-8 -->
 
     <!-- Sidebar: System toggles -->

@@ -34,12 +34,19 @@ use Core\Config;
  *   echo base64_encode(hash("sha256",$m[1],true));'
  * if that file's script content ever changes.
  *
+ * googletagmanager.com/google-analytics.com/analytics.google.com are
+ * allow-listed for optional Google Analytics support (Admin > Settings >
+ * Analytics, App/Views/_shared/theme-init.php + Public/assets/js/ga.js) -
+ * gtag.js is loaded as an external script (script-src), then sends hits via
+ * fetch/sendBeacon (connect-src). Harmless to allow even when no GA
+ * Measurement ID is configured, since ga.js loads nothing without one.
+ *
  * @package Core\Middleware
  * @author  Prima Yoga
  */
 class SecurityHeadersMiddleware implements MiddlewareInterface
 {
-    private const CSP = "default-src 'self'; script-src 'self' 'sha256-oDYWwGoPMMLZnC4nXKXi7EA6Ad5mbokl8Ye1cMFUfJk='; style-src 'self'; img-src 'self' data: blob:; font-src 'self' data:; frame-ancestors 'none'";
+    private const CSP = "default-src 'self'; script-src 'self' 'sha256-oDYWwGoPMMLZnC4nXKXi7EA6Ad5mbokl8Ye1cMFUfJk=' https://*.googletagmanager.com; style-src 'self'; img-src 'self' data: blob: https://*.google-analytics.com https://*.googletagmanager.com; font-src 'self' data:; connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com; frame-ancestors 'none'";
 
     /**
      * @param callable $next The next middleware or the final application handler.

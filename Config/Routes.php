@@ -41,6 +41,9 @@ if (isset($_GET['lang'])) {
  *  get|post route, $this->get($pattern,$controller,$action) or $this->post($pattern,$controller,$action)
  */
 
+// -- Health check (Kubernetes liveness/readiness probe target) ---------------
+$router->get('/health', 'Web\HealthController', 'index');
+
 // -- Setup Wizard -------------------------------------------------------------
 $router->get('/setup',           'Setup\WizardController', 'index');
 $router->post('/setup/next',     'Setup\WizardController', 'next');

@@ -14,10 +14,15 @@ class Installer
     private const DB_FILE   = ROOT . 'Storage' . DS . 'db.php';
     private const APP_FILE  = ROOT . 'Storage' . DS . 'app.php';
 
-    /** Check if CMS is already installed */
+    /**
+     * Check if CMS is already installed. `APP_INSTALLED=1` lets a container
+     * deployment with no persisted Storage/ (DB config delivered via env vars
+     * instead - see Config\Database) skip the wizard-redirect after the first
+     * real install, without needing installed.lock to survive a pod restart.
+     */
     public static function isInstalled(): bool
     {
-        return file_exists(self::LOCK_FILE);
+        return file_exists(self::LOCK_FILE) || getenv('APP_INSTALLED') === '1';
     }
 
     /** Ensure Storage directory is writable */

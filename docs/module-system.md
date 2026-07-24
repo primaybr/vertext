@@ -157,7 +157,9 @@ Modules that expose public front-end routes can declare them via `nav_routes` in
 }
 ```
 
-The `nav_routes` array supports multiple entries (for modules with more than one public page). Each entry needs `path` (required) and `label` (used as the default menu label). Nav items inserted this way have `type = 'module'` in the `nav_items` table.
+The `nav_routes` array supports multiple entries (for modules with more than one public page). Each entry needs `path` (required) and `label` (used as the default menu label), and may optionally set `priority` (int, default `1000` if omitted). Nav items inserted this way have `type = 'module'` in the `nav_items` table.
+
+**`priority` only matters for `NavHelper::buildFromModuleRoutes()`'s fallback** (i.e. sites with no Navigation module installed, so there's no `nav_items` DB table to order by `sort_order` yet) - without it, item order there is purely `modules.slug ASC`, an alphabetical accident rather than intent. Lower numbers sort first; a module that omits `priority` sorts after every module that sets one. There's no fixed scale - pick a number that reads sensibly next to whatever else already declares `nav_routes` in your install. Once the Navigation module is installed, `priority` stops mattering for that site - `sort_order` (admin-reorderable) takes over entirely.
 
 **If your module's path is user-configurable at runtime** (like Blog's base path setting), the static `path` in `module.json` is only a *default* - it is not re-read automatically. Both auto-registration paths (`NavHelper::buildFromModuleRoutes()`'s fallback and `NavigationController::syncModules()`/`builder()`) must resolve the live path instead of trusting the manifest; see `resolveModuleRoutePath()` in `NavigationController` and the `blog` special-case in `NavHelper` for the pattern to follow. Your module's settings-save handler is also responsible for calling something equivalent to `Blog\Module::syncNavItem()` to keep the existing nav item's URL (and visibility) in sync when the path changes.
 

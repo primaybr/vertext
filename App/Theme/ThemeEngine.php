@@ -226,7 +226,7 @@ class ThemeEngine
     private static function siteSettings(): array
     {
         try {
-            $rows = (new \Core\Model('settings'))->where('grp', 'general')->get() ?: [];
+            $rows = (new \Core\Model('settings'))->whereIn(['grp' => ['general', 'analytics']])->get() ?: [];
             $s    = [];
             foreach ($rows as $r) {
                 $s[$r['key']] = $r['value'];

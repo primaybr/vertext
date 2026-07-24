@@ -16,7 +16,7 @@
         }
     },
     "nav_routes": [
-        {"label": "Blog", "path": "/blog"}
+        {"label": "Blog", "path": "/blog", "priority": 50}
     ],
     "nav": {
         "label":      "Blog",

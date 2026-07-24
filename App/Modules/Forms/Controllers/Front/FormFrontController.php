@@ -347,7 +347,6 @@ class FormFrontController extends Controller
                 CURLOPT_TIMEOUT        => 8,
             ]);
             $body = curl_exec($ch);
-            curl_close($ch);
 
             if (!is_string($body)) {
                 return false;

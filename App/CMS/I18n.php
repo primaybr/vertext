@@ -273,7 +273,12 @@ class I18n
     {
         static $pdo = null;
         if ($pdo === null) {
-            $cfg = require ROOT . 'Storage' . DS . 'db.php';
+            // Config\Database already knows about the DB_HOST/etc. env-var
+            // override (Kubernetes/container deployments), falling back to
+            // Storage/db.php for traditional/wizard-based installs - this used
+            // to require Storage/db.php directly and fatal in a container
+            // where DB config is env-var-driven with no Storage/ at all.
+            $cfg = (new \Config\Database())->getConnectionConfig();
             $dsn = "pgsql:host={$cfg['host']};port={$cfg['port']};dbname={$cfg['database']}";
             $pdo = new \PDO($dsn, $cfg['username'], $cfg['password'], [
                 \PDO::ATTR_ERRMODE            => \PDO::ERRMODE_EXCEPTION,

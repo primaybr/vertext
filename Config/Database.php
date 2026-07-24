@@ -31,6 +31,22 @@ class Database
 
     public function __construct()
     {
+        // Env vars take priority (Kubernetes/container deployments - credentials
+        // delivered via a ConfigMap/Secret-backed env, no setup wizard involved).
+        // Falls back to the setup-wizard-written Storage/db.php override otherwise,
+        // so local/traditional installs are unaffected.
+        $dbHost = getenv('DB_HOST');
+        if ($dbHost !== false && $dbHost !== '') {
+            $this->connections['default'] = array_merge($this->connections['default'], [
+                'host'     => $dbHost,
+                'port'     => getenv('DB_PORT') ?: $this->connections['default']['port'],
+                'database' => getenv('DB_DATABASE') ?: $this->connections['default']['database'],
+                'username' => getenv('DB_USERNAME') ?: $this->connections['default']['username'],
+                'password' => getenv('DB_PASSWORD') ?: $this->connections['default']['password'],
+            ]);
+            return;
+        }
+
         // Override with storage config written by setup wizard
         $storageFile = defined('ROOT') ? ROOT . 'Storage' . DIRECTORY_SEPARATOR . 'db.php' : '';
         if ($storageFile && file_exists($storageFile)) {

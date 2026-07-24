@@ -7,6 +7,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Upcoming]
 
+## [0.1.4d] - 2026-07-24
+
+### Added
+
+- **Google Analytics (gtag.js) support**, off by default. New "Analytics" panel in Admin > Settings holds a Measurement ID (`ga_measurement_id`, e.g. `G-XXXXXXXXXX`); leaving it blank disables tracking entirely, no code change needed either way. Loaded via a new static `Public/assets/js/ga.js`, which reads the Measurement ID from its own `data-ga-id` attribute rather than an inline `<script>` body - keeps `App/Views/_shared/theme-init.php`'s existing CSP `script-src` hash-allowlisting approach intact (the ID is admin-configurable, so a per-value inline-script hash would need constant recomputation; an external file with a data attribute needs none) and follows this codebase's standing no-inline-JS convention. `Core\Middleware\SecurityHeadersMiddleware`'s CSP extended to allow `googletagmanager.com`/`google-analytics.com`/`analytics.google.com` for the script load and its outbound hit tracking (`connect-src`); harmless when no ID is configured since `ga.js` loads nothing in that case. Fires on front-end pages only (`ThemeEngine::render()`'s `$site` data) - the admin panel renders through a separate path that never populates `$site`, so the conditional check is safely false there with no separate CSP carve-out needed. Ported from Carikno, which shipped this first.
+
+## [0.1.4c] - 2026-07-23
+
+### Fixed
+
+- **Auto-registered header navigation had no ordering concept - purely alphabetical by module slug.** With the Navigation module not installed on a site, `NavHelper::buildFromModuleRoutes()` builds the menu straight from each enabled module's `nav_routes` declaration in `modules.slug ASC` order, which produces a nav sequence with no relationship to actual priority. Added an optional `priority` field to `nav_routes` entries (lower sorts first; omitting it sorts a module after every module that sets one) - see the "Public Navigation Auto-Registration" section of `docs/module-system.md`. Once the Navigation module is installed for a site, this stops mattering - the DB-backed, admin-reorderable `sort_order` column takes over entirely, unaffected by this change.
+
 ## [0.1.4b] - 2026-07-23
 
 ### Added

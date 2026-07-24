@@ -115,7 +115,6 @@ class WebhookDispatcher
             $elapsed  = (int) ((microtime(true) - $start) * 1000);
             $code     = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
             $curlErr  = curl_error($ch);
-            curl_close($ch);
 
             if ($curlErr) {
                 $respBody = 'cURL error: ' . $curlErr;

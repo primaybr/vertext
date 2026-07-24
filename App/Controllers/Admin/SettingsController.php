@@ -29,6 +29,10 @@ class SettingsController extends BaseController
         'mail_from_name'    => '',
     ];
 
+    private const ANALYTICS_KEYS = [
+        'ga_measurement_id' => '',
+    ];
+
     public function __construct()
     {
         parent::__construct();
@@ -40,6 +44,7 @@ class SettingsController extends BaseController
         $this->requirePermission('settings.view');
 
         $this->ensureMailSettings();
+        $this->ensureAnalyticsSettings();
 
         $rows = $this->db('settings')->orderBy('grp', 'ASC')->orderBy('key', 'ASC')->get() ?: [];
         $settings = [];
@@ -68,7 +73,7 @@ class SettingsController extends BaseController
             $this->redirect($this->baseUrl . '/admin/settings');
         }
 
-        $allowed = ['site_name', 'site_url', 'site_description', 'admin_email', 'default_language', 'timezone', 'date_format', 'time_format'];
+        $allowed = ['site_name', 'site_url', 'site_description', 'admin_email', 'default_language', 'timezone', 'date_format', 'time_format', 'ga_measurement_id'];
 
         foreach ($allowed as $key) {
             $value = $this->input->post($key, false) ?? '';
@@ -150,7 +155,10 @@ class SettingsController extends BaseController
         }
 
         try {
-            $dbConfig = require ROOT . 'Storage' . DS . 'db.php';
+            // Config\Database already knows about the DB_HOST/etc. env-var
+            // override (Kubernetes/container deployments), falling back to
+            // Storage/db.php for traditional/wizard-based installs.
+            $dbConfig = (new \Config\Database())->getConnectionConfig();
             $dsn = "pgsql:host={$dbConfig['host']};port={$dbConfig['port']};dbname={$dbConfig['database']}";
             $pdo = new \PDO($dsn, $dbConfig['username'], $dbConfig['password'], [
                 \PDO::ATTR_ERRMODE            => \PDO::ERRMODE_EXCEPTION,
@@ -249,6 +257,18 @@ class SettingsController extends BaseController
                 $this->db('settings')
                     ->withoutTimestamps()
                     ->save(['key' => $key, 'value' => $default, 'type' => 'string', 'grp' => 'mail', 'label' => $key, 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')]);
+            }
+        }
+    }
+
+    private function ensureAnalyticsSettings(): void
+    {
+        foreach (self::ANALYTICS_KEYS as $key => $default) {
+            $exists = $this->db('settings')->where('key', $key)->get(1);
+            if (!$exists) {
+                $this->db('settings')
+                    ->withoutTimestamps()
+                    ->save(['key' => $key, 'value' => $default, 'type' => 'string', 'grp' => 'analytics', 'label' => $key, 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')]);
             }
         }
     }

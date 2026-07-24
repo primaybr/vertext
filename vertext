@@ -8,6 +8,7 @@ define('DS', DIRECTORY_SEPARATOR);
 define('ROOT', BASE_PATH . DS);
 
 require __DIR__ . '/App/CMS/Version.php';
+require __DIR__ . '/Config/Database.php';
 require __DIR__ . '/App/CMS/Cli/MakeModule.php';
 require __DIR__ . '/App/CMS/Cli/MakeBundle.php';
 require __DIR__ . '/App/CMS/MigrationRunner.php';

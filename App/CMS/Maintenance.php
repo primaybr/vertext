@@ -21,8 +21,11 @@ class Maintenance
 
         $uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
 
-        // Admin and setup paths always bypass (handles base-path installs too)
-        if (preg_match('#/(admin|setup)(/|$)#', $uri)) {
+        // Admin, setup, and health-check paths always bypass (handles base-path
+        // installs too) - /health specifically must never be gated by maintenance
+        // mode, or a Kubernetes readiness probe would start failing/restarting
+        // pods the moment maintenance mode is turned on.
+        if (preg_match('#/(admin|setup|health)(/|$)#', $uri)) {
             return;
         }
 

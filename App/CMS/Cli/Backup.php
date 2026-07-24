@@ -41,11 +41,17 @@ final class Backup
 
     private static function loadDbConfig(): array
     {
-        $file = BASE_PATH . '/Storage/db.php';
-        if (!file_exists($file)) {
-            self::error('No database configured - Storage/db.php not found. Run the setup wizard first.');
+        // Config\Database is a standalone class (no Composer autoload available
+        // here - see the require list in the `vertext` CLI entrypoint), so it
+        // already knows about the DB_HOST/etc. env-var override, falling back
+        // to Storage/db.php for traditional/wizard-based installs.
+        $config = (new \Config\Database())->getConnectionConfig();
+
+        if ($config['database'] === '') {
+            self::error('No database configured - set DB_HOST/DB_DATABASE/DB_USERNAME/DB_PASSWORD env vars, or run the setup wizard first.');
         }
-        return require $file;
+
+        return $config;
     }
 
     private static function out(string $msg): void

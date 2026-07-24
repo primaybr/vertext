@@ -74,11 +74,20 @@ final class Migrate
 
     private static function loadDbConfig(): array
     {
-        $file = BASE_PATH . '/Storage/db.php';
-        if (!file_exists($file)) {
-            self::error('No database configured - Storage/db.php not found. Run the setup wizard first.');
+        // Config\Database is a standalone class (no Composer autoload available
+        // here - see the require list in the `vertext` CLI entrypoint), so it
+        // already knows about the DB_HOST/etc. env-var override the rest of the
+        // app uses, falling back to Storage/db.php for traditional/wizard-based
+        // installs - this used to check Storage/db.php directly and never
+        // considered env vars at all, so `php vertext migrate up` always failed
+        // that way in a container even when the app itself connected fine.
+        $config = (new \Config\Database())->getConnectionConfig();
+
+        if ($config['database'] === '') {
+            self::error('No database configured - set DB_HOST/DB_DATABASE/DB_USERNAME/DB_PASSWORD env vars, or run the setup wizard first.');
         }
-        return require $file;
+
+        return $config;
     }
 
     private static function out(string $msg): void

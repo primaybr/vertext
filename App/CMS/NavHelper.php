@@ -163,9 +163,25 @@ class NavHelper
                         'open_in_new' => false,
                         'type'        => 'module',
                         'children'    => [],
+                        // Not part of the returned item shape - sort key only,
+                        // stripped below. A module omitting "priority" sorts
+                        // after every module that sets one, rather than landing
+                        // wherever "modules.slug ASC" (this loop's own iteration
+                        // order) happens to place it.
+                        'priority'    => (int) ($route['priority'] ?? 1000),
                     ];
                 }
             }
+
+            // Auto-registered nav has no admin-configurable order (that's what
+            // the Navigation module's DB-backed sort_order is for) - without
+            // this, item order is purely "modules.slug ASC", alphabetical
+            // accident rather than intent (e.g. Blog/Contact outranking Search).
+            usort($items, static fn(array $a, array $b): int => $a['priority'] <=> $b['priority']);
+            foreach ($items as &$item) {
+                unset($item['priority']);
+            }
+            unset($item);
 
             return $items;
         } catch (\Throwable) {
