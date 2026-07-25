@@ -140,6 +140,16 @@ class UsersController extends BaseController
             $this->redirect($this->baseUrl . '/admin/users/create');
         }
 
+        // See the identical guard in update() - a user with zero roles has no
+        // valid permission state in this app and can never sign in to do
+        // anything, so this can only be an incomplete form submission.
+        if (!$roleIds || !is_array($roleIds) || count(array_filter($roleIds)) === 0) {
+            $msg = 'At least one role must be selected.';
+            if ($this->isAjax()) { $this->json(['success' => false, 'message' => $msg]); }
+            $this->session->set('flash', ['type' => 'error', 'message' => $msg]);
+            $this->redirect($this->baseUrl . '/admin/users/create');
+        }
+
         $hash   = \App\Models\UserModel::hashPassword($password);
         $userId = (string) $this->db('users')->save([
             'name'     => $name,
@@ -208,6 +218,21 @@ class UsersController extends BaseController
         if (!$name || !$email) {
             if ($this->isAjax()) { $this->json(['success' => false, 'message' => 'Name and email are required.']); }
             $this->flash('error', 'Name and email are required.');
+            $this->redirect($this->baseUrl . "/admin/users/{$id}/edit");
+        }
+
+        // A user must always keep at least one role - there's no "no role" state
+        // in this app's permission model (an inactive/disabled account is
+        // expressed via the status field above, not by stripping roles), so an
+        // empty roles[] submission can only mean a broken/incomplete form post,
+        // never an intentional choice. Without this guard, submitting the edit
+        // form with no roles checked silently wiped the account's entire role
+        // assignment (delete-then-conditionally-reinsert below), which can lock
+        // that user - including the admin doing the editing - out of the whole
+        // admin panel with no way back in except direct DB access.
+        if (!$roleIds || !is_array($roleIds) || count(array_filter($roleIds)) === 0) {
+            if ($this->isAjax()) { $this->json(['success' => false, 'message' => 'At least one role must be selected.']); }
+            $this->flash('error', 'At least one role must be selected.');
             $this->redirect($this->baseUrl . "/admin/users/{$id}/edit");
         }
 

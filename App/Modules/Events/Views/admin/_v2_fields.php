@@ -59,7 +59,7 @@ $tickets = json_decode((string) ($event['tickets'] ?? '[]'), true) ?: [];
                placeholder="Ticket name (e.g. General)" value="<?php echo htmlspecialchars($t['name'] ?? ''); ?>" style="flex:2;">
         <input class="form-control form-control-sm" type="number" name="ticket_price[]" min="0" step="0.01"
                placeholder="0.00" value="<?php echo htmlspecialchars((string) ($t['price'] ?? '')); ?>" style="flex:1;">
-        <button type="button" class="vtx-icon-btn danger" onclick="this.parentElement.remove()" title="Remove">
+         <button type="button" class="vtx-icon-btn danger" data-action="remove-self" title="Remove">
           <i class="pi pi-trash"></i>
         </button>
       </div>

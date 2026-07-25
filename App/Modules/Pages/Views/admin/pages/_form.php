@@ -134,21 +134,21 @@
                placeholder="key" value="<?php echo htmlspecialchars($mKey); ?>" style="flex:1;">
         <input class="form-control form-control-sm" type="text" name="meta_value[]"
                placeholder="value" value="<?php echo htmlspecialchars($mValue); ?>" style="flex:2;">
-        <button type="button" class="vtx-icon-btn danger" onclick="this.parentElement.remove()" title="Remove">
+         <button type="button" class="vtx-icon-btn danger" data-action="remove-self" title="Remove">
           <i class="pi pi-trash"></i>
         </button>
       </div>
       <?php endforeach; ?>
     </div>
     <button type="button" class="btn btn-outline-secondary btn-sm mt-2"
-            onclick="(function(c){var d=document.createElement('div');d.style.cssText='display:flex;gap:.5rem;';d.innerHTML='<input class=\'form-control form-control-sm\' type=\'text\' name=\'meta_key[]\' maxlength=\'100\' placeholder=\'key\' style=\'flex:1;\'><input class=\'form-control form-control-sm\' type=\'text\' name=\'meta_value[]\' placeholder=\'value\' style=\'flex:2;\'><button type=\'button\' class=\'vtx-icon-btn danger\' onclick=\'this.parentElement.remove()\' title=\'Remove\'><i class=\'pi pi-trash\'></i></button>';c.appendChild(d);})(document.getElementById('page-meta-rows'))">
+            id="vtx-add-page-meta-btn">
       <i class="pi pi-plus me-1"></i> Add Field
     </button>
   </details>
 
   <div style="display:flex;gap:.5rem;justify-content:flex-end;border-top:1px solid var(--ps-border);padding-top:.875rem;">
     <button type="button" class="btn btn-outline-secondary btn-sm"
-            onclick="window.vtxFormModalClose && window.vtxFormModalClose()">Cancel</button>
+            data-action="close-modal">Cancel</button>
     <button type="submit" class="btn btn-primary btn-sm">
       <i class="pi pi-check me-1"></i><?php echo $editing ? 'Update Page' : 'Create Page'; ?>
     </button>

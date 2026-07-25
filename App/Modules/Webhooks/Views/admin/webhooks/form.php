@@ -56,7 +56,7 @@ $isModal       = $isModal ?? false;
                  placeholder="Random secret for HMAC verification" required>
           <?php if (!$isEdit): ?>
           <button type="button" class="btn btn-outline-secondary btn-sm wh-shrink-0"
-                  onclick="document.getElementById('wh-secret').value = Array.from(crypto.getRandomValues(new Uint8Array(20))).map(b=>b.toString(16).padStart(2,'0')).join('')">
+                  data-action="regen-secret">
             Regenerate
           </button>
           <?php endif; ?>
@@ -132,8 +132,8 @@ $isModal       = $isModal ?? false;
                      value="<?php echo htmlspecialchars($currentSecret); ?>"
                      placeholder="Random secret for HMAC verification" required>
               <?php if (!$isEdit): ?>
-              <button type="button" class="btn btn-outline-secondary btn-sm wh-shrink-0"
-                      onclick="document.getElementById('wh-secret').value = Array.from(crypto.getRandomValues(new Uint8Array(20))).map(b=>b.toString(16).padStart(2,'0')).join('')">
+               <button type="button" class="btn btn-outline-secondary btn-sm wh-shrink-0"
+                       data-action="regen-secret">
                 Regenerate
               </button>
               <?php endif; ?>

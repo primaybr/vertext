@@ -603,6 +603,91 @@
     /* -- Public API (called by partial refreshes e.g. module manager nav swap) */
     window.vtxInitNavGroups = initNavGroups;
 
+    /* -- Data-Action Delegation ---------------------------------- */
+    function initDataActions() {
+        document.addEventListener('click', function (e) {
+            var btn = e.target.closest('[data-action="close-modal"]');
+            if (btn) { window.vtxFormModalClose(); return; }
+            btn = e.target.closest('[data-action="go-back"]');
+            if (btn) { e.preventDefault(); history.back(); return; }
+            btn = e.target.closest('[data-action="test-webhook"]');
+            if (btn) { e.preventDefault(); if (typeof vtxTestWebhook === 'function') vtxTestWebhook(btn.dataset.webhookId); return; }
+            btn = e.target.closest('[data-action="bulk-submit"]');
+            if (btn) { if (typeof vtxBulkSubmit === 'function') vtxBulkSubmit(btn.dataset.bulkAction); return; }
+            btn = e.target.closest('[data-action="bulk-delete"]');
+            if (btn) { if (typeof vtxBulkConfirmDelete === 'function') vtxBulkConfirmDelete(); return; }
+            btn = e.target.closest('[data-action="remove-self"]');
+            if (btn) { btn.parentElement.remove(); return; }
+            btn = e.target.closest('[data-action="copy-secret"]');
+            if (btn) { if (typeof copySecret === 'function') copySecret(); return; }
+            btn = e.target.closest('[data-action="copy-all-codes"]');
+            if (btn) { if (typeof copyAllCodes === 'function') copyAllCodes(); return; }
+            btn = e.target.closest('[data-action="print-codes"]');
+            if (btn) { if (typeof printCodes === 'function') printCodes(); return; }
+            btn = e.target.closest('#vtx-add-page-meta-btn');
+            if (btn) {
+                var c = document.getElementById('page-meta-rows');
+                if (c) {
+                    var d = document.createElement('div');
+                    d.style.cssText = 'display:flex;gap:.5rem;';
+                    d.innerHTML = '<input class=\'form-control form-control-sm\' type=\'text\' name=\'meta_key[]\' maxlength=\'100\' placeholder=\'key\' style=\'flex:1;\'><input class=\'form-control form-control-sm\' type=\'text\' name=\'meta_value[]\' placeholder=\'value\' style=\'flex:2;\'><button type=\'button\' class=\'vtx-icon-btn danger\' data-action=\'remove-self\' title=\'Remove\'><i class=\'pi pi-trash\'></i></button>';
+                    c.appendChild(d);
+                }
+                return;
+            }
+            btn = e.target.closest('[data-action="close-imged-modal"]');
+            if (btn) {
+                var imged = document.getElementById('vtx-imged-modal');
+                if (imged) imged.style.display = 'none';
+                return;
+            }
+            btn = e.target.closest('[data-action="show-modal"]');
+            if (btn) {
+                var modal = document.getElementById(btn.dataset.modalId);
+                if (modal) modal.style.display = 'flex';
+                return;
+            }
+            btn = e.target.closest('[data-action="hide-modal"]');
+            if (btn) {
+                var hideModal = document.getElementById(btn.dataset.modalId);
+                if (hideModal) hideModal.style.display = 'none';
+                return;
+            }
+            btn = e.target.closest('[data-action="regen-secret"]');
+            if (btn) {
+                var secretEl = document.getElementById('wh-secret');
+                if (secretEl && typeof crypto !== 'undefined' && crypto.getRandomValues) {
+                    var arr = new Uint8Array(20);
+                    crypto.getRandomValues(arr);
+                    secretEl.value = Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
+                }
+                return;
+            }
+        });
+        document.addEventListener('change', function (e) {
+            var el = e.target.closest('[data-submit-form]');
+            if (el) {
+                var form = el.dataset.submitForm ? document.querySelector(el.dataset.submitForm) : el.form;
+                if (form) form.submit();
+                return;
+            }
+            el = e.target.closest('[data-action="toggle-smtp"]');
+            if (el) { if (typeof vtxToggleSmtp === 'function') vtxToggleSmtp(el.value); }
+        });
+        document.addEventListener('submit', function (e) {
+            var form = e.target.closest('[data-confirm]');
+            if (!form) return;
+            e.preventDefault();
+            window.vtxConfirmModal({
+                title:        form.dataset.confirmTitle   || 'Confirm',
+                message:      form.dataset.confirmMessage || 'Are you sure?',
+                confirmLabel: form.dataset.confirmLabel   || 'Confirm',
+                confirmClass: form.dataset.confirmClass   || 'btn-danger',
+                onConfirm:    function () { form.submit(); }
+            });
+        });
+    }
+
     /* -- Init -------------------------------------------------- */
     applyTheme();
 
@@ -616,6 +701,7 @@
         initAjaxNav();
         initSetup();
         initPasswordToggle();
+        initDataActions();
         syncThemeIcon();
 
         var themeBtn = document.getElementById('theme-toggle');

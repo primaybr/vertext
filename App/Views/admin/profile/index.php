@@ -121,7 +121,10 @@
         </div>
         <?php if (count($sessions ?? []) > 1): ?>
         <form method="POST" action="{{baseUrl}}/admin/profile/sessions/revoke-others"
-              onsubmit="return confirm('Sign out of all other sessions?');">
+              data-confirm="Sign out of all other sessions?"
+              data-confirm-title="Sign Out Everywhere"
+              data-confirm-label="Sign Out"
+              data-confirm-class="btn-danger">
           <input type="hidden" name="csrf_token" value="{{csrf_token}}">
           <button type="submit" class="btn btn-sm btn-outline-danger">
             <i class="pi pi-log-out me-1"></i> Sign out everywhere else

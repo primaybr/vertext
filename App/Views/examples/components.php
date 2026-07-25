@@ -311,16 +311,16 @@
           </p>
 
           <div class="d-flex flex-wrap gap-2 mb-3">
-            <button class="btn btn-success" onclick="showToast('success')">
+             <button class="btn btn-success" data-action="toast-success">
               <i class="pi pi-check-circle me-1"></i> Success
             </button>
-            <button class="btn btn-danger" onclick="showToast('error')">
+             <button class="btn btn-danger" data-action="toast-error">
               <i class="pi pi-x-circle me-1"></i> Error
             </button>
-            <button class="btn btn-info" onclick="showToast('info')">
+             <button class="btn btn-info" data-action="toast-info">
               <i class="pi pi-info me-1"></i> Info
             </button>
-            <button class="btn btn-warning" onclick="showToast('warning')">
+             <button class="btn btn-warning" data-action="toast-warning">
               <i class="pi pi-alert-triangle me-1"></i> Warning
             </button>
           </div>

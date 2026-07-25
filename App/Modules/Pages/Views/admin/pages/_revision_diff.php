@@ -162,7 +162,7 @@ $bodyChanged = $bodyDiff !== '';
   <!-- Actions -->
   <div style="display:flex;gap:.5rem;justify-content:flex-end;border-top:1px solid var(--ps-border);padding-top:.875rem;">
     <button type="button" class="btn btn-outline-secondary btn-sm"
-            onclick="window.vtxFormModalClose && window.vtxFormModalClose()">Close</button>
+            data-action="close-modal">Close</button>
     <?php if (\App\CMS\Auth::can('pages.edit')): ?>
     <form id="vtx-diff-restore-form" method="POST"
           action="<?php echo htmlspecialchars($restoreAction); ?>" style="display:none;">

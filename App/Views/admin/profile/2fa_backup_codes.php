@@ -36,10 +36,10 @@
         </div>
 
         <div class="d-flex gap-2 flex-wrap">
-          <button type="button" class="btn btn-outline-secondary btn-sm" onclick="copyAllCodes()">
+          <button type="button" class="btn btn-outline-secondary btn-sm" data-action="copy-all-codes">
             <i class="pi pi-copy me-1"></i> Copy all
           </button>
-          <button type="button" class="btn btn-outline-secondary btn-sm" onclick="printCodes()">
+          <button type="button" class="btn btn-outline-secondary btn-sm" data-action="print-codes">
             <i class="pi pi-print me-1"></i> Print
           </button>
         </div>

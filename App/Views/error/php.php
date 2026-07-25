@@ -14,7 +14,7 @@
       <div class="error-details">
         Sorry, an error has occurred.
       </div>
-      <a href="#" onclick="history.back()" class="btn btn-outline-primary">Go Back</a>
+      <a href="#" class="btn btn-outline-primary" data-action="go-back">Go Back</a>
     </div>
   </div>
 </body>

@@ -77,12 +77,11 @@
           <td style="text-align:right;">
             <div style="display:flex;gap:.375rem;justify-content:flex-end;align-items:center;">
               <?php if (\App\CMS\Auth::can('webhooks.manage')): ?>
-              <button type="button" class="vtx-icon-btn"
-                      id="test-btn-<?php echo $ep['id']; ?>"
-                      title="Send test ping"
-                      onclick="vtxTestWebhook('<?php echo $ep['id']; ?>')">
-                <i class="pi pi-refresh"></i>
-              </button>
+               <button type="button" class="vtx-icon-btn"
+                       title="Send test ping"
+                       data-action="test-webhook" data-webhook-id="<?php echo $ep['id']; ?>">
+                 <i class="pi pi-refresh"></i>
+               </button>
               <button type="button" class="vtx-icon-btn" title="Edit"
                       data-form-url="{{baseUrl}}/admin/webhooks/<?php echo $ep['id']; ?>/edit"
                       data-form-title="Edit Webhook" data-form-size="modal-lg">

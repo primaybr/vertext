@@ -19,7 +19,7 @@
     After saving you'll be taken to the campaign editor to write the content.
   </p>
   <div style="display:flex;gap:.5rem;justify-content:flex-end;">
-    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.vtxFormModalClose()">Cancel</button>
+    <button type="button" class="btn btn-outline-secondary btn-sm" data-action="close-modal">Cancel</button>
     <button type="submit" class="btn btn-primary btn-sm"><i class="pi pi-plus me-1"></i> Create Campaign</button>
   </div>
 </form>
@@ -244,7 +244,7 @@
     </div>
     <div id="nl-test-msg" style="display:none;" class="mb-3"></div>
     <div style="display:flex;gap:.5rem;justify-content:flex-end;">
-      <button type="button" class="btn btn-outline-secondary btn-sm" onclick="document.getElementById('nl-test-modal').style.display='none'">Cancel</button>
+      <button type="button" class="btn btn-outline-secondary btn-sm" data-action="hide-modal" data-modal-id="nl-test-modal">Cancel</button>
       <button type="button" class="btn btn-primary btn-sm" id="nl-test-confirm">Send Test</button>
     </div>
   </div>

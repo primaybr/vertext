@@ -149,12 +149,15 @@
           <div class="vtx-avatar-name">{{currentUser.name}}</div>
           <div class="vtx-avatar-role">Administrator</div>
         </div>
-        <a href="#"
+        <a href="{{baseUrl}}/admin/logout"
            class="vtx-icon-btn"
            title="Logout"
-           onclick="event.preventDefault();vtxConfirmModal({title:'Log out',message:'You will be returned to the login page.',confirmLabel:'Log out',confirmClass:'btn-danger',onConfirm:function(){window.location.href=window.VTX_BASE_URL+'/admin/logout';}})">
-          <i class="pi pi-arrow-right"></i>
-        </a>
+           data-confirm-title="Log out"
+           data-confirm-message="You will be returned to the login page."
+           data-confirm-label="Log out"
+           data-confirm-class="btn-danger">
+           <i class="pi pi-arrow-right"></i>
+         </a>
       </div>
     </div>
 
@@ -194,7 +197,7 @@
         ?>
         <form id="vtx-locale-form" method="POST" action="{{baseUrl}}/admin/settings/set-locale" style="display:flex;align-items:center;margin:0;">
           <input type="hidden" name="csrf_token" value="{{csrf_token}}">
-          <select name="locale" class="vtx-locale-select" onchange="document.getElementById('vtx-locale-form').submit()" title="Switch language" aria-label="Language">
+          <select name="locale" class="vtx-locale-select" data-submit-form="#vtx-locale-form" title="Switch language" aria-label="Language">
             <?php foreach ($__allLocales as $__loc): ?>
             <option value="<?= htmlspecialchars($__loc) ?>"<?= $__loc === $__curLocale ? ' selected' : '' ?>><?= strtoupper(htmlspecialchars($__loc)) ?></option>
             <?php endforeach; ?>
@@ -224,10 +227,13 @@
               <i class="pi pi-settings"></i> Settings
             </a>
             <div class="vtx-dropdown-divider"></div>
-            <a href="#" class="vtx-dropdown-item danger"
-               onclick="event.preventDefault();vtxConfirmModal({title:'Log out',message:'You will be returned to the login page.',confirmLabel:'Log out',confirmClass:'btn-danger',onConfirm:function(){window.location.href=window.VTX_BASE_URL+'/admin/logout';}})">
-              <i class="pi pi-arrow-right"></i> Logout
-            </a>
+            <a href="{{baseUrl}}/admin/logout" class="vtx-dropdown-item danger"
+               data-confirm-title="Log out"
+               data-confirm-message="You will be returned to the login page."
+               data-confirm-label="Log out"
+               data-confirm-class="btn-danger">
+               <i class="pi pi-arrow-right"></i> Logout
+             </a>
           </div>
         </div>
       </div>

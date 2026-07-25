@@ -43,8 +43,13 @@
     });
 }());
 
-/* -- post.php: comment reply-form toggle (invoked via inline onclick attributes
-   in the server-rendered comment markup, so this stays a plain global function) -- */
+/* -- post.php: comment reply-form toggle (data-action delegation) -- */
+document.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-action="toggle-reply"]');
+    if (!btn) return;
+    toggleReplyForm(btn.dataset.replyTarget);
+});
+
 function toggleReplyForm(id) {
     var el = document.getElementById(id);
     if (el) el.classList.toggle('open');

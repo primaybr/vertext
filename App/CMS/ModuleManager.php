@@ -957,7 +957,7 @@ class ModuleManager
             return;
         }
 
-        self::copyDir($src, self::ASSETS_OUT . $slug . DS);
+        self::copyDir($src, self::ASSETS_OUT . $slug . DS, minifyCss: true);
     }
 
     /** Remove Public/assets/modules/{slug}/ when a module is uninstalled */
@@ -969,7 +969,17 @@ class ModuleManager
         }
     }
 
-    private static function copyDir(string $src, string $dest): void
+    /**
+     * $minifyCss: only ever passed true from deployAssets() - deployViews()
+     * copies PHP templates, which must reach Public/ byte-for-byte untouched.
+     * CSS only (not JS) - Core\Utilities\Text\JS::minify()'s whitespace
+     * collapsing isn't string-literal-safe (its own processStrings()/
+     * processRegexes() guards exist but are never actually called), so it
+     * risks corrupting a JS file's string contents; Text\CSS::minifyCSS() has
+     * no such gap. Falls back to a raw copy if minification throws for any
+     * reason, so a bad file degrades to "unminified" rather than "missing".
+     */
+    private static function copyDir(string $src, string $dest, bool $minifyCss = false): void
     {
         if (!is_dir($dest)) {
             mkdir($dest, 0755, true);
@@ -996,13 +1006,24 @@ class ModuleManager
 
             // Verify resolved destination stays within expected base
             if (is_dir($s)) {
-                self::copyDir($s . DS, $d . DS);
+                self::copyDir($s . DS, $d . DS, $minifyCss);
             } else {
                 // Guard: resolved destination file must start with dest directory
                 $dReal = realpath(dirname($d));
                 if ($dReal !== false && !str_starts_with($dReal . DS, $destReal . DS)) {
                     continue; // Silently skip suspected traversal
                 }
+
+                if ($minifyCss && strtolower(pathinfo($item, PATHINFO_EXTENSION)) === 'css') {
+                    try {
+                        $minified = (new \Core\Utilities\Text\CSS())->minifyCSS((string) file_get_contents($s));
+                        file_put_contents($d, $minified);
+                        continue;
+                    } catch (\Throwable) {
+                        // Fall through to a raw copy below
+                    }
+                }
+
                 copy($s, $d);
             }
         }

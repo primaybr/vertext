@@ -1,6 +1,11 @@
 /* Events Module - Front-end scripts */
 
 /* -- front/index.php: tab switcher -- */
+document.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-action="switch-tab"]');
+    if (!btn) return;
+    switchTab(btn.dataset.tab, btn);
+});
 function switchTab(tab, btn) {
   document.querySelectorAll('.ev-tab').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');

@@ -74,7 +74,7 @@
 
     <div class="d-flex justify-content-end gap-2 mt-3 pt-2 border-top">
         <button type="button" class="btn btn-outline-secondary btn-sm"
-                onclick="window.vtxFormModalClose && window.vtxFormModalClose()">Cancel</button>
+                data-action="close-modal">Cancel</button>
         <button type="submit" class="btn btn-primary">
             <?= $video ? 'Update Video' : 'Add Video' ?>
         </button>

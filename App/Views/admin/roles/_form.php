@@ -71,7 +71,7 @@
   <div style="display:flex;justify-content:flex-end;gap:.5rem;
               padding-top:.875rem;margin-top:.875rem;border-top:1px solid var(--ps-border);">
     <button type="button" class="btn btn-outline-secondary btn-sm"
-            onclick="window.vtxFormModalClose()">Cancel</button>
+            data-action="close-modal">Cancel</button>
     <button type="submit" class="btn btn-primary btn-sm">
       <i class="pi pi-check me-1"></i><?php echo $editing ? 'Update Role' : 'Create Role'; ?>
     </button>

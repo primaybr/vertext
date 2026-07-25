@@ -39,7 +39,7 @@
 
   <div style="display:flex;gap:.5rem;justify-content:flex-end;">
     <button type="button" class="btn btn-outline-secondary btn-sm"
-            onclick="window.vtxFormModalClose && window.vtxFormModalClose()">Cancel</button>
+            data-action="close-modal">Cancel</button>
     <button type="submit" class="btn btn-primary btn-sm">
       <?php echo $editing ? 'Save Changes' : 'Create Form'; ?>
     </button>

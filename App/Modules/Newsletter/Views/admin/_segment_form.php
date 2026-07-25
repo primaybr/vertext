@@ -43,7 +43,7 @@
   </div>
 
   <div style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:.5rem;">
-    <button type="button" class="btn btn-outline-secondary" onclick="vtxFormModalClose()">Cancel</button>
+    <button type="button" class="btn btn-outline-secondary" data-action="close-modal">Cancel</button>
     <button type="submit" class="btn btn-primary">
       <?php echo $segment ? 'Save Changes' : 'Create Segment'; ?>
     </button>

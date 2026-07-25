@@ -7,6 +7,26 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Upcoming]
 
+## [0.1.4g-beta] - 2026-07-24
+
+### Fixed
+
+- **`ModuleLoader::frontAssets()` returned an unconditional union of every enabled module's front CSS/JS, injected identically into every page** regardless of which module actually owns that page. Now accepts the current page's owning module slug and scopes its result to just that module plus a small always-global set - `theme-customizer` (site-wide accent-color/font/custom-CSS overrides) and `forms`/`newsletter` (their widgets can be embedded into *any* Pages/Blog body via a `[form slug="..."]`/`[newsletter_signup]` shortcode - `App\CMS\Shortcodes::render()` - and the embedded partial renders only markup with no `<link>`/`<script>` tags of its own, so excluding them would have silently broken every embedded form/signup box's styling and behavior on any page other than their own dedicated route). `ThemeEngine::render()` derives the current module automatically from the view path convention every front controller already follows (`modules/{slug}/front/...`), so no controller changes were needed; falls back to the old union-of-everything behavior for anything that doesn't resolve to a single module (error pages). All 4 bundled themes' `layout.php` updated to pass the new parameter through. `App/CMS/ModuleLoader.php`, `App/Theme/ThemeEngine.php`, `App/Themes/*/layout.php`.
+- **Module CSS was never minified despite the codebase already having a CSS minifier** (`Core\Utilities\Text\CSS::minifyCSS()`, previously only wired into inline `<style>` blocks via `HTML::minify()`). Now applied to every module's CSS at asset-deploy time (`ModuleManager::deployAssets()`), so `Public/assets/modules/*/*.css` ships minified with zero runtime cost - falls back to a raw copy if minification throws for any file. Deliberately CSS only, not JS: `Core\Utilities\Text\JS::minify()`'s whitespace-collapsing pipeline never calls its own `processStrings()`/`processRegexes()` string-literal-safety guards (dead code, defined but never called), so it isn't safe to apply blindly to arbitrary module JS without risking corrupting a string literal's internal whitespace; left for a follow-up once that gap is fixed. `App/CMS/ModuleManager.php`.
+
+## [0.1.4f] - 2026-07-24
+
+### Fixed
+
+- **Regression from 0.1.4e: `??` vs `?:` - the meta-description fallback used `$data['page_description'] ?: $siteDesc`, which still triggers an "Undefined array key" warning when the key is genuinely absent (`?:` evaluates the array access before falling back; only `??` suppresses that).** Fixed to `($data['page_description'] ?? '') ?: $siteDesc`. `App/Theme/ThemeEngine.php`.
+- **Editing any user in Admin > Users could silently wipe their role assignment and lock them out of the admin panel** - `UsersController::update()` unconditionally deleted all of a user's `user_roles` rows before conditionally re-inserting only if the submitted `roles[]` array was non-empty, so an incomplete/empty submission left the user with zero roles and zero permissions, with no way back in short of direct database access. Both `update()` and `store()` now reject a submission with no roles selected - there's no valid "no role" state in this app's permission model (use the existing `status` field to deactivate an account instead). `App/Controllers/Admin/UsersController.php`.
+
+## [0.1.4e] - 2026-07-24
+
+### Fixed
+
+- **`<meta name="description">` was omitted from every page that didn't set its own page-specific description** (e.g. the homepage on a site whose front controller doesn't pass `page_description`), even when the admin had configured a site-wide description in Admin > Settings. `ThemeEngine::render()` computed `$pageDesc` from `$data['page_description']` with no fallback at all - the site-wide `$siteDesc` was extracted into the layout's scope separately but never consulted. `$pageDesc` now falls back to `$siteDesc` when the page doesn't supply its own. `App/Theme/ThemeEngine.php`.
+
 ## [0.1.4d] - 2026-07-24
 
 ### Added

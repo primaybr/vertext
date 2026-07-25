@@ -72,7 +72,7 @@
 
   <div style="display:flex;gap:.5rem;justify-content:flex-end;border-top:1px solid var(--ps-border);padding-top:.875rem;">
     <button type="button" class="btn btn-outline-secondary btn-sm"
-            onclick="window.vtxFormModalClose && window.vtxFormModalClose()">Cancel</button>
+            data-action="close-modal">Cancel</button>
     <button type="submit" class="btn btn-primary btn-sm">
       <i class="pi pi-check me-1"></i><?php echo $editing ? 'Update Album' : 'Create Album'; ?>
     </button>

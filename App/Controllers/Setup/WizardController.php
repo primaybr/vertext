@@ -26,7 +26,7 @@ class WizardController extends Controller
         // inline script (included by setup/layout.php) is silently blocked by
         // SecurityHeadersMiddleware's strict default CSP.
         if (!headers_sent()) {
-            header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; frame-ancestors 'none'");
+            header("Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self' data:; frame-ancestors 'none'");
         }
     }
 

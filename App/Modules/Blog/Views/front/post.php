@@ -145,7 +145,7 @@ $blogBase    = $rawBlogBase === '' ? '' : '/' . $rawBlogBase;
       <span class="comment-date"><?php echo date('M j, Y', strtotime($c['created_at'])); ?></span>
       <div class="comment-body"><?php echo nl2br(htmlspecialchars($c['body'])); ?></div>
       <?php if (empty($c['parent_comment_id'])): ?>
-      <button type="button" class="comment-reply-btn" onclick="toggleReplyForm('reply-<?php echo $c['id']; ?>')">Reply</button>
+      <button type="button" class="comment-reply-btn" data-action="toggle-reply" data-reply-target="reply-<?php echo $c['id']; ?>">Reply</button>
       <div class="reply-form" id="reply-<?php echo $c['id']; ?>">
         <form method="POST" action="<?php echo htmlspecialchars(site_path($baseUrl, $blogBase . '/' . $postSlug . '/comment')); ?>">
           <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
@@ -159,7 +159,7 @@ $blogBase    = $rawBlogBase === '' ? '' : '/' . $rawBlogBase;
             <textarea name="body" required maxlength="2000" rows="3"></textarea>
           </div>
           <button type="submit" class="btn btn-sm">Post Reply</button>
-          <button type="button" class="btn btn-sm btn-cancel" onclick="toggleReplyForm('reply-<?php echo $c['id']; ?>')">Cancel</button>
+           <button type="button" class="btn btn-sm btn-cancel" data-action="toggle-reply" data-reply-target="reply-<?php echo $c['id']; ?>">Cancel</button>
         </form>
       </div>
       <?php endif; ?>

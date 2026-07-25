@@ -7,10 +7,10 @@
     <div>
       <!-- Tabs -->
       <div class="ev-tabs">
-        <button class="ev-tab active" data-tab="upcoming" onclick="switchTab('upcoming',this)">
+        <button class="ev-tab active" data-action="switch-tab" data-tab="upcoming">
           Upcoming (<?php echo count($upcoming); ?>)
         </button>
-        <button class="ev-tab" data-tab="past" onclick="switchTab('past',this)">
+        <button class="ev-tab" data-action="switch-tab" data-tab="past">
           Past
         </button>
       </div>

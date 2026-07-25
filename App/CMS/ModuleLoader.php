@@ -12,11 +12,25 @@ namespace App\CMS;
  */
 class ModuleLoader
 {
+    /**
+     * Modules whose front assets apply site-wide regardless of which module
+     * "owns" the current page, so they're always included alongside the
+     * current page's own module in frontAssets():
+     *   - theme-customizer: admin-configured accent color/font/custom-CSS
+     *     overrides, which must apply on every page, not just its own.
+     *   - forms, newsletter: App\CMS\Shortcodes::render() lets a [form
+     *     slug="..."] or [newsletter_signup] shortcode embed either module's
+     *     widget inline into ANY Pages/Blog body - the embedded partial
+     *     renders only markup, no <link>/<script> tags of its own, so its
+     *     CSS/JS has no other way to reach the page than being global here.
+     */
+    private const ALWAYS_GLOBAL_FRONT_MODULES = ['theme-customizer', 'forms', 'newsletter'];
+
     /** Per-request cache: null = not loaded yet */
-    private static ?array $enabled     = null;
-    private static ?array $navItems    = null;
-    private static ?array $assets      = null;
-    private static ?array $frontAssets = null;
+    private static ?array $enabled            = null;
+    private static ?array $navItems           = null;
+    private static ?array $assets             = null;
+    private static ?array $frontAssetsByModule = null;
 
     /** Load enabled module data from DB into the static cache */
     private static function load(): void
@@ -81,8 +95,8 @@ class ModuleLoader
                 ];
             }
             // Build module asset URL paths (css/js relative to assetsUrl)
-            self::$assets      = ['css' => [], 'js' => []];
-            self::$frontAssets = ['css' => [], 'js' => []];
+            self::$assets              = ['css' => [], 'js' => []];
+            self::$frontAssetsByModule = [];
             foreach ($rows as $assetRow) {
                 $assetDir  = $assetRow['directory'] ?? '';
                 $assetSlug = $assetRow['slug']      ?? '';
@@ -109,23 +123,29 @@ class ModuleLoader
                 }
 
                 // Front-end assets live at the top level of "assets" (sibling to "admin"),
-                // deployed the same way, but injected into theme layouts instead of the admin layout.
+                // deployed the same way, but injected into theme layouts instead of the
+                // admin layout - kept per-module here so frontAssets() can scope to just
+                // the module(s) a given page actually needs instead of unioning everything.
+                $moduleFront = ['css' => [], 'js' => []];
                 foreach ((array) ($assetManifest['assets']['css'] ?? []) as $p) {
                     $p = ltrim((string) $p, '/');
-                    if ($p) self::$frontAssets['css'][] = "modules/{$assetSlug}/{$p}?v={$ver}";
+                    if ($p) $moduleFront['css'][] = "modules/{$assetSlug}/{$p}?v={$ver}";
                 }
                 foreach ((array) ($assetManifest['assets']['js'] ?? []) as $p) {
                     $p = ltrim((string) $p, '/');
-                    if ($p) self::$frontAssets['js'][] = "modules/{$assetSlug}/{$p}?v={$ver}";
+                    if ($p) $moduleFront['js'][] = "modules/{$assetSlug}/{$p}?v={$ver}";
+                }
+                if ($moduleFront['css'] || $moduleFront['js']) {
+                    self::$frontAssetsByModule[$assetSlug] = $moduleFront;
                 }
             }
 
         } catch (\Exception) {
             // If DB is unavailable, allow everything (install/setup state)
-            self::$enabled      = [];
-            self::$navItems     = [];
-            self::$assets       = ['css' => [], 'js' => []];
-            self::$frontAssets  = ['css' => [], 'js' => []];
+            self::$enabled              = [];
+            self::$navItems             = [];
+            self::$assets               = ['css' => [], 'js' => []];
+            self::$frontAssetsByModule  = [];
         }
     }
 
@@ -172,15 +192,38 @@ class ModuleLoader
     }
 
     /**
-     * Return front-end asset URL paths (relative to assetsUrl) for all enabled modules.
+     * Return front-end asset URL paths (relative to assetsUrl) for the current page.
      * Reads the top-level "css"/"js" keys of module.json's "assets" (sibling to "admin"),
      * e.g. {"assets": {"css": [...], "js": [...], "admin": {"css": [...], "js": [...]}}}.
      * Injected into theme layouts (App/Themes/*\/layout.php), not the admin layout.
+     *
+     * $currentModule scopes the result to just that module's own front assets
+     * plus ALWAYS_GLOBAL_FRONT_MODULES (ThemeEngine::render() derives it from
+     * the view path, e.g. 'modules/blog/front/index' -> 'blog') - without it,
+     * every enabled module's front assets are unioned together regardless of
+     * whether the current page renders any of that module's markup at all
+     * (the old behavior, kept as the default for error pages and anything
+     * else that doesn't resolve to a single owning module).
      */
-    public static function frontAssets(): array
+    public static function frontAssets(?string $currentModule = null): array
     {
         self::load();
-        return self::$frontAssets ?? ['css' => [], 'js' => []];
+        $byModule = self::$frontAssetsByModule ?? [];
+
+        if ($currentModule === null) {
+            $wanted = array_keys($byModule);
+        } else {
+            $wanted = array_unique([$currentModule, ...self::ALWAYS_GLOBAL_FRONT_MODULES]);
+        }
+
+        $css = [];
+        $js  = [];
+        foreach ($wanted as $slug) {
+            $css = array_merge($css, $byModule[$slug]['css'] ?? []);
+            $js  = array_merge($js, $byModule[$slug]['js'] ?? []);
+        }
+
+        return ['css' => $css, 'js' => $js];
     }
 
     /**
@@ -190,9 +233,9 @@ class ModuleLoader
      */
     public static function refresh(): void
     {
-        self::$enabled      = null;
-        self::$navItems     = null;
-        self::$assets       = null;
-        self::$frontAssets  = null;
+        self::$enabled              = null;
+        self::$navItems             = null;
+        self::$assets               = null;
+        self::$frontAssetsByModule  = null;
     }
 }

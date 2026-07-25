@@ -23,7 +23,7 @@
   ?>
   <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl . '/assets/css/styles.css'); ?>?v=<?php echo $__stylesV; ?>">
   <link rel="stylesheet" href="<?php echo htmlspecialchars($themeUrl . '/css/theme.css'); ?>?v=<?php echo $__themeV; ?>">
-  <?php foreach (\App\CMS\ModuleLoader::frontAssets()['css'] as $__mAsset): ?>
+  <?php foreach (\App\CMS\ModuleLoader::frontAssets($currentModule ?? null)['css'] as $__mAsset): ?>
   <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl . '/assets/' . $__mAsset); ?>">
   <?php endforeach; ?>
   <?php // hreflang alternates for locale path-prefix routing (i18n v0.0.2) ?>
@@ -102,7 +102,7 @@
 </footer>
 
 <script src="<?php echo htmlspecialchars($themeUrl . '/js/theme.js'); ?>?v=<?php echo $__themeJsV; ?>"></script>
-<?php foreach (\App\CMS\ModuleLoader::frontAssets()['js'] as $__mAsset): ?>
+<?php foreach (\App\CMS\ModuleLoader::frontAssets($currentModule ?? null)['js'] as $__mAsset): ?>
 <script src="<?php echo htmlspecialchars($baseUrl . '/assets/' . $__mAsset); ?>"></script>
 <?php endforeach; ?>
 <?php if (!empty($data['preview'])): ?>

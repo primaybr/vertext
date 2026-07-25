@@ -12,11 +12,11 @@
     <?php endif; ?>
     <?php if (\App\CMS\Auth::can('newsletter.manage')): ?>
     <button type="button" class="btn btn-outline-secondary btn-sm"
-            onclick="document.getElementById('nl-import-modal').style.display='flex'">
+            data-action="show-modal" data-modal-id="nl-import-modal">
       <i class="pi pi-plus me-1"></i> Import
     </button>
     <button type="button" class="btn btn-primary btn-sm"
-            onclick="document.getElementById('nl-add-modal').style.display='flex'">
+            data-action="show-modal" data-modal-id="nl-add-modal">
       <i class="pi pi-plus me-1"></i> Add Subscriber
     </button>
     <?php endif; ?>
@@ -146,7 +146,7 @@
       </div>
       <div style="display:flex;gap:.5rem;justify-content:flex-end;">
         <button type="button" class="btn btn-outline-secondary btn-sm"
-                onclick="document.getElementById('nl-add-modal').style.display='none'">Cancel</button>
+                data-action="hide-modal" data-modal-id="nl-add-modal">Cancel</button>
         <button type="submit" class="btn btn-primary btn-sm">Add</button>
       </div>
     </form>
@@ -172,7 +172,7 @@
       </div>
       <div style="display:flex;gap:.5rem;justify-content:flex-end;">
         <button type="button" class="btn btn-outline-secondary btn-sm"
-                onclick="document.getElementById('nl-import-modal').style.display='none'">Cancel</button>
+                data-action="hide-modal" data-modal-id="nl-import-modal">Cancel</button>
         <button type="submit" class="btn btn-primary btn-sm">Import</button>
       </div>
     </form>

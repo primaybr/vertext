@@ -242,7 +242,7 @@ $canBulkDelete = \App\CMS\Auth::can('media.delete');
   <div style="background:var(--ps-bg-base);border-radius:8px;padding:1.25rem;width:100%;max-width:760px;max-height:92vh;overflow:auto;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;">
       <h5 style="margin:0;">Edit Image</h5>
-      <button type="button" class="vtx-icon-btn" onclick="document.getElementById('vtx-imged-modal').style.display='none'">
+       <button type="button" class="vtx-icon-btn" data-action="close-imged-modal">
         <i class="pi pi-x-circle"></i>
       </button>
     </div>
@@ -260,7 +260,7 @@ $canBulkDelete = \App\CMS\Auth::can('media.delete');
       <canvas id="vtx-imged-canvas" style="max-width:100%;cursor:crosshair;"></canvas>
     </div>
     <div style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:1rem;flex-wrap:wrap;">
-      <button type="button" class="btn btn-outline-secondary btn-sm" onclick="document.getElementById('vtx-imged-modal').style.display='none'">Cancel</button>
+      <button type="button" class="btn btn-outline-secondary btn-sm" data-action="close-imged-modal">Cancel</button>
       <button type="button" class="btn btn-outline-primary btn-sm" id="vtx-imged-save-copy"><i class="pi pi-plus me-1"></i>Save as Copy</button>
       <button type="button" class="btn btn-primary btn-sm" id="vtx-imged-overwrite"><i class="pi pi-save me-1"></i>Overwrite Original</button>
     </div>

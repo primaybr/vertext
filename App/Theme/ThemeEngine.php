@@ -43,15 +43,18 @@ class ThemeEngine
         $baseUrl  = $data['baseUrl'] ?? '';
         $themeUrl = $baseUrl . '/themes/' . $theme;
 
-        // Extract common page-meta keys so layout can reference them directly
-        $pageTitle = $data['page_title']       ?? '';
-        $pageDesc  = $data['page_description'] ?? '';
-        $pageImage = $data['page_image']       ?? '';
-
         // Load general site settings for nav/footer
         $site     = self::siteSettings();
         $siteName = $site['site_name']        ?? 'Vertext';
         $siteDesc = $site['site_description'] ?? '';
+
+        // Extract common page-meta keys so layout can reference them directly.
+        // pageDesc falls back to the site-wide description so pages that don't
+        // set their own still emit a <meta name="description"> instead of
+        // omitting it entirely.
+        $pageTitle = $data['page_title']       ?? '';
+        $pageDesc  = ($data['page_description'] ?? '') ?: $siteDesc;
+        $pageImage = $data['page_image']       ?? '';
 
         // Canonical URL: prefer the admin-configured site_url (agrees with the
         // sitemap's own <loc> host resolution) over the detected request host,

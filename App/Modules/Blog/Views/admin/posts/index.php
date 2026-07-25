@@ -70,13 +70,13 @@
           <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token ?? ''); ?>">
           <input type="hidden" name="bulk_action" id="vtx-bulk-action" value="">
         </form>
-        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="vtxBulkSubmit('publish')">
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-action="bulk-submit" data-bulk-action="publish">
           <i class="pi pi-check-circle me-1"></i> Publish
         </button>
-        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="vtxBulkSubmit('draft')">
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-action="bulk-submit" data-bulk-action="draft">
           <i class="pi pi-pencil me-1"></i> Draft
         </button>
-        <button type="button" class="btn btn-outline-danger btn-sm" onclick="vtxBulkConfirmDelete()">
+        <button type="button" class="btn btn-outline-danger btn-sm" data-action="bulk-delete">
           <i class="pi pi-trash me-1"></i> Delete
         </button>
       </div>

@@ -14,7 +14,7 @@
       <div class="error-details">
         Sorry, the request method is not supported for the requested resource.
       </div>
-      <a href="#" onclick="history.back()" class="btn btn-outline-primary">Go Back</a>
+      <a href="#" class="btn btn-outline-primary" data-action="go-back">Go Back</a>
     </div>
   </div>
 </body>

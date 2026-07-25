@@ -33,7 +33,7 @@
 
           <div class="vtx-field mb-3">
             <label class="vtx-label" for="mail_driver">Driver</label>
-            <select class="form-select" id="mail_driver" name="mail_driver" data-vtx-select onchange="vtxToggleSmtp(this.value)">
+             <select class="form-select" id="mail_driver" name="mail_driver" data-vtx-select data-action="toggle-smtp">
               <option value="mail" <?php echo ($settings['mail_driver'] ?? 'mail') === 'mail' ? 'selected' : ''; ?>>PHP mail() - uses server sendmail</option>
               <option value="smtp" <?php echo ($settings['mail_driver'] ?? '') === 'smtp' ? 'selected' : ''; ?>>SMTP</option>
             </select>

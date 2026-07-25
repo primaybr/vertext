@@ -96,7 +96,7 @@ $uri          = $setup_uri     ?? '';
                   style="flex:1;padding:.5rem .75rem;background:var(--ps-bg);border:1px solid var(--ps-border);border-radius:6px;font-size:1rem;letter-spacing:.12em;word-break:break-all;">
               <?php echo htmlspecialchars($secret); ?>
             </code>
-            <button type="button" onclick="copySecret()"
+            <button type="button" data-action="copy-secret"
                     class="btn btn-outline-secondary btn-sm" id="copy-btn" style="flex-shrink:0;">
               <i class="pi pi-copy"></i>
             </button>

@@ -21,7 +21,7 @@
   <div class="vtx-panel-body" style="padding:.75rem 1rem;display:flex;gap:1rem;flex-wrap:wrap;align-items:center;">
     <form method="GET" action="{{baseUrl}}/admin/translations" style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;">
       <label style="font-size:.8125rem;font-weight:600;">Locale</label>
-      <select class="form-select form-select-sm" name="locale" style="width:auto;" onchange="this.form.submit()">
+      <select class="form-select form-select-sm" name="locale" style="width:auto;" data-submit-form>
         <?php foreach ($locales as $loc): ?>
         <option value="<?php echo htmlspecialchars($loc); ?>" <?php echo $loc === $locale ? 'selected' : ''; ?>>
           <?php echo strtoupper(htmlspecialchars($loc)); ?><?php echo $loc === 'en' ? ' (reference)' : ''; ?>
@@ -29,7 +29,7 @@
         <?php endforeach; ?>
       </select>
       <label style="font-size:.8125rem;font-weight:600;">Group</label>
-      <select class="form-select form-select-sm" name="group" style="width:auto;" onchange="this.form.submit()">
+      <select class="form-select form-select-sm" name="group" style="width:auto;" data-submit-form>
         <?php foreach ($groups as $grp): ?>
         <option value="<?php echo htmlspecialchars($grp); ?>" <?php echo $grp === $group ? 'selected' : ''; ?>>
           <?php echo htmlspecialchars($grp); ?>.php

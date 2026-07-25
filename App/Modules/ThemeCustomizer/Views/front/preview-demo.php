@@ -6,7 +6,7 @@
     <div class="tc-demo-actions">
       <span class="tc-demo-btn">Primary Button</span>
       <span class="tc-demo-btn outline">Outline Button</span>
-      <a href="#" class="tc-demo-link" onclick="return false">A text link</a>
+      <a href="javascript:void(0)" class="tc-demo-link">A text link</a>
     </div>
   </div>
 

@@ -61,11 +61,11 @@ abstract class BaseController extends Controller
     {
         // Core\Middleware\SecurityHeadersMiddleware already applied X-Frame-Options,
         // X-Content-Type-Options, Referrer-Policy, and a strict CSP to every request.
-        // Admin views still rely on inline <script>/<style>, so only the CSP is
-        // re-emitted here with 'unsafe-inline' allowed - header() replaces the
+        // Admin views now use external JS only, so only the CSP is
+        // re-emitted here without 'unsafe-inline' - header() replaces the
         // earlier same-named header, the other three stay as the middleware set them.
         if (!headers_sent()) {
-            header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; frame-ancestors 'none'");
+            header("Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self' data:; frame-ancestors 'none'");
         }
         $flash     = $this->session->flash('flash');
         $csrfToken = $this->csrf->getToken();
