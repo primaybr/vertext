@@ -177,8 +177,10 @@ Enhanced `<select>` with search, keyboard navigation, and optional AJAX-loaded o
 | `data-vtx-select` | Required - activates the component on this `<select>` |
 | `data-searchable` | Adds a search box inside the dropdown; add this once the option list can exceed a screenful (brand/category/user pickers) - omit for small fixed enums (status, language) |
 | `data-placeholder` | Placeholder text shown when nothing is selected (defaults to the first empty-value `<option>`'s text, or "Select…") |
-| `data-ajax-url` | Lazy-loads options from this URL on first open instead of reading static `<option>`s - expects a JSON array of `{value, label, disabled}` |
+| `data-ajax-url` | Combined with `data-searchable`: remote search - never preloads the full list, queries `{url}?q={term}` on open and on every keystroke (debounced 220ms), expects a JSON array of `{value, label, disabled}` already filtered/limited server-side. Without `data-searchable`: loads the full option list from this URL once on first open and filters client-side thereafter. |
 | `multiple` (native) | Renders as a multi-select with removable tag chips |
+
+Use `data-searchable data-ajax-url` (remote search) instead of rendering the full option list inline once it can reach into the thousands (a brand/product/user picker over a large table, for example) - besides the page weight, `Core\Utilities\Text\HTML`'s admin minifier can hit PHP's internal PCRE backtrack limit on a large enough page and previously crashed outright (fixed defensively there too, but avoiding a giant `<option>` list in the first place is the real fix). In remote-search mode, render only the currently-selected option inline (if any) so its label shows without waiting on a fetch; the controller's search endpoint does an `ILIKE` + `LIMIT` query and returns `{value, label}` pairs.
 
 Imperative API (rarely needed - the declarative attributes above cover normal use): `new Vtx.Select({ el: selectEl, searchable: true, placeholder: 'Choose…', ajaxUrl: '/admin/...', onChange: fn })`, with instance methods `getValue()`, `setValue(val)`, `setOptions([{value,label,disabled}])`, `destroy()` (accessible on an enhanced element via `selectEl._vtxSelect`).
 

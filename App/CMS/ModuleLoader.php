@@ -197,7 +197,8 @@ class ModuleLoader
      * e.g. {"assets": {"css": [...], "js": [...], "admin": {"css": [...], "js": [...]}}}.
      * Injected into theme layouts (App/Themes/*\/layout.php), not the admin layout.
      *
-     * $currentModule scopes the result to just that module's own front assets
+     * $currentModule scopes the result to that module's own front assets, or
+     * an ordered list of modules whose markup shares the current page,
      * plus ALWAYS_GLOBAL_FRONT_MODULES (ThemeEngine::render() derives it from
      * the view path, e.g. 'modules/blog/front/index' -> 'blog') - without it,
      * every enabled module's front assets are unioned together regardless of
@@ -205,7 +206,7 @@ class ModuleLoader
      * (the old behavior, kept as the default for error pages and anything
      * else that doesn't resolve to a single owning module).
      */
-    public static function frontAssets(?string $currentModule = null): array
+    public static function frontAssets(string|array|null $currentModule = null): array
     {
         self::load();
         $byModule = self::$frontAssetsByModule ?? [];
@@ -213,7 +214,12 @@ class ModuleLoader
         if ($currentModule === null) {
             $wanted = array_keys($byModule);
         } else {
-            $wanted = array_unique([$currentModule, ...self::ALWAYS_GLOBAL_FRONT_MODULES]);
+            $requested = is_array($currentModule) ? $currentModule : [$currentModule];
+            $requested = array_values(array_filter(
+                $requested,
+                static fn (mixed $slug): bool => is_string($slug) && $slug !== ''
+            ));
+            $wanted = array_values(array_unique([...$requested, ...self::ALWAYS_GLOBAL_FRONT_MODULES]));
         }
 
         $css = [];

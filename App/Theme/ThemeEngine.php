@@ -43,6 +43,20 @@ class ThemeEngine
         $baseUrl  = $data['baseUrl'] ?? '';
         $themeUrl = $baseUrl . '/themes/' . $theme;
 
+        // Derive which module "owns" this page from the view path convention
+        // every front controller already follows (e.g. 'modules/blog/front/index'
+        // -> 'blog'), so the layout can ask ModuleLoader::frontAssets() for just
+        // this module's own front CSS/JS instead of every enabled module's.
+        // Null for anything that doesn't match (error pages) - frontAssets()
+        // falls back to the old union-of-everything behavior in that case.
+        $currentModule = null;
+        if (preg_match('#^modules/([a-z0-9\-]+)/#', $view, $__moduleMatch)) {
+            $currentModule = $__moduleMatch[1];
+        }
+        if (isset($data['front_asset_modules']) && is_array($data['front_asset_modules'])) {
+            $currentModule = $data['front_asset_modules'];
+        }
+
         // Load general site settings for nav/footer
         $site     = self::siteSettings();
         $siteName = $site['site_name']        ?? 'Vertext';
@@ -92,7 +106,7 @@ class ThemeEngine
         extract(compact(
             'content', 'pageTitle', 'pageDesc', 'pageImage', 'canonicalUrl',
             'baseUrl', 'themeUrl', 'siteName', 'siteDesc',
-            'site', 'data', 'feedUrl'
+            'site', 'data', 'feedUrl', 'currentModule'
         ));
         include $layoutFile;
         $finalHtml = ob_get_clean();

@@ -254,6 +254,25 @@ class MediaController extends BaseController
         }
 
         $fullPath   = $dir . $stored;
+
+        // Convert image to WebP for smaller file size.
+        // Always converts PNG/JPG/JPEG to WebP after upload (GD handles all formats).
+        $convertToWebp = (in_array($ext, ['png', 'jpg', 'jpeg'], true) && function_exists('imagewebp'));
+        if ($convertToWebp) {
+            $im = $this->loadGdImage($fullPath, $ext);
+            if ($im) {
+                $webpStored = preg_replace('/\.[^.]+$/', '.webp', $stored);
+                $webpPath   = $dir . $webpStored;
+                if (@imagewebp($im, $webpPath, 85)) {
+                    @unlink($fullPath);
+                    $stored    = $webpStored;
+                    $fullPath  = $webpPath;
+                    $ext       = 'webp';
+                }
+                imagedestroy($im);
+            }
+        }
+
         $dimensions = @getimagesize($fullPath);
         $width      = $dimensions ? $dimensions[0] : null;
         $height     = $dimensions ? $dimensions[1] : null;
@@ -289,7 +308,7 @@ class MediaController extends BaseController
             $id = (string) $this->db('media_files')->save([
                 'filename'       => $storedFilename,
                 'original_name'  => basename($file['name']),
-                'mime_type'      => $file['type'],
+                 'mime_type'      => $convertToWebp ? 'image/webp' : $file['type'],
                 'size'           => (int) filesize($fullPath),
                 'width'          => $width,
                 'height'         => $height,
@@ -413,6 +432,114 @@ class MediaController extends BaseController
             'processed' => $done,
             'remaining' => $remaining,
             'message'   => "{$done} thumbnail(s) generated." . ($remaining > 0 ? " {$remaining} still pending - run again." : ' All done.'),
+        ]);
+    }
+
+    /**
+     * Bulk-convert existing PNG images to WebP.
+     * POST /admin/media/convert-png-to-webp
+     */
+    public function convertPngToWebp(): void
+    {
+        $this->requirePermission('media.edit');
+        $this->validateCsrf();
+
+        if (!function_exists('imagewebp')) {
+            $this->json(['success' => false, 'message' => 'GD WebP support is not available on this server.'], 500);
+        }
+
+        $limit = max(1, min(100, (int) ($this->input->post('limit', false) ?? 50)));
+
+        $rows = $this->db('media_files')
+            ->select('id, filename, thumbnail_path, mime_type, width, height')
+            ->where('mime_type', 'image/png')
+            ->whereNull('deleted_at')
+            ->limitOffset($limit, 0)
+            ->get() ?: [];
+
+        $done       = 0;
+        $failedIds  = [];
+
+        foreach ($rows as $row) {
+            $filename = $row['filename']; // YYYY/MM/stored.png
+            $parts    = explode('/', $filename);
+            if (count($parts) < 3) {
+                $failedIds[] = $row['id'];
+                continue;
+            }
+            $year  = $parts[0];
+            $month = $parts[1];
+            $stored = $parts[2];
+
+            $dir      = ROOT . 'Public' . DS . 'uploads' . DS . 'media' . DS . $year . DS . $month . DS;
+            $fullPath = $dir . $stored;
+
+            if (!file_exists($fullPath)) {
+                $failedIds[] = $row['id'];
+                continue;
+            }
+
+            // Convert PNG → WebP
+            $im = @imagecreatefrompng($fullPath);
+            if (!$im) {
+                $failedIds[] = $row['id'];
+                continue;
+            }
+
+            $webpStored = preg_replace('/\.[^.]+$/', '.webp', $stored);
+            $webpPath   = $dir . $webpStored;
+
+            if (!@imagewebp($im, $webpPath, 85)) {
+                imagedestroy($im);
+                $failedIds[] = $row['id'];
+                continue;
+            }
+            imagedestroy($im);
+
+            // Remove old PNG, update DB record
+            @unlink($fullPath);
+
+            $newThumbnail = null;
+            if (!empty($row['thumbnail_path'])) {
+                $thumbParts = explode('/', $row['thumbnail_path']);
+                if (count($thumbParts) >= 3) {
+                    $oldThumbPath = $dir . $thumbParts[2];
+                    if (file_exists($oldThumbPath) && str_ends_with($oldThumbPath, '.png')) {
+                        $im = @imagecreatefrompng($oldThumbPath);
+                        if ($im) {
+                            $newThumbName = preg_replace('/\.[^.]+$/', '.webp', $thumbParts[2]);
+                            $newThumbPath = $dir . $newThumbName;
+                            if (@imagewebp($im, $newThumbPath, 85)) {
+                                @unlink($oldThumbPath);
+                                $newThumbnail = $year . '/' . $month . '/' . $newThumbName;
+                            }
+                            imagedestroy($im);
+                        }
+                    }
+                }
+            }
+
+            $this->db('media_files')->where('id', $row['id'])->update([
+                'filename'       => $year . '/' . $month . '/' . $webpStored,
+                'thumbnail_path' => $newThumbnail,
+                'mime_type'      => 'image/webp',
+                'resized'        => false,
+            ]);
+
+            $done++;
+        }
+
+        $remaining = (int) ($this->db('media_files')
+            ->where('mime_type', 'image/png')
+            ->whereNull('deleted_at')
+            ->totalRows() ?: 0);
+
+        $this->json([
+            'success'   => true,
+            'processed' => $done,
+            'remaining' => $remaining,
+            'failed'    => $failedIds,
+            'message'   => "{$done} PNG(s) converted to WebP." . ($remaining > 0 ? " {$remaining} still pending - run again." : ' All done.'),
         ]);
     }
 

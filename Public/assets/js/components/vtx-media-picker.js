@@ -57,17 +57,34 @@
             if (e.target === overlay) overlay.remove();
         });
 
+        // picker.php always ships its own upload dropzone + inline script that
+        // instantiates VtxUpload - Vtx.autoInit() only scans the DOM once at
+        // initial page load to decide which lazy component bundles to fetch,
+        // so it never sees this picker's [data-vtx-upload] element (injected
+        // later via AJAX) and vtx-upload.js never loads on its own. Must
+        // explicitly load it before running the fetched HTML's inline script.
+        function runScripts(container) {
+            var run = function () {
+                container.querySelectorAll('script').forEach(function (old) {
+                    var s = document.createElement('script');
+                    s.textContent = old.textContent;
+                    old.parentNode.replaceChild(s, old);
+                });
+            };
+            if (window.Vtx && window.Vtx.load) {
+                Vtx.load(['upload'], run);
+            } else {
+                run();
+            }
+        }
+
         VtxAjax.get(url, function (ok, html) {
             if (!ok) {
                 body.innerHTML = '<p class="vtx-picker-error">Failed to load media library.</p>';
                 return;
             }
             body.innerHTML = html;
-            body.querySelectorAll('script').forEach(function (old) {
-                var s = document.createElement('script');
-                s.textContent = old.textContent;
-                old.parentNode.replaceChild(s, old);
-            });
+            runScripts(body);
 
             body.addEventListener('click', function (e) {
                 var link = e.target.closest('a[data-picker-page]');
@@ -77,11 +94,7 @@
                 VtxAjax.get(link.href, function (ok2, html2) {
                     if (!ok2) return;
                     body.innerHTML = html2;
-                    body.querySelectorAll('script').forEach(function (old) {
-                        var s = document.createElement('script');
-                        s.textContent = old.textContent;
-                        old.parentNode.replaceChild(s, old);
-                    });
+                    runScripts(body);
                 });
             });
         });

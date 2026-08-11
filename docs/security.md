@@ -77,7 +77,7 @@ On login, the user's effective permissions (union of all assigned roles) are loa
 Sessions are configured with:
 - `HttpOnly` cookie - not accessible via JavaScript
 - `Secure` cookie - only sent over HTTPS (when `https => true` in config)
-- `SameSite=Strict` - prevents CSRF via cross-site requests
+- `SameSite=Lax` - blocks cross-site POST/subrequests (the actual CSRF vector); `Strict` was tried first but silently breaks any third-party OAuth redirect back into the app
 - Session hijacking detection: stores user-agent and IP; mismatches are logged
 
 ### Auth Helper Methods

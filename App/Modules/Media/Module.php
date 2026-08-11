@@ -173,6 +173,7 @@ class Module implements ModuleInterface
         $router->get('/admin/media',                               $c,  'index');
         $router->post('/admin/media/upload',                       $c,  'upload');
         $router->post('/admin/media/regen-thumbnails',             $c,  'regenThumbnails');
+        $router->post('/admin/media/convert-png-to-webp',           $c,  'convertPngToWebp');
         $router->post('/admin/media/bulk',                         $c,  'bulk');
         $router->post('/admin/media/folders/store',                $c,  'storeFolder');
         $router->post('/admin/media/folders/([a-zA-Z0-9\-]+)/rename', $c, 'renameFolder');

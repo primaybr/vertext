@@ -121,7 +121,7 @@ class Base
 
             // Process through middleware stack
             $middlewareStack->process();
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             // Log the exception and display an appropriate error
             $this->logger->write(
                 "Application Error: " . $e->getMessage(),

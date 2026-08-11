@@ -62,8 +62,19 @@ class Database
         return $this->connections[$connection] ?? $this->connections['default'];
     }
 
-    public function getCacheConfig(): array
+    public function getCacheConfig(?string $requestUri = null): array
     {
-        return $this->cache;
+        $cache = $this->cache;
+        $uri = $requestUri ?? (string) ($_SERVER['REQUEST_URI'] ?? '');
+        $path = parse_url($uri, PHP_URL_PATH);
+
+        // Admin screens and AJAX endpoints are operational views where stale
+        // data is worse than an extra database read. Match a complete path
+        // segment so this also works when the app is hosted below a base path.
+        if (is_string($path) && preg_match('#(?:^|/)admin(?:/|$)#', $path) === 1) {
+            $cache['enabled'] = false;
+        }
+
+        return $cache;
     }
 }

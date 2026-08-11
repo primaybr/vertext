@@ -1,7 +1,19 @@
-/* Vertext CMS - VtxSelect Component v1.1.0
+/* Vertext CMS - VtxSelect Component v1.2.1
  *
  * Declarative:  <select data-vtx-select data-searchable data-placeholder="Choose…">
  * Imperative:   new Vtx.Select({ el: selectEl, searchable: true, placeholder: 'Choose…' })
+ *
+ * Remote search: <select data-vtx-select data-searchable data-ajax-url="/admin/.../search">
+ * With both `data-searchable` and `data-ajax-url` set, options are never inline in the
+ * <select> (except the one already-selected option, so its label shows without a fetch) -
+ * every open and every keystroke (debounced 220ms) queries `{ajaxUrl}?q={term}` and expects
+ * JSON `[{value, label, disabled?}, ...]` back, already filtered/limited server-side. Use
+ * this instead of rendering thousands of <option> tags inline: besides the page weight, the
+ * admin HTML minifier can hit PHP's internal PCRE limit on a large enough page and crash
+ * (see Core\Utilities\Text\HTML - fixed defensively there too, but avoiding the giant
+ * <option> list in the first place is the real fix for this component's own forms).
+ * `data-ajax-url` WITHOUT `data-searchable` keeps the older "load full list once, filter
+ * client-side" behavior.
  *
  * The native <select> stays in the DOM (hidden) so form serialization works unchanged.
  * The dropdown is rendered as a body-level portal (position:fixed) so it is never
@@ -28,9 +40,19 @@
         var onChange    = opts.onChange    || null;
         var id          = 'vtx-sel-' + (++_uid);
 
+        // Both set - options come from the server per-keystroke, never preloaded in bulk.
+        var remoteSearch = !!(ajaxUrl && searchable);
+
         var options   = [];   // [{ value, label, disabled }]
         var selected  = [];   // array of string values
+        // value -> label for every option ever selected/rendered, kept independent of
+        // `options` so a remote search replacing `options` can't blank out the trigger's
+        // label for whatever was already picked (e.g. the label of a pre-selected option
+        // isn't necessarily present in the results of a later, unrelated search query).
+        var selectedLabels = {};
         var ajaxCache = null;
+        var searchToken = 0; // increments per remote-search request; stale responses are dropped
+        var searchDebounceTimer = null;
         var isOpen    = false;
 
         /* -- Build widget DOM ----------------------------------- */
@@ -119,10 +141,22 @@
         /* -- Read native state ---------------------------------- */
         function readNativeOptions() {
             options = [];
+            // A blank-value <option> (e.g. "- None -") used to be skipped here entirely, so
+            // once such a field had a real value selected, there was no list item left to
+            // click to clear it back to blank - confirmed live on Carikno's Categories
+            // "Parent Category" field. It's kept in `options` now so it renders as a normal,
+            // clickable (or disabled, if the option itself is disabled) list entry.
             Array.from(selectEl.options).forEach(function (opt) {
-                if (opt.value === '') return;
-                options.push({ value: opt.value, label: opt.text.trim(), disabled: opt.disabled });
+                var o = { value: opt.value, label: opt.text.trim(), disabled: opt.disabled };
+                options.push(o);
+                selectedLabels[o.value] = o.label;
             });
+        }
+
+        function resolveLabel(value) {
+            if (selectedLabels[value] !== undefined) return selectedLabels[value];
+            var o = findOption(value);
+            return o ? o.label : null;
         }
 
         function readNativeSelected() {
@@ -183,19 +217,19 @@
 
             if (multiple) {
                 selected.forEach(function (val) {
-                    var opt = findOption(val);
-                    if (!opt) return;
+                    var optLabel = resolveLabel(val);
+                    if (optLabel === null) return;
                     var tag = document.createElement('span');
                     tag.className = 'vtx-select-tag';
 
                     var label = document.createElement('span');
-                    label.textContent = opt.label;
+                    label.textContent = optLabel;
                     tag.appendChild(label);
 
                     var rm = document.createElement('button');
                     rm.type = 'button';
                     rm.className = 'vtx-select-tag-rm';
-                    rm.setAttribute('aria-label', 'Remove ' + opt.label);
+                    rm.setAttribute('aria-label', 'Remove ' + optLabel);
                     rm.innerHTML = '&#x2715;';
                     rm.addEventListener('mousedown', function (e) {
                         e.preventDefault();
@@ -206,8 +240,8 @@
                     valueEl.appendChild(tag);
                 });
             } else {
-                var o = findOption(selected[0]);
-                valueEl.textContent = o ? o.label : placeholder;
+                var resolved = resolveLabel(selected[0]);
+                valueEl.textContent = resolved !== null ? resolved : placeholder;
             }
         }
 
@@ -217,6 +251,17 @@
 
         /* -- Sync native select --------------------------------- */
         function syncNative() {
+            // In remote-search mode, a value picked from a server search result has no
+            // backing <option> in the native <select> (only the pre-selected option, if
+            // any, is ever rendered inline) - add one, or the form would submit nothing
+            // for this field despite the widget showing a selection.
+            selected.forEach(function (val) {
+                var exists = Array.from(selectEl.options).some(function (opt) { return opt.value === val; });
+                if (!exists) {
+                    selectEl.add(new Option(resolveLabel(val) || val, val, false, false));
+                }
+            });
+
             Array.from(selectEl.options).forEach(function (opt) {
                 opt.selected = selected.indexOf(opt.value) !== -1;
             });
@@ -229,6 +274,9 @@
 
         /* -- Pick / deselect ------------------------------------ */
         function pickOption(value) {
+            var opt = findOption(value);
+            if (opt) selectedLabels[value] = opt.label;
+
             if (multiple) {
                 var idx = selected.indexOf(value);
                 if (idx === -1) { selected.push(value); }
@@ -259,7 +307,10 @@
                 if (el !== container && el._vtxSelectInst) el._vtxSelectInst.close();
             });
 
-            if (ajaxUrl && !ajaxCache) {
+            if (remoteSearch) {
+                openDropdown();
+                remoteSearchFetch('');
+            } else if (ajaxUrl && !ajaxCache) {
                 loadAjaxOptions();
             } else {
                 openDropdown();
@@ -284,6 +335,7 @@
         function close() {
             if (!isOpen) return;
             isOpen = false;
+            clearTimeout(searchDebounceTimer);
             container.classList.remove('is-open');
             dropdown.classList.remove('vtx-select-dropdown--open');
             dropdown.classList.remove('is-above');
@@ -299,6 +351,27 @@
         // Capture phase catches scrolls inside any ancestor container
         window.addEventListener('scroll', onScrollOrResize, true);
         window.addEventListener('resize', onScrollOrResize);
+
+        /* -- Remote search (data-searchable + data-ajax-url) ---- */
+        function remoteSearchFetch(query) {
+            var token = ++searchToken;
+            listEl.innerHTML = '<li class="vtx-select-no-results">Loading…</li>';
+
+            VtxAjax.get(ajaxUrl + '?q=' + encodeURIComponent(query), function (ok, text) {
+                if (token !== searchToken) return; // superseded by a newer search
+
+                if (!ok) {
+                    listEl.innerHTML = '<li class="vtx-select-no-results">Failed to load options.</li>';
+                    return;
+                }
+                var data;
+                try { data = JSON.parse(text); } catch (e) { data = []; }
+                options = data.map(function (item) {
+                    return { value: String(item.value), label: String(item.label), disabled: !!item.disabled };
+                });
+                renderList('');
+            });
+        }
 
         /* -- AJAX option loading -------------------------------- */
         function loadAjaxOptions() {
@@ -337,7 +410,13 @@
 
         if (searchInput) {
             searchInput.addEventListener('input', function () {
-                renderList(searchInput.value);
+                if (remoteSearch) {
+                    var q = searchInput.value;
+                    clearTimeout(searchDebounceTimer);
+                    searchDebounceTimer = setTimeout(function () { remoteSearchFetch(q); }, 220);
+                } else {
+                    renderList(searchInput.value);
+                }
             });
             searchInput.addEventListener('keydown', handleListKeydown);
         }
@@ -382,11 +461,14 @@
             if (!container.contains(e.target) && !dropdown.contains(e.target)) close();
         });
 
-        /* -- Initial render ------------------------------------- */
-        if (!ajaxUrl) {
-            readNativeOptions();
-            readNativeSelected();
-        }
+        /* -- Initial render --------------------------------------
+         * Always read whatever's in the native <select> - for a static select
+         * that's the full option list; for an ajax/remote-search select it's
+         * only the 0-1 option the server pre-rendered for the current value
+         * (see the module docblock), which is exactly what's needed to show
+         * the right label immediately without waiting on a fetch. */
+        readNativeOptions();
+        readNativeSelected();
         renderTrigger();
 
         /* -- Public API ----------------------------------------- */
@@ -427,6 +509,7 @@
             },
 
             destroy: function () {
+                clearTimeout(searchDebounceTimer);
                 window.removeEventListener('scroll', onScrollOrResize, true);
                 window.removeEventListener('resize', onScrollOrResize);
                 if (dropdown.parentNode) dropdown.parentNode.removeChild(dropdown);
@@ -443,7 +526,7 @@
         return self;
     }
 
-    VtxSelect.version = '1.1.0';
+    VtxSelect.version = '1.2.1';
     window.Vtx.Select = VtxSelect;
 
     function autoInit() {

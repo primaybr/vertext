@@ -126,7 +126,7 @@
     /* -- Vtx Component Loader ---------------------------------- */
     window.Vtx = (function () {
         var BASE     = (window.VTX_ASSETS_URL || '') + 'js/components/';
-        var VERSIONS = { search: 1, datatable: 2, select: 1, editor: 2, tags: 3, chart: 1, upload: 1, 'media-picker': 2, slug: 1, tooltip: 1 };
+        var VERSIONS = { search: 1, datatable: 2, select: 2, editor: 3, tags: 3, chart: 1, upload: 1, 'media-picker': 3, slug: 1, tooltip: 1 };
         var _loaded    = {};
         var _instances = {};
 
@@ -312,13 +312,27 @@
                     var f = document.getElementById(btn.dataset.confirmForm);
                     if (!f) return;
                     if (isAjax) {
+                        // Defaults to 'delete' for backward compat - every existing caller of
+                        // this handler before data-confirm-action existed WAS a delete action.
+                        // Confirmed live in Carikno: a non-delete action (Retry) reusing this
+                        // exact same generic handler/markup still got its <tr> ripped out of
+                        // the DOM here, even though the underlying row wasn't actually gone -
+                        // it just vanished from view with no feedback.
+                        var action = btn.dataset.confirmAction || 'delete';
                         VtxAjax.postForm(f.action, f, function (ok, res) {
                             var msg = (res && res.message) ? res.message : (ok ? 'Done.' : 'An error occurred.');
                             Phuse.toast(msg, ok && res && res.success ? 'success' : 'error');
                             if (ok && res && res.success) {
-                                var row = btn.closest('tr');
-                                if (row) row.remove();
-                                document.dispatchEvent(new CustomEvent('vtx:crud:success', { detail: { action: 'delete' } }));
+                                if (action === 'delete') {
+                                    var row = btn.closest('tr');
+                                    if (row) row.remove();
+                                }
+                                // data-gen-id (or any future button opting into this) lets a
+                                // page-specific listener re-sync just the affected row without
+                                // this generic handler needing to know anything about it.
+                                document.dispatchEvent(new CustomEvent('vtx:crud:success', {
+                                    detail: { action: action, id: btn.dataset.genId || null }
+                                }));
                             }
                         });
                     } else {
@@ -518,6 +532,14 @@
             var form    = e.target;
             var panelId = form.dataset.ajaxPanel;
             if (!panelId) return;
+            // A form also marked [data-ajax-form] is a POST action (e.g. "Sync",
+            // "Approve"), not a GET filter/search form - initAjaxForms() handles
+            // those (real POST via VtxAjax.postForm, refreshing panelId after
+            // success). Without this check, this GET-only nav path fired for
+            // EVERY [data-ajax-panel] form regardless of method="POST", silently
+            // rewriting the action into a GET query string - confirmed live on
+            // Carikno as the cause of a 404 against a POST-only route.
+            if (form.dataset.ajaxForm !== undefined) return;
             e.preventDefault();
 
             var params = new URLSearchParams();

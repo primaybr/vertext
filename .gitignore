@@ -13,6 +13,7 @@ tests/coverage/
 .markdownlint.json
 .remember/
 .kilo/
+.codex/
 
 # Runtime-generated credential files — never commit these
 Storage/db.php

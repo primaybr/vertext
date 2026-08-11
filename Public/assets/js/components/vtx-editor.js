@@ -12,9 +12,8 @@
     function loadQuill(cb) {
         if (_quillLoaded) { cb(); return; }
         _queue.push(cb);
-        if (_queue.length > 1) return; // already loading
+        if (_queue.length > 1) return;
 
-        // CSS
         if (!_cssLoaded) {
             var link = document.createElement('link');
             link.rel  = 'stylesheet';
@@ -23,7 +22,6 @@
             _cssLoaded = true;
         }
 
-        // JS
         var s = document.createElement('script');
         s.src = QUILL_JS;
         s.onload = function () {
@@ -43,15 +41,6 @@
         ['clean']
     ];
 
-    /**
-     * VtxEditor
-     *
-     * @param {object} opts
-     *   container    {Element}   - div to render Quill into
-     *   textarea     {Element}   - hidden textarea synced on change
-     *   mediaPicker  {boolean}   - use VtxMediaPicker for image insertion
-     *   onWordCount  {function}  - called with word count on each change
-     */
     function VtxEditor(opts) {
         this.container    = opts.container;
         this.textarea     = opts.textarea;
@@ -65,7 +54,7 @@
         var self = this;
         loadQuill(function () {
             self._quill = new Quill(self.container, {
-                theme:   'snow',
+                theme: 'snow',
                 modules: {
                     toolbar: {
                         container: TOOLBAR,
@@ -73,13 +62,11 @@
                             image: function () {
                                 var range = self._quill.getSelection(true);
                                 var idx   = range ? range.index : self._quill.getLength();
-
                                 function insertImage(url) {
                                     if (!url) return;
                                     self._quill.insertEmbed(idx, 'image', url, Quill.sources.USER);
                                     self._quill.setSelection(idx + 1, Quill.sources.SILENT);
                                 }
-
                                 if (self._mediaPicker && window.VtxMediaPicker && window.VtxMediaPicker.open) {
                                     window.VtxMediaPicker.open(function (url) { insertImage(url); });
                                 } else {
@@ -90,10 +77,9 @@
                         }
                     }
                 },
-                placeholder: 'Start writing…'
+                placeholder: 'Start writing...'
             });
 
-            // Sync to textarea on change
             self._quill.on('text-change', function () {
                 if (self.textarea) {
                     self.textarea.value = self._quill.root.innerHTML;
@@ -105,7 +91,6 @@
                 }
             });
 
-            // Sync before form submit
             var form = self.container.closest('form');
             if (form) {
                 form.addEventListener('submit', function () {
@@ -121,10 +106,15 @@
 
     VtxEditor.prototype.setHTML = function (html) {
         var self = this;
+        var apply = function () {
+            if (!self._quill) return;
+            self._quill.setContents([]);
+            self._quill.clipboard.dangerouslyPasteHTML(0, html);
+        };
         if (this._quill) {
-            this._quill.root.innerHTML = html;
+            apply();
         } else {
-            loadQuill(function () { self._quill && (self._quill.root.innerHTML = html); });
+            loadQuill(apply);
         }
     };
 
@@ -134,7 +124,6 @@
 
     root.VtxEditor = VtxEditor;
 
-    // Auto-init any [data-vtx-editor] textarea elements
     document.querySelectorAll('[data-vtx-editor]').forEach(function (ta) {
         var wrap = document.createElement('div');
         wrap.className = 'vtx-editor-wrap';
@@ -143,7 +132,10 @@
         wrap.appendChild(container);
         ta.parentNode.insertBefore(wrap, ta);
         ta.style.display = 'none';
-        new VtxEditor({ container: container, textarea: ta });
+        var editor = new VtxEditor({ container: container, textarea: ta });
+        if (ta.value) {
+            editor.setHTML(ta.value);
+        }
     });
 
 }(window));

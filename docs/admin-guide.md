@@ -29,7 +29,7 @@ Changes are logged to the audit trail under `profile.updated`.
 `/admin/login` - Standard username/password login form.
 
 - **Rate limiting**: After repeated failures, the account is temporarily locked (brute-force protection via `LoginRateLimiter`).
-- **Session security**: Session ID is regenerated on successful login. Cookies are `HttpOnly`, `Secure`, and `SameSite=Strict`.
+- **Session security**: Session ID is regenerated on successful login. Cookies are `HttpOnly`, `Secure`, and `SameSite=Lax`.
 
 ### Logout
 
