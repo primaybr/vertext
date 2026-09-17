@@ -1,6 +1,6 @@
 # Vertext CMS
 
-![Version](https://img.shields.io/badge/version-0.1.6-blue)
+![Version](https://img.shields.io/badge/version-0.1.7-blue)
 ![Status](https://img.shields.io/badge/status-public%20beta-orange)
 ![PHP](https://img.shields.io/badge/PHP-8.2%2B-777BB4)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -13,7 +13,7 @@ Vertext is a lightweight, extensible content management system written in PHP 8.
 > enterprise-hardened. Read [Known Limitations](docs/known-limitations.md) before deploying, and
 > [Going to Production](docs/going-to-production.md) before inviting real users.
 
-> **Built on [Phuse 1.3.3](https://github.com/primaybr/phuse)** - Vertext is powered by the Phuse framework, which provides the ORM, router, session manager, input helpers, validator, and core utilities.
+> **Built on [Phuse 1.3.4](https://github.com/primaybr/phuse)** - Vertext is powered by the Phuse framework, which provides the ORM, router, session manager, input helpers, validator, and core utilities.
 
 ---
 

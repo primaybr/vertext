@@ -11,9 +11,19 @@ use Core\Exception\DatabaseException;
 
 class Connection
 {
-    private ?PDO $handler;
-    private ?PDOStatement $statement;
+    private ?PDO $handler = null;
+    private ?PDOStatement $statement = null;
     private array $boundParams = [];
+    private ?string $lastQuery = null;
+    private float $lastUsedAt = 0.0;
+
+    private string $driver;
+    private string $host;
+    private int|string $port;
+    private string $dbname;
+    private string $user;
+    private string $password;
+    private array $options;
 
     public function __construct(
         string $driver,
@@ -24,13 +34,15 @@ class Connection
         string $password,
         array $options = []
     ) {
-		$connection = "Core\Database\Drivers\\".$this->getDrivers($driver);
-		$connect	= new $connection($host, $port, $dbname, $user, $password, $options);
-		$this->handler = $connect->getDB();
+        $this->driver   = $driver;
+        $this->host     = $host;
+        $this->port     = $port;
+        $this->dbname   = $dbname;
+        $this->user     = $user;
+        $this->password = $password;
+        $this->options  = $options;
 
-		if (!$this->handler instanceof PDO) {
-			throw new DatabaseException('Failed to establish a database connection');
-		}
+        $this->connect();
     }
 
     // No __destruct(): PDO connections close automatically when the handler is garbage
@@ -38,6 +50,121 @@ class Connection
     // ConnectionPool's static-held references during PHP shutdown - if this object's
     // destructor ran before the owning Model's, returnConnection()/isConnectionValid()
     // would later call prepare() on the already-nulled handler and fatal.
+
+    /**
+     * Establish (or re-establish) the underlying PDO handle from the stored
+     * connection parameters. Called from the constructor and from reconnect().
+     *
+     * @return void
+     * @throws DatabaseException If the connection cannot be established
+     */
+    private function connect(): void
+    {
+        $connection = "Core\\Database\\Drivers\\" . $this->getDrivers($this->driver);
+        $connect = new $connection($this->host, $this->port, $this->dbname, $this->user, $this->password, $this->options);
+        $this->handler = $connect->getDB();
+        $this->lastUsedAt = microtime(true);
+
+        if (!$this->handler instanceof PDO) {
+            throw new DatabaseException('Failed to establish a database connection');
+        }
+    }
+
+    /**
+     * Reconnect to the database using the originally supplied connection parameters.
+     * Used to recover a connection that has been severed (see isDisconnectError()).
+     *
+     * @return void
+     * @throws DatabaseException If the reconnection attempt fails
+     */
+    public function reconnect(): void
+    {
+        $this->handler = null;
+        $this->statement = null;
+        $this->connect();
+    }
+
+    /**
+     * Check whether the underlying connection is currently alive.
+     *
+     * @return bool True if the connection responds to a simple ping query
+     */
+    public function isAlive(): bool
+    {
+        if (!$this->handler instanceof PDO) {
+            return false;
+        }
+
+        try {
+            $stmt = $this->handler->query('SELECT 1');
+            return $stmt !== false;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /**
+     * Determine whether a throwable represents a severed/lost database connection,
+     * as opposed to an ordinary query error (constraint violation, syntax error, etc).
+     *
+     * @param \Throwable $e The throwable to inspect
+     * @return bool True if this looks like a connection-lost condition
+     */
+    public function isDisconnectError(\Throwable $e): bool
+    {
+        $msg = strtolower($e->getMessage());
+        $code = strtolower((string) $e->getCode());
+
+        $disconnectCodes = ['08006', '08001', '08004', '57p01', '57p02', '57p03', '2006', '2013'];
+        if (in_array($code, $disconnectCodes, true)) {
+            return true;
+        }
+
+        return str_contains($msg, 'no connection to the server')
+            || str_contains($msg, 'terminating connection')
+            || str_contains($msg, 'closed unexpectedly')
+            || str_contains($msg, 'server closed the connection')
+            || str_contains($msg, 'connection to server was lost')
+            || str_contains($msg, 'could not connect to server')
+            || str_contains($msg, 'server has gone away')
+            || str_contains($msg, 'broken pipe')
+            || str_contains($msg, 'forcibly closed')
+            || str_contains($msg, 'connection reset');
+    }
+
+    /**
+     * Check whether the connection is currently inside an active transaction.
+     * Disconnect recovery must never retry mid-transaction - the transaction
+     * state itself would already be lost, so silently reconnecting and retrying
+     * a single statement would mask a bigger problem.
+     *
+     * @return bool
+     */
+    public function inTransaction(): bool
+    {
+        return $this->handler instanceof PDO && $this->handler->inTransaction();
+    }
+
+    /**
+     * Update the last-used timestamp, used by ConnectionPool to skip an active
+     * ping on a connection that was used recently (see item 8 of the pool logic).
+     *
+     * @return void
+     */
+    public function touchLastUsed(): void
+    {
+        $this->lastUsedAt = microtime(true);
+    }
+
+    /**
+     * Get the timestamp this connection was last used at.
+     *
+     * @return float
+     */
+    public function getLastUsedAt(): float
+    {
+        return $this->lastUsedAt;
+    }
 
 	/**
      * Get the appropriate driver class name based on the driver type
@@ -62,12 +189,24 @@ class Connection
      */
     public function query(string $query): void
     {
-		$this->statement = $this->handler->prepare($query);
-		if ($this->statement === false) {
-			throw new DatabaseException('Failed to prepare SQL statement');
-		}
-		// Reset bound parameters when preparing a new statement to prevent accumulation
-		$this->boundParams = [];
+        $this->lastQuery = $query;
+
+        try {
+            $this->statement = $this->handler->prepare($query);
+        } catch (\Throwable $e) {
+            if ($this->isDisconnectError($e) && !$this->inTransaction()) {
+                $this->reconnect();
+                $this->statement = $this->handler->prepare($query);
+            } else {
+                throw $e;
+            }
+        }
+
+        if ($this->statement === false) {
+            throw new DatabaseException('Failed to prepare SQL statement');
+        }
+        // Reset bound parameters when preparing a new statement to prevent accumulation
+        $this->boundParams = [];
     }
 
     /**
@@ -123,6 +262,7 @@ class Connection
     public function execute(array $params = []): mixed
     {
         try {
+            $this->lastUsedAt = microtime(true);
             if (!empty($params)) {
                 // Caller passed explicit params - PDO binds them (all as PARAM_STR).
                 return $this->statement->execute($params);
@@ -132,6 +272,26 @@ class Connection
             // everything as PARAM_STR), breaking BOOLEAN, NULL, and INT columns.
             return $this->statement->execute();
         } catch (PDOException $e) {
+            if ($this->isDisconnectError($e) && !$this->inTransaction() && $this->lastQuery !== null) {
+                // Connection dropped between query() and execute() - reconnect,
+                // re-prepare the last statement, and retry exactly once.
+                $savedBinds = $this->boundParams;
+                $this->reconnect();
+                $this->statement = $this->handler->prepare($this->lastQuery);
+                if ($this->statement === false) {
+                    throw $e;
+                }
+
+                if (!empty($params)) {
+                    return $this->statement->execute($params);
+                }
+
+                foreach ($savedBinds as $param => $value) {
+                    $this->bind($param, $value);
+                }
+                return $this->statement->execute();
+            }
+
             throw $e;
         }
     }
@@ -250,7 +410,7 @@ class Connection
      */
     public function cancelTransaction(): bool
     {
-        return $this->handler->rollBack();
+        return $this->handler ? $this->handler->rollBack() : false;
     }
 
     /**

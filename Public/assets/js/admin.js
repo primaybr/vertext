@@ -96,7 +96,7 @@
             xhr.send(JSON.stringify(data));
         },
 
-        // POST FormData (for CRUD forms: checkboxes, selects, file inputs)
+        // POST FormData (for CRUD forms: checkboxes, selects, file inputs, or FormData objects)
         postForm: function (url, formEl, cb) {
             var xhr = new XMLHttpRequest();
             xhr.open('POST', url, true);
@@ -107,7 +107,7 @@
                 try { res = JSON.parse(xhr.responseText); } catch (e) { res = {}; }
                 cb(xhr.status >= 200 && xhr.status < 300, res, xhr.status);
             };
-            xhr.send(new FormData(formEl));
+            xhr.send(formEl instanceof FormData ? formEl : new FormData(formEl));
         },
 
         // GET (for loading form partials into the CRUD modal)

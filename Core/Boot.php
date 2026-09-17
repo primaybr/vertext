@@ -10,14 +10,14 @@
 set_include_path(get_include_path().PATH_SEPARATOR.'./');
 
 // Composer's autoloader (third-party vendor/ packages) is registered FIRST,
-// before the custom App/Core/Config loader below - order matters here: on a
-// miss, Composer's generated loader just returns (never throws), so PHP
-// falls through to try the next registered autoloader; but the custom one
-// below throws on a miss instead of returning, which would abort the whole
-// autoload chain before Composer ever got a turn if it were registered
-// first. Stays invisible until a runtime Composer dependency is actually
-// added - confirmed missing in Carikno (its fork) when minishlink/web-push
-// was added there and silently failed to resolve at runtime.
+// before the custom App/Core/Config loader below - both autoloaders simply
+// return on a miss (neither throws), so PHP falls through to try the next
+// registered autoloader and, ultimately, its own class-not-found handling.
+// Registration order still matters so a vendor package's classes resolve via
+// Composer rather than being missed entirely. Stays invisible until a
+// runtime Composer dependency is actually added - confirmed missing in a
+// sibling fork of this framework when a vendor package was added there and
+// silently failed to resolve at runtime.
 $_vtxVendorAutoload = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php';
 if (file_exists($_vtxVendorAutoload)) {
     require $_vtxVendorAutoload;
@@ -38,24 +38,13 @@ spl_autoload_register(function ($namespace_class) {
         $autoloadExtensions = explode(',', spl_autoload_extensions());
     }
     $baseDir = dirname(__DIR__). DIRECTORY_SEPARATOR . str_replace('\\', DIRECTORY_SEPARATOR, $namespace_class);
-    $fileFound = false;
 
-    try {
-        foreach ($autoloadExtensions as $extension) {
-            $filePath = $baseDir . $extension;
-            if (file_exists($filePath)) {
-                require $filePath;
-                $fileFound = true;
-                break;
-            }
+    foreach ($autoloadExtensions as $extension) {
+        $filePath = $baseDir . $extension;
+        if (file_exists($filePath)) {
+            require $filePath;
+            return;
         }
-
-        if (!$fileFound) {
-            throw new Exception("Class not found: $namespace_class");
-        }
-    } catch (Exception $e) {
-        error_log("Autoload failed for class: $namespace_class - " . $e->getMessage());
-        throw $e;
     }
 });
 

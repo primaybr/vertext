@@ -126,8 +126,11 @@ If your server sits behind a load balancer or Cloudflare, configure trusted prox
 ```php
 // In Public/index.php (bootstrap) or a middleware
 use Core\Http\Client;
-Client::setTrustedProxies(['10.0.0.1', '192.168.1.100']);
+Client::setTrustedProxies(['10.0.0.1', '192.168.1.100', '10.0.0.0/8']);
 ```
+
+Entries can be an exact IP or a CIDR range (IPv4 or IPv6) - useful when the proxy's
+address varies within a pod/container network range rather than being one fixed IP.
 
 Without this, `REMOTE_ADDR` is always used (the secure default).
 
@@ -136,6 +139,21 @@ Note this is separate from HTTPS detection: the `Secure` session cookie flag and
 [Going to Production](going-to-production.md)), not off proxy headers. If TLS is terminated by a
 proxy in front of this server, set `'https' => true` yourself - trusted-proxy config above only
 affects IP address logging/rate limiting, not the HTTPS signal.
+
+## Sessions
+
+Sessions are configured via environment variables (read with `getenv()`, so set them
+in your web server/process manager, not `Config/Config.php`):
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `SESSION_DRIVER` | `files` | `files`, `redis`, or `database`. Production refuses to start on `files` (non-durable) - use `redis` or `database` when running more than one app instance behind a load balancer. |
+| `SESSION_LIFETIME_SECONDS` | 1440 (24 min) | Clamped to a sane range internally. |
+| `DB_POOL_MAX_CONNECTIONS` | 50 | Overrides the database connection pool's max size (default range is 1-50). |
+
+`SESSION_DRIVER=database` uses a built-in Postgres-backed session store
+(`Core\Http\PostgresSessionStore`) - no external session backend needed for a
+multi-pod deployment, just the app's existing database connection.
 
 ## Cache
 

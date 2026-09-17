@@ -7,6 +7,33 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Upcoming]
 
+## [0.1.7] - 2026-09-16
+
+### Changed
+
+- **Updated the framework to Phuse 1.3.4** - a large batch of Core fixes and additions found and fixed while working on Carikno, mirrored back through Phuse into Vertext. See below; full technical detail in Phuse's own changelog.
+
+### Fixed
+
+- **Session hijacking protection never actually triggered** - it compared the current request against values stored on the `Session` object itself, but a fresh `Session` instance is constructed on every request, so those values were always empty after the first request and the check silently no-op'd. Now reads the previously-stored values back out of the session, and a genuine mismatch invalidates the session and issues a clean one instead of throwing a 500 at the visitor. Ported from Phuse 1.3.4.
+- **A dropped database connection (idle timeout, brief network blip) required a restart to recover from** - queries after that point simply failed. The connection pool now detects a dead connection and transparently reconnects and retries once, and validates connections lazily on checkout instead of pinging every one on check-in. Ported from Phuse 1.3.4.
+- **A bulk write via `insertBatch()`/`updateBatch()`/`deleteBatch()` could leave stale rows visible through the query cache** - unlike a single-row save, these didn't clear the affected cache entries after committing. Fixed. Ported from Phuse 1.3.4.
+- **The compiled SQL for any query could have an escaped quote silently un-escaped** - a leftover cleanup step collapsed every doubled single-quote in the final SQL string, which could corrupt an intentionally-escaped literal. Removed. Ported from Phuse 1.3.4.
+- **A malformed request URI or a request with no Host header could trigger a PHP warning (heading toward a hard error in future PHP) in the router.** Hardened. Ported from Phuse 1.3.4.
+- **The fallback class autoloader threw an exception on any class it couldn't resolve**, which broke any legitimate `class_exists()`-style existence check on a genuinely-missing class instead of just returning false. Fixed. Ported from Phuse 1.3.4.
+- **A very large uploaded image could crash the whole PHP process with an out-of-memory fatal** before its dimensions were ever checked. Dimensions and estimated memory footprint are now checked cheaply before decoding, with a clear error instead of a crash if the image is too large. Ported from Phuse 1.3.4.
+- **A failed file upload gave no indication of why** - now reports the concrete reason (missing directory, permissions, PHP upload error code, etc). Ported from Phuse 1.3.4.
+- **Pagination logged to a file on nearly every setter call and every render** - up to several disk writes per paginated page view. Removed. Ported from Phuse 1.3.4.
+- **A JSON API response could silently come back empty** if any string in the payload contained invalid UTF-8 bytes (a routine risk with scraped or externally-sourced data), with no error surfaced anywhere. Fixed. Ported from Phuse 1.3.4.
+
+### Added
+
+- **A Postgres session timezone pin (`SET TIME ZONE 'UTC'`)** so timestamp columns have a known, consistent source timezone regardless of the database server's own configuration. Ported from Phuse 1.3.4.
+- **CIDR support for trusted reverse-proxy IPs** (e.g. `10.0.0.0/8`), not just exact-IP matches - needed for any deployment where the proxy's address varies within a pod network range. Ported from Phuse 1.3.4.
+- **Configurable session driver and lifetime** (`SESSION_DRIVER`, `SESSION_LIFETIME_SECONDS` env vars), session-fixation hardening, and an optional Postgres-backed distributed session store for deployments running multiple app instances behind a load balancer. A production environment can no longer be silently misconfigured onto ephemeral local-disk sessions. Ported from Phuse 1.3.4.
+- **Pages can now be served as Markdown to a requester that explicitly asks for it** (e.g. an AI agent/LLM tool sending `Accept: text/markdown`) - the page content converts cleanly to Markdown with frontmatter, with no HTML markup in the way. Off by default for normal browser requests. Ported from Phuse 1.3.4.
+- **The database connection pool's default sizing increased** (from 2-10 connections to 1-50) and is now tunable via `DB_POOL_MAX_CONNECTIONS`, better matching real concurrent load. Ported from Phuse 1.3.4.
+
 ## [0.1.6] - 2026-08-11
 
 ### Added
